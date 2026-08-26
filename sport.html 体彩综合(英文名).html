@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>体育彩票选号工具</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;background:#f0f2f5;color:#333;min-height:100vh;font-size:14px;padding-bottom:70px}
+.header{background:linear-gradient(135deg,#1a5276 0%,#2980b9 100%);color:#fff;padding:16px 16px 0;text-align:center;position:sticky;top:0;z-index:50;box-shadow:0 2px 6px rgba(0,0,0,.15)}
+.header h1{font-size:18px;letter-spacing:2px;font-weight:700}
+.header p{font-size:11px;margin-top:4px;opacity:.85}
+.nav-tabs{display:flex;gap:0;margin-top:12px;overflow-x:auto}
+.nav-tab{flex:1;padding:10px 8px;text-align:center;cursor:pointer;font-size:13px;font-weight:600;color:rgba(255,255,255,.7);border-bottom:3px solid transparent;transition:all .2s;white-space:nowrap;min-width:70px}
+.nav-tab.active{color:#fff;border-bottom-color:#f39c12}
+.container{padding:10px;max-width:100%}
+.tab-content{display:none}.tab-content.active{display:block}
+.card{background:#fff;border-radius:10px;padding:14px 12px;margin-bottom:10px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.card-title{font-size:15px;font-weight:700;color:#1a5276;border-left:3px solid #2980b9;padding-left:8px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between}
+.tabs{display:flex;gap:4px}
+.tab{padding:4px 10px;border:1px solid #ddd;border-radius:14px;cursor:pointer;font-size:11px;background:#fff;transition:all .2s;white-space:nowrap}
+.tab.active{background:#2980b9;color:#fff;border-color:#2980b9}
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.history-table{width:100%;border-collapse:collapse;font-size:11px;min-width:400px}
+.history-table th{background:#fafafa;padding:8px 4px;text-align:center;border-bottom:2px solid #eee;font-weight:600;color:#666;white-space:nowrap}
+.history-table td{padding:7px 4px;text-align:center;border-bottom:1px solid #f0f0f0;white-space:nowrap}
+.ball{display:inline-block;width:24px;height:24px;line-height:24px;border-radius:50%;font-size:10px;font-weight:bold;text-align:center;margin:0 1px}
+.ball-front{background:#e67e22;color:#fff}.ball-back{background:#2980b9;color:#fff}
+.ball-digit{background:#8e44ad;color:#fff;width:22px;height:22px;line-height:22px;font-size:11px;border-radius:4px}
+.ball-special{background:#c0392b;color:#fff}
+.freq-row{margin-bottom:10px}
+.freq-label{font-size:12px;color:#888;margin-bottom:4px}
+.freq-grid{display:grid;grid-template-columns:repeat(10,1fr);gap:3px}
+.freq-grid.col15{grid-template-columns:repeat(5,1fr)}
+.freq-cell{text-align:center;padding:4px 1px;border-radius:4px;font-size:9px}
+.freq-cell .num{font-weight:bold;font-size:11px}
+.freq-cell .cnt{font-size:8px;color:#888;margin-top:1px}
+.freq-hot{background:#ffe0e0;border:1px solid #ff9999}
+.freq-warm{background:#fff3e0;border:1px solid #ffcc80}
+.freq-cold{background:#e3f2fd;border:1px solid #90caf9}
+.freq-none{background:#f5f5f5;border:1px solid #e0e0e0}
+.freq-legend{display:flex;gap:10px;font-size:10px;color:#666;margin-top:6px;flex-wrap:wrap}
+.freq-legend span{display:flex;align-items:center;gap:3px}
+.legend-box{width:12px;height:12px;border-radius:2px;display:inline-block}
+.picker-label{font-size:13px;font-weight:600;margin-bottom:8px;color:#555}
+.picker-label .count{color:#2980b9;font-weight:700}
+.number-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}
+.num-btn{padding:9px 0;border:1px solid #ddd;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600;background:#fff;transition:all .15s;text-align:center;user-select:none}
+.num-btn:active{transform:scale(.95)}
+.num-btn.selected-front{background:#e67e22;color:#fff;border-color:#e67e22}
+.num-btn.selected-back{background:#2980b9;color:#fff;border-color:#2980b9}
+.digit-row{display:flex;gap:6px;justify-content:center;margin-bottom:12px;flex-wrap:wrap}
+.digit-box{width:44px;text-align:center}
+.digit-box label{font-size:10px;color:#888;display:block;margin-bottom:4px}
+.digit-box select{width:100%;padding:7px 2px;border:1px solid #ddd;border-radius:6px;font-size:15px;font-weight:bold;text-align:center;background:#fff}
+.action-row{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;align-items:center}
+.btn{padding:10px 16px;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600;transition:all .2s;flex:1;min-width:80px;text-align:center}
+.btn:active{transform:scale(.97)}
+.btn-primary{background:#2980b9;color:#fff}
+.btn-secondary{background:#f0f0f0;color:#555}
+.btn-orange{background:#e67e22;color:#fff}
+.btn-green{background:#27ae60;color:#fff}
+.input-group{display:flex;align-items:center;gap:4px;font-size:12px;color:#666}
+.input-group input{width:42px;padding:6px 4px;border:1px solid #ddd;border-radius:4px;text-align:center;font-size:13px}
+.ticket-list{display:flex;flex-direction:column;gap:10px}
+.ticket-item{border:1px solid #eee;border-radius:8px;padding:12px;background:#fafafa;display:flex;align-items:flex-start;gap:10px}
+.ticket-index{background:#2980b9;color:#fff;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:13px;flex-shrink:0}
+.ticket-body{flex:1;min-width:0}
+.ticket-nums{margin-bottom:6px}
+.ticket-desc{font-size:11px;color:#777;line-height:1.7;background:#fff;padding:8px 10px;border-radius:6px;border:1px solid #f0f0f0;margin-top:6px}
+.ticket-del{background:none;border:none;color:#ccc;cursor:pointer;font-size:20px;padding:0 4px;flex-shrink:0}
+.empty-tip{text-align:center;color:#aaa;padding:24px;font-size:13px}
+.analysis-box{background:#f0f7ff;border:1px solid #b8d4f0;border-radius:8px;padding:10px 12px;font-size:12px;line-height:1.8;color:#555;margin-top:10px}
+.analysis-box strong{color:#1a5276}
+.analysis-box ul{margin-left:16px;margin-top:4px}
+.stat-row{display:flex;gap:10px;margin-bottom:10px;flex-wrap:wrap}
+.stat-item{background:#f7f7f7;padding:6px 10px;border-radius:5px;font-size:11px}
+.stat-item .label{color:#888}
+.stat-item .value{font-weight:bold;color:#2980b9;font-size:14px;margin-left:3px}
+.play-tip{background:#fff8e1;border:1px solid #ffe082;border-radius:6px;padding:8px 12px;font-size:11px;color:#795548;margin-bottom:10px;line-height:1.6}
+.loading{text-align:center;padding:40px;color:#999;font-size:14px}
+.footer-bar{position:fixed;bottom:0;left:0;right:0;background:#2c2c2c;display:flex;justify-content:flex-start;gap:2px;padding:8px 10px;z-index:100;box-shadow:0 -2px 6px rgba(0,0,0,.2);overflow-x:auto;-webkit-overflow-scrolling:touch}
+.footer-bar::-webkit-scrollbar{display:none}
+.footer-btn{padding:7px 14px;background:#3a3a3a;color:#bbb;border:none;border-radius:4px;font-size:12px;cursor:pointer;transition:all .2s;white-space:nowrap;flex-shrink:0}
+.footer-btn:active{background:#2980b9;color:#fff}
+@media(min-width:600px){.container{max-width:720px;margin:0 auto;padding:14px}.number-grid{grid-template-columns:repeat(10,1fr)}.header h1{font-size:22px}}
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>体育彩票选号工具</h1>
+  <p>大乐透 | 排列3 | 排列5 | 7星彩</p>
+  <div class="nav-tabs">
+    <div class="nav-tab active" data-tab="dlt">大乐透</div>
+    <div class="nav-tab" data-tab="p3">排列3</div>
+    <div class="nav-tab" data-tab="p5">排列5</div>
+    <div class="nav-tab" data-tab="qxc">7星彩</div>
+  </div>
+</div>
+<div class="container">
+
+<!-- ===== 大乐透 ===== -->
+<div class="tab-content active" id="tab-dlt">
+  <div id="dltLoading" class="loading">正在加载开奖数据...</div>
+  <div id="dltContent" style="display:none">
+    <div class="card">
+      <div class="card-title"><span>历史开奖</span>
+        <div class="tabs"><div class="tab active" data-dlt-range="5">5天</div><div class="tab" data-dlt-range="10">10天</div><div class="tab" data-dlt-range="30">30天</div></div>
+      </div>
+      <div class="stat-row" id="dltStats"></div>
+      <div class="table-wrap"><table class="history-table" id="dltTable"><thead><tr><th>期号</th><th>日期</th><th>前区</th><th>后区</th><th>和值</th><th>奇偶</th></tr></thead><tbody></tbody></table></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span>频次 & 冷热</span>
+        <div class="tabs"><div class="tab active" data-dlt-freq="5">5天</div><div class="tab" data-dlt-freq="10">10天</div><div class="tab" data-dlt-freq="30">30天</div></div>
+      </div>
+      <div class="freq-label">前区频次（1-35）</div><div class="freq-grid" id="dltFrontFreq"></div>
+      <div class="freq-label">后区频次（1-12）</div><div class="freq-grid" style="grid-template-columns:repeat(6,1fr)" id="dltBackFreq"></div>
+      <div class="freq-legend"><span><i class="legend-box" style="background:#ffe0e0;border:1px solid #ff9999"></i>热</span><span><i class="legend-box" style="background:#fff3e0;border:1px solid #ffcc80"></i>温</span><span><i class="legend-box" style="background:#e3f2fd;border:1px solid #90caf9"></i>冷</span><span><i class="legend-box" style="background:#f5f5f5;border:1px solid #e0e0e0"></i>未出</span></div>
+      <div class="analysis-box" id="dltAnalysis"></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span>选号中心</span></div>
+      <div class="picker-label">前区（已选 <span class="count" id="dltFrontCount">0</span>/5）</div>
+      <div class="number-grid" id="dltFrontGrid"></div>
+      <div class="picker-label" style="margin-top:14px">后区（已选 <span class="count" id="dltBackCount">0</span>/2）</div>
+      <div class="number-grid" style="grid-template-columns:repeat(6,1fr)" id="dltBackGrid"></div>
+      <div class="action-row"><button class="btn btn-primary" onclick="addDltManual()">添加本组</button><button class="btn btn-secondary" onclick="clearDltSelection()">清空</button></div>
+      <div class="action-row" style="margin-top:0"><div class="input-group"><span>随机</span><input type="number" id="dltRandomCount" value="5" min="1" max="20"><span>组</span></div><button class="btn btn-orange" onclick="genDltRandom()">一键随机</button><button class="btn btn-secondary" onclick="clearDltTickets()">清空全部</button></div>
+    </div>
+    <div class="card"><div class="card-title"><span>我的选号（<span id="dltTicketCount">0</span>组）</span></div><div class="ticket-list" id="dltTicketList"><div class="empty-tip">暂无选号</div></div></div>
+  </div>
+</div>
+
+<!-- ===== 排列3 ===== -->
+<div class="tab-content" id="tab-p3">
+  <div id="p3Loading" class="loading">正在加载开奖数据...</div>
+  <div id="p3Content" style="display:none">
+    <div class="card">
+      <div class="card-title"><span>历史开奖</span>
+        <div class="tabs"><div class="tab active" data-p3-range="5">5天</div><div class="tab" data-p3-range="10">10天</div><div class="tab" data-p3-range="30">30天</div></div>
+      </div>
+      <div class="stat-row" id="p3Stats"></div>
+      <div class="table-wrap"><table class="history-table" id="p3Table"><thead><tr><th>期号</th><th>日期</th><th>百位</th><th>十位</th><th>个位</th><th>和值</th><th>类型</th></tr></thead><tbody></tbody></table></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span>各位频次统计</span>
+        <div class="tabs"><div class="tab active" data-p3-freq="5">5天</div><div class="tab" data-p3-freq="10">10天</div><div class="tab" data-p3-freq="30">30天</div></div>
+      </div>
+      <div id="p3FreqContainer"></div>
+      <div class="freq-legend"><span><i class="legend-box" style="background:#ffe0e0;border:1px solid #ff9999"></i>热</span><span><i class="legend-box" style="background:#fff3e0;border:1px solid #ffcc80"></i>温</span><span><i class="legend-box" style="background:#e3f2fd;border:1px solid #90caf9"></i>冷</span><span><i class="legend-box" style="background:#f5f5f5;border:1px solid #e0e0e0"></i>未出</span></div>
+      <div class="analysis-box" id="p3Analysis"></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span>选号中心</span></div>
+      <div class="play-tip">排列3：从000-999选1个3位数。直选按位对号中奖1040元；组选不按顺序，组三346元、组六173元。</div>
+      <div class="digit-row" id="p3Digits"></div>
+      <div class="action-row"><button class="btn btn-green" onclick="addP3Manual()">添加本组</button><button class="btn btn-secondary" onclick="clearP3Selection()">清空</button></div>
+      <div class="action-row" style="margin-top:0"><div class="input-group"><span>随机</span><input type="number" id="p3RandomCount" value="5" min="1" max="20"><span>组</span></div><button class="btn btn-green" onclick="genP3Random()">一键随机</button><button class="btn btn-secondary" onclick="clearP3Tickets()">清空全部</button></div>
+    </div>
+    <div class="card"><div class="card-title"><span>我的选号（<span id="p3TicketCount">0</span>组）</span></div><div class="ticket-list" id="p3TicketList"><div class="empty-tip">暂无选号</div></div></div>
+  </div>
+</div>
+
+<!-- ===== 排列5 ===== -->
+<div class="tab-content" id="tab-p5">
+  <div id="p5Loading" class="loading">正在加载开奖数据...</div>
+  <div id="p5Content" style="display:none">
+    <div class="card">
+      <div class="card-title"><span>历史开奖</span>
+        <div class="tabs"><div class="tab active" data-p5-range="5">5天</div><div class="tab" data-p5-range="10">10天</div><div class="tab" data-p5-range="30">30天</div></div>
+      </div>
+      <div class="stat-row" id="p5Stats"></div>
+      <div class="table-wrap"><table class="history-table" id="p5Table"><thead><tr><th>期号</th><th>日期</th><th>开奖号码</th><th>和值</th><th>奇偶</th><th>大小</th></tr></thead><tbody></tbody></table></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span>各位频次统计</span>
+        <div class="tabs"><div class="tab active" data-p5-freq="5">5天</div><div class="tab" data-p5-freq="10">10天</div><div class="tab" data-p5-freq="30">30天</div></div>
+      </div>
+      <div id="p5FreqContainer"></div>
+      <div class="freq-legend"><span><i class="legend-box" style="background:#ffe0e0;border:1px solid #ff9999"></i>热</span><span><i class="legend-box" style="background:#fff3e0;border:1px solid #ffcc80"></i>温</span><span><i class="legend-box" style="background:#e3f2fd;border:1px solid #90caf9"></i>冷</span><span><i class="legend-box" style="background:#f5f5f5;border:1px solid #e0e0e0"></i>未出</span></div>
+      <div class="analysis-box" id="p5Analysis"></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span>选号中心</span></div>
+      <div class="play-tip">排列5：从00000-99999选1个5位数，直选按位对号，全部命中即中一等奖10万元。</div>
+      <div class="digit-row" id="p5Digits"></div>
+      <div class="action-row"><button class="btn btn-green" onclick="addP5Manual()">添加本组</button><button class="btn btn-secondary" onclick="clearP5Selection()">清空</button></div>
+      <div class="action-row" style="margin-top:0"><div class="input-group"><span>随机</span><input type="number" id="p5RandomCount" value="5" min="1" max="20"><span>组</span></div><button class="btn btn-green" onclick="genP5Random()">一键随机</button><button class="btn btn-secondary" onclick="clearP5Tickets()">清空全部</button></div>
+    </div>
+    <div class="card"><div class="card-title"><span>我的选号（<span id="p5TicketCount">0</span>组）</span></div><div class="ticket-list" id="p5TicketList"><div class="empty-tip">暂无选号</div></div></div>
+  </div>
+</div>
+
+<!-- ===== 7星彩 ===== -->
+<div class="tab-content" id="tab-qxc">
+  <div id="qxcLoading" class="loading">正在加载开奖数据...</div>
+  <div id="qxcContent" style="display:none">
+    <div class="card">
+      <div class="card-title"><span>历史开奖</span>
+        <div class="tabs"><div class="tab active" data-qxc-range="5">5天</div><div class="tab" data-qxc-range="10">10天</div><div class="tab" data-qxc-range="30">30天</div></div>
+      </div>
+      <div class="stat-row" id="qxcStats"></div>
+      <div class="table-wrap"><table class="history-table" id="qxcTable"><thead><tr><th>期号</th><th>日期</th><th>开奖号码</th><th>和值</th><th>奇偶</th></tr></thead><tbody></tbody></table></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span>各位频次统计</span>
+        <div class="tabs"><div class="tab active" data-qxc-freq="5">5天</div><div class="tab" data-qxc-freq="10">10天</div><div class="tab" data-qxc-freq="30">30天</div></div>
+      </div>
+      <div id="qxcFreqContainer"></div>
+      <div class="freq-legend"><span><i class="legend-box" style="background:#ffe0e0;border:1px solid #ff9999"></i>热</span><span><i class="legend-box" style="background:#fff3e0;border:1px solid #ffcc80"></i>温</span><span><i class="legend-box" style="background:#e3f2fd;border:1px solid #90caf9"></i>冷</span><span><i class="legend-box" style="background:#f5f5f5;border:1px solid #e0e0e0"></i>未出</span></div>
+      <div class="analysis-box" id="qxcAnalysis"></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span>选号中心</span></div>
+      <div class="play-tip">7星彩：前6位每位0-9，第7位特别号0-14。按位对号，命中位置越多奖金越高，全中500万。</div>
+      <div class="digit-row" id="qxcDigits"></div>
+      <div class="action-row"><button class="btn btn-green" onclick="addQxcManual()">添加本组</button><button class="btn btn-secondary" onclick="clearQxcSelection()">清空</button></div>
+      <div class="action-row" style="margin-top:0"><div class="input-group"><span>随机</span><input type="number" id="qxcRandomCount" value="5" min="1" max="20"><span>组</span></div><button class="btn btn-green" onclick="genQxcRandom()">一键随机</button><button class="btn btn-secondary" onclick="clearQxcTickets()">清空全部</button></div>
+    </div>
+    <div class="card"><div class="card-title"><span>我的选号（<span id="qxcTicketCount">0</span>组）</span></div><div class="ticket-list" id="qxcTicketList"><div class="empty-tip">暂无选号</div></div></div>
+  </div>
+</div>
+
+</div>
+<div class="footer-bar">
+  <button class="footer-btn">工作任务</button><button class="footer-btn">Turbo</button><button class="footer-btn">本地电脑</button><button class="footer-btn">项目</button><button class="footer-btn">按需确认</button><button class="footer-btn">节能</button><button class="footer-btn">连接器</button>
+</div>
+
+<script>
+// ===== Tab切换 =====
+document.querySelectorAll('.nav-tab').forEach(t=>{t.onclick=()=>{document.querySelectorAll('.nav-tab').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.tab-content').forEach(x=>x.classList.remove('active'));t.classList.add('active');document.getElementById('tab-'+t.dataset.tab).classList.add('active');};});
+
+function pad(n){return n<10?"0"+n:""+n;}
+
+// ===== 通用：数字彩票 =====
+const digitGames = {
+  p3: {name:"排列3", digits:3, maxes:[9,9,9], labels:["百位","十位","个位"], data:"data/p3.json", tickets:[], range:5, freq:5, loaded:false},
+  p5: {name:"排列5", digits:5, maxes:[9,9,9,9,9], labels:["万位","千位","百位","十位","个位"], data:"data/p5.json", tickets:[], range:5, freq:5, loaded:false},
+  qxc:{name:"7星彩", digits:7, maxes:[9,9,9,9,9,9,14], labels:["第一位","第二位","第三位","第四位","第五位","第六位","特别号"], data:"data/qxc.json", tickets:[], range:5, freq:5, loaded:false}
+};
+
+function initDigitPicker(type){
+  const g = digitGames[type];
+  const el = document.getElementById(type+"Digits");
+  el.innerHTML = "";
+  for(let i=0;i<g.digits;i++){
+    const box = document.createElement("div"); box.className="digit-box";
+    box.innerHTML = `<label>${g.labels[i]}</label><select id="${type}_d${i}"></select>`;
+    el.appendChild(box);
+    const sel = box.querySelector("select");
+    for(let n=0;n<=g.maxes[i];n++){const o=document.createElement("option");o.value=n;o.textContent=n;sel.appendChild(o);}
+  }
+}
+
+function getDigitSelection(type){
+  const g = digitGames[type];
+  return Array.from({length:g.digits},(_,i)=>parseInt(document.getElementById(type+"_d"+i).value));
+}
+
+function digitDesc(digits, typeName, maxes){
+  const sum = digits.reduce((a,b)=>a+b,0);
+  const odd = digits.filter(n=>n%2).length;
+  const big = digits.filter((n,i)=>n>=(maxes[i]>=14?7:5)).length;
+  const unique = new Set(digits).size;
+  let x = `${typeName}：和值${sum}，奇偶${odd}:${digits.length-odd}，大小${big}:${digits.length-big}`;
+  if(unique===digits.length) x+="，全不同号";
+  else if(unique===digits.length-1) x+="，含一对同号";
+  else x+=`，${digits.length-unique+1}个同号`;
+  let cons=0; const sorted=[...digits].sort((a,b)=>a-b);
+  for(let i=1;i<sorted.length;i++) if(sorted[i]===sorted[i-1]+1) cons++;
+  if(cons>0) x+=`，${cons}组连号`;
+  x+="。"; return x;
+}
+
+function renderDigitTickets(type){
+  const g = digitGames[type];
+  document.getElementById(type+"TicketCount").textContent = g.tickets.length;
+  const list = document.getElementById(type+"TicketList");
+  if(!g.tickets.length){list.innerHTML='<div class="empty-tip">暂无选号</div>';return;}
+  list.innerHTML = g.tickets.map((t,i)=>{
+    const balls = t.digits.map((n,idx)=>`<span class="ball ${idx===t.digits.length-1&&g.maxes[idx]>=14?'ball-special':'ball-digit'}">${n}</span>`).join("");
+    return `<div class="ticket-item"><div class="ticket-index">${i+1}</div><div class="ticket-body"><div class="ticket-nums">${balls}</div><div class="ticket-desc">${t.desc}</div></div><button class="ticket-del" onclick="delDigitTicket('${type}',${i})">×</button></div>`;
+  }).join("");
+}
+function delDigitTicket(type,i){digitGames[type].tickets.splice(i,1);renderDigitTickets(type);}
+function addDigitManual(type){const d=getDigitSelection(type);const g=digitGames[type];g.tickets.push({digits:d,desc:digitDesc(d,g.name,g.maxes)});renderDigitTickets(type);}
+function genDigitRandom(type){const g=digitGames[type];const c=Math.min(20,Math.max(1,parseInt(document.getElementById(type+"RandomCount").value)||5));for(let i=0;i<c;i++){const d=Array.from({length:g.digits},(_,j)=>Math.floor(Math.random()*(g.maxes[j]+1)));g.tickets.push({digits:d,desc:digitDesc(d,g.name,g.maxes)});}renderDigitTickets(type);}
+function clearDigitSelection(type){const g=digitGames[type];for(let i=0;i<g.digits;i++)document.getElementById(type+"_d"+i).value=0;}
+function clearDigitTickets(type){if(digitGames[type].tickets.length&&confirm("清空全部？")){digitGames[type].tickets=[];renderDigitTickets(type);}}
+
+function filterDigitData(type,days){const g=digitGames[type];const c=new Date();c.setDate(c.getDate()-days);return g.data.filter(x=>new Date(x.date)>=c);}
+
+function renderDigitHistory(type){
+  const g = digitGames[type];
+  const data = filterDigitData(type,g.range);
+  const table = document.getElementById(type+"Table");
+  if(type==="p3"){
+    table.querySelector("tbody").innerHTML = data.map(d=>{
+      const sum=d.digits.reduce((a,b)=>a+b,0);
+      const u=new Set(d.digits).size; const tp=u===3?"组六":u===2?"组三":"豹子";
+      return `<tr><td>${d.issue}</td><td>${d.date.slice(5)}</td><td><span class="ball ball-digit">${d.digits[0]}</span></td><td><span class="ball ball-digit">${d.digits[1]}</span></td><td><span class="ball ball-digit">${d.digits[2]}</span></td><td>${sum}</td><td>${tp}</td></tr>`;
+    }).join("");
+  }else{
+    table.querySelector("tbody").innerHTML = data.map(d=>{
+      const balls=d.digits.map((n,idx)=>`<span class="ball ${idx===d.digits.length-1&&g.maxes[idx]>=14?'ball-special':'ball-digit'}">${n}</span>`).join("");
+      const sum=d.digits.reduce((a,b)=>a+b,0),odd=d.digits.filter(n=>n%2).length;
+      const big=d.digits.filter((n,i)=>n>=(g.maxes[i]>=14?7:5)).length;
+      return `<tr><td>${d.issue}</td><td>${d.date.slice(5)}</td><td>${balls}</td><td>${sum}</td><td>${odd}:${d.digits.length-odd}</td>${type==="p5"?`<td>${big}:${5-big}</td>`:""}</tr>`;
+    }).join("");
+  }
+  const allDigits = data.flatMap(d=>d.digits);
+  const sumAvg = (allDigits.reduce((a,b)=>a+b,0)/data.length).toFixed(0);
+  document.getElementById(type+"Stats").innerHTML = `<div class="stat-item"><span class="label">期数</span><span class="value">${data.length}</span></div><div class="stat-item"><span class="label">均和</span><span class="value">${sumAvg}</span></div>`;
+}
+
+function renderDigitFreq(type){
+  const g = digitGames[type];
+  const data = filterDigitData(type,g.freq);
+  const container = document.getElementById(type+"FreqContainer");
+  let html = "";
+  for(let pos=0;pos<g.digits;pos++){
+    const maxN = g.maxes[pos];
+    const cnt = {}; for(let n=0;n<=maxN;n++) cnt[n]=0;
+    data.forEach(d=>cnt[d.digits[pos]]++);
+    const avg = data.length / (maxN+1);
+    html += `<div class="freq-row"><div class="freq-label">${g.labels[pos]}频次（0-${maxN}）</div><div class="freq-grid ${maxN>=14?'col15':''}">`;
+    for(let n=0;n<=maxN;n++){
+      const c=cnt[n]; let cl="freq-none";
+      if(c===0)cl="freq-none"; else if(c>=avg*1.5)cl="freq-hot"; else if(c<=avg*.5)cl="freq-cold"; else cl="freq-warm";
+      html+=`<div class="freq-cell ${cl}"><div class="num">${n}</div><div class="cnt">${c}</div></div>`;
+    }
+    html += `</div></div>`;
+  }
+  container.innerHTML = html;
+  // 分析
+  const hotNums=[],coldNums=[];
+  for(let pos=0;pos<g.digits;pos++){
+    const maxN=g.maxes[pos];const cnt={};for(let n=0;n<=maxN;n++)cnt[n]=0;
+    data.forEach(d=>cnt[d.digits[pos]]++);const avg=data.length/(maxN+1);
+    const hot=Object.entries(cnt).filter(([_,c])=>c>=avg*1.5&&c>0).map(([n])=>+n);
+    const cold=Object.entries(cnt).filter(([_,c])=>c<=avg*.5).map(([n])=>+n);
+    if(hot.length)hotNums.push(`${g.labels[pos]}${hot.join("、")}`);
+    if(cold.length)coldNums.push(`${g.labels[pos]}${cold.slice(0,3).join("、")}`);
+  }
+  document.getElementById(type+"Analysis").innerHTML=`<strong>近${g.freq}天冷热分析（${data.length}期）：</strong><ul><li><strong>热号</strong>：${hotNums.length?hotNums.join("；"):"无"}。</li><li><strong>冷号</strong>：${coldNums.length?coldNums.join("；"):"无"}。</li><li><strong>选号建议</strong>：各位冷热搭配，和值居中，避免全奇全偶。</li><li style="color:#999;">※ 彩票为独立随机事件，仅供娱乐参考</li></ul>`;
+}
+
+async function loadDigitData(type){
+  const g = digitGames[type];
+  try{
+    const resp = await fetch(g.data+"?_t="+Date.now());
+    if(!resp.ok) throw new Error("HTTP "+resp.status);
+    g.data = await resp.json();
+    g.loaded = true;
+    document.getElementById(type+"Loading").style.display="none";
+    document.getElementById(type+"Content").style.display="block";
+    initDigitPicker(type);
+    renderDigitHistory(type);
+    renderDigitFreq(type);
+    renderDigitTickets(type);
+  }catch(e){
+    document.getElementById(type+"Loading").innerHTML="数据加载失败："+e.message;
+  }
+}
+
+// 数字彩票Tab事件
+["p3","p5","qxc"].forEach(type=>{
+  document.querySelectorAll(`[data-${type}-range]`).forEach(t=>{t.onclick=()=>{document.querySelectorAll(`[data-${type}-range]`).forEach(x=>x.classList.remove('active'));t.classList.add('active');digitGames[type].range=+t.dataset[type+"Range"];renderDigitHistory(type);};});
+  document.querySelectorAll(`[data-${type}-freq]`).forEach(t=>{t.onclick=()=>{document.querySelectorAll(`[data-${type}-freq]`).forEach(x=>x.classList.remove('active'));t.classList.add('active');digitGames[type].freq=+t.dataset[type+"Freq"];renderDigitFreq(type);};});
+});
+
+// ===== 大乐透 =====
+let dltData=[],dltFront=new Set(),dltBack=new Set(),dltTickets=[],dltHistoryRange=5,dltFreqRange=5,dltLoaded=false;
+function dltFilter(days){const c=new Date();c.setDate(c.getDate()-days);return dltData.filter(x=>new Date(x.date)>=c);}
+function dltTopN(arr,max,n){const c={};for(let i=1;i<=max;i++)c[i]=0;arr.forEach(v=>c[v]++);return Object.entries(c).sort((a,b)=>b[1]-a[1]).slice(0,n).map(e=>+e[0]);}
+async function loadDlt(){
+  try{
+    const resp=await fetch("data/dlt.json?_t="+Date.now());
+    if(!resp.ok)throw new Error("HTTP "+resp.status);
+    dltData=await resp.json();dltLoaded=true;
+    document.getElementById("dltLoading").style.display="none";document.getElementById("dltContent").style.display="block";
+    renderDltHistory();renderDltFreq();renderDltPicker();
+  }catch(e){document.getElementById("dltLoading").innerHTML="数据加载失败："+e.message;}
+}
+function renderDltHistory(){
+  if(!dltLoaded)return;const data=dltFilter(dltHistoryRange);
+  document.querySelector("#dltTable tbody").innerHTML=data.map(d=>{
+    const fb=d.front.map(n=>`<span class="ball ball-front">${pad(n)}</span>`).join("");
+    const bb=d.back.map(n=>`<span class="ball ball-back">${pad(n)}</span>`).join("");
+    const sum=d.front.reduce((a,b)=>a+b,0),odd=d.front.filter(n=>n%2).length;
+    return `<tr><td>${d.issue}</td><td>${d.date.slice(5)}</td><td>${fb}</td><td>${bb}</td><td>${sum}</td><td>${odd}:${5-odd}</td></tr>`;
+  }).join("");
+  const af=data.flatMap(d=>d.front),ab=data.flatMap(d=>d.back);
+  document.getElementById("dltStats").innerHTML=`<div class="stat-item"><span class="label">期数</span><span class="value">${data.length}</span></div><div class="stat-item"><span class="label">均和</span><span class="value">${(af.reduce((a,b)=>a+b,0)/data.length).toFixed(0)}</span></div><div class="stat-item"><span class="label">热前</span><span class="value">${dltTopN(af,35,3).map(pad).join(" ")}</span></div><div class="stat-item"><span class="label">热后</span><span class="value">${dltTopN(ab,12,2).map(pad).join(" ")}</span></div>`;
+}
+function renderDltFreq(){
+  if(!dltLoaded)return;const data=dltFilter(dltFreqRange);
+  const fc={},bc={};for(let i=1;i<=35;i++)fc[i]=0;for(let i=1;i<=12;i++)bc[i]=0;
+  data.forEach(d=>{d.front.forEach(n=>fc[n]++);d.back.forEach(n=>bc[n]++);});
+  const fa=(data.length*5)/35,ba=(data.length*2)/12;
+  function cell(num,cnt,avg){let cl="freq-none";if(cnt===0)cl="freq-none";else if(cnt>=avg*1.5)cl="freq-hot";else if(cnt<=avg*.5)cl="freq-cold";else cl="freq-warm";return `<div class="freq-cell ${cl}"><div class="num">${pad(num)}</div><div class="cnt">${cnt}</div></div>`;}
+  document.getElementById("dltFrontFreq").innerHTML=Array.from({length:35},(_,i)=>cell(i+1,fc[i+1],fa)).join("");
+  document.getElementById("dltBackFreq").innerHTML=Array.from({length:12},(_,i)=>cell(i+1,bc[i+1],ba)).join("");
+  const fs=Object.entries(fc).sort((a,b)=>b[1]-a[1]),bs=Object.entries(bc).sort((a,b)=>b[1]-a[1]);
+  const hf=fs.filter(([_,c])=>c>=fa*1.5&&c>0).map(([n])=>pad(+n)),cf=fs.filter(([_,c])=>c<=fa*.5).map(([n])=>pad(+n));
+  const hb=bs.filter(([_,c])=>c>=ba*1.5&&c>0).map(([n])=>pad(+n)),cb=bs.filter(([_,c])=>c<=ba*.5).map(([n])=>pad(+n));
+  document.getElementById("dltAnalysis").innerHTML=`<strong>近${dltFreqRange}天冷热分析（${data.length}期）：</strong><ul><li><strong>热号</strong>：前区${hf.length?hf.join("、"):"无"}；后区${hb.length?hb.join("、"):"无"}。</li><li><strong>冷号</strong>：前区${cf.length?cf.slice(0,6).join("、"):"无"}；后区${cb.length?cb.join("、"):"无"}。</li><li><strong>选号建议</strong>：前区2热+2温+1冷，和值70-120，奇偶接近3:2；后区1热1冷。</li><li style="color:#999;">※ 彩票为独立随机事件，仅供娱乐参考</li></ul>`;
+}
+function renderDltPicker(){
+  const fg=document.getElementById("dltFrontGrid");fg.innerHTML="";
+  for(let i=1;i<=35;i++){const b=document.createElement("div");b.className="num-btn"+(dltFront.has(i)?" selected-front":"");b.textContent=pad(i);b.onclick=()=>{if(dltFront.has(i))dltFront.delete(i);else{if(dltFront.size>=5){alert("前区最多5个");return;}dltFront.add(i);}renderDltPicker();};fg.appendChild(b);}
+  const bg=document.getElementById("dltBackGrid");bg.innerHTML="";
+  for(let i=1;i<=12;i++){const b=document.createElement("div");b.className="num-btn"+(dltBack.has(i)?" selected-back":"");b.textContent=pad(i);b.onclick=()=>{if(dltBack.has(i))dltBack.delete(i);else{if(dltBack.size>=2){alert("后区最多2个");return;}dltBack.add(i);}renderDltPicker();};bg.appendChild(b);}
+  document.getElementById("dltFrontCount").textContent=dltFront.size;
+  document.getElementById("dltBackCount").textContent=dltBack.size;
+}
+function clearDltSelection(){dltFront.clear();dltBack.clear();renderDltPicker();}
+function dltDesc(front,back){const sorted=[...front].sort((a,b)=>a-b);const sum=sorted.reduce((a,b)=>a+b,0),odd=sorted.filter(n=>n%2).length,big=sorted.filter(n=>n>=18).length;const z1=sorted.filter(n=>n<=12).length,z2=sorted.filter(n=>n>=13&&n<=24).length,z3=sorted.filter(n=>n>=25).length;let cons=0;for(let i=1;i<sorted.length;i++)if(sorted[i]===sorted[i-1]+1)cons++;let x=`和值${sum}（${sum>=70&&sum<=120?"正常":sum<70?"偏小":"偏大"}），奇偶${odd}:${5-odd}，大小${big}:${5-big}，三区${z1}:${z2}:${z3}`;if(cons>0)x+=`，${cons}组连号`;const bs=[...back].sort((a,b)=>a-b),bo=bs.filter(n=>n%2).length;x+=`。后区${bs.map(pad).join("、")}（奇偶${bo}:${2-bo}）。`;return x;}
+function addDltTicket(front,back){dltTickets.push({front:[...front].sort((a,b)=>a-b),back:[...back].sort((a,b)=>a-b),desc:dltDesc(front,back)});renderDltTickets();}
+function addDltManual(){if(dltFront.size!==5){alert("请选满5个前区");return;}if(dltBack.size!==2){alert("请选满2个后区");return;}addDltTicket([...dltFront],[...dltBack]);clearDltSelection();}
+function genDltRandom(){const c=Math.min(20,Math.max(1,parseInt(document.getElementById("dltRandomCount").value)||5));for(let i=0;i<c;i++){const f=new Set();while(f.size<5)f.add(Math.floor(Math.random()*35)+1);const b=new Set();while(b.size<2)b.add(Math.floor(Math.random()*12)+1);addDltTicket([...f],[...b]);}}
+function clearDltTickets(){if(dltTickets.length&&confirm("清空全部？")){dltTickets=[];renderDltTickets();}}
+function renderDltTickets(){document.getElementById("dltTicketCount").textContent=dltTickets.length;const list=document.getElementById("dltTicketList");if(!dltTickets.length){list.innerHTML='<div class="empty-tip">暂无选号</div>';return;}list.innerHTML=dltTickets.map((t,i)=>{const fb=t.front.map(n=>`<span class="ball ball-front">${pad(n)}</span>`).join("");const bb=t.back.map(n=>`<span class="ball ball-back">${pad(n)}</span>`).join("");return `<div class="ticket-item"><div class="ticket-index">${i+1}</div><div class="ticket-body"><div class="ticket-nums">${fb} + ${bb}</div><div class="ticket-desc">${t.desc}</div></div><button class="ticket-del" onclick="dltTickets.splice(${i},1);renderDltTickets();">×</button></div>`;}).join("");}
+document.querySelectorAll('[data-dlt-range]').forEach(t=>{t.onclick=()=>{document.querySelectorAll('[data-dlt-range]').forEach(x=>x.classList.remove('active'));t.classList.add('active');dltHistoryRange=+t.dataset.dltRange;renderDltHistory();};});
+document.querySelectorAll('[data-dlt-freq]').forEach(t=>{t.onclick=()=>{document.querySelectorAll('[data-dlt-freq]').forEach(x=>x.classList.remove('active'));t.classList.add('active');dltFreqRange=+t.dataset.dltFreq;renderDltFreq();};});
+document.querySelectorAll('.footer-btn').forEach(b=>{b.onclick=()=>alert("【"+b.textContent+"】演示按钮");});
+
+// ===== 初始化 =====
+loadDlt();
+loadDigitData("p3");
+loadDigitData("p5");
+loadDigitData("qxc");
+</script>
+</body>
+</html>
