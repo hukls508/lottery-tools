@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>大乐透选号工具</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: #f0f2f5; color: #333; min-height: 100vh; font-size: 14px; -webkit-text-size-adjust: 100%;
+  }
+  body { padding-bottom: 70px; }
+  .header {
+    background: linear-gradient(135deg, #1a5276 0%, #2980b9 100%);
+    color: #fff; padding: 16px 16px 14px; text-align: center;
+    position: sticky; top: 0; z-index: 50; box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+  }
+  .header h1 { font-size: 18px; letter-spacing: 2px; font-weight: 700; }
+  .header p { font-size: 11px; margin-top: 4px; opacity: 0.85; }
+  .container { padding: 10px; max-width: 100%; }
+  .card { background: #fff; border-radius: 10px; padding: 14px 12px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+  .card-title { font-size: 15px; font-weight: 700; color: #1a5276; border-left: 3px solid #2980b9; padding-left: 8px; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; }
+  .tabs { display: flex; gap: 4px; }
+  .tab { padding: 4px 10px; border: 1px solid #ddd; border-radius: 14px; cursor: pointer; font-size: 11px; background: #fff; transition: all 0.2s; white-space: nowrap; }
+  .tab.active { background: #2980b9; color: #fff; border-color: #2980b9; }
+  .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .history-table { width: 100%; border-collapse: collapse; font-size: 11px; min-width: 480px; }
+  .history-table th { background: #fafafa; padding: 8px 4px; text-align: center; border-bottom: 2px solid #eee; font-weight: 600; color: #666; white-space: nowrap; }
+  .history-table td { padding: 7px 4px; text-align: center; border-bottom: 1px solid #f0f0f0; white-space: nowrap; }
+  .ball { display: inline-block; width: 24px; height: 24px; line-height: 24px; border-radius: 50%; font-size: 10px; font-weight: bold; text-align: center; margin: 0 1px; }
+  .ball-front { background: #e67e22; color: #fff; }
+  .ball-back { background: #2980b9; color: #fff; }
+  .freq-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-bottom: 12px; }
+  .freq-grid.back-grid { grid-template-columns: repeat(6, 1fr); }
+  .freq-cell { text-align: center; padding: 5px 1px; border-radius: 5px; font-size: 10px; }
+  .freq-cell .num { font-weight: bold; font-size: 12px; }
+  .freq-cell .cnt { font-size: 9px; color: #888; margin-top: 1px; }
+  .freq-hot { background: #ffe0e0; border: 1px solid #ff9999; }
+  .freq-warm { background: #fff3e0; border: 1px solid #ffcc80; }
+  .freq-cold { background: #e3f2fd; border: 1px solid #90caf9; }
+  .freq-none { background: #f5f5f5; border: 1px solid #e0e0e0; }
+  .freq-legend { display: flex; gap: 10px; font-size: 10px; color: #666; margin-top: 6px; flex-wrap: wrap; }
+  .freq-legend span { display: flex; align-items: center; gap: 3px; }
+  .legend-box { width: 12px; height: 12px; border-radius: 2px; display: inline-block; }
+  .picker-section { display: flex; flex-direction: column; gap: 16px; }
+  .picker-label { font-size: 13px; font-weight: 600; margin-bottom: 8px; color: #555; }
+  .picker-label .count { color: #2980b9; font-weight: 700; }
+  .number-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; }
+  .number-grid.back-grid { grid-template-columns: repeat(6, 1fr); }
+  .num-btn { padding: 9px 0; border: 1px solid #ddd; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; background: #fff; transition: all 0.15s; text-align: center; user-select: none; }
+  .num-btn:active { transform: scale(0.95); }
+  .num-btn.selected-front { background: #e67e22; color: #fff; border-color: #e67e22; }
+  .num-btn.selected-back { background: #2980b9; color: #fff; border-color: #2980b9; }
+  .picker-hint { font-size: 11px; color: #999; margin-top: 6px; }
+  .action-row { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; align-items: center; }
+  .btn { padding: 10px 16px; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; transition: all 0.2s; flex: 1; min-width: 80px; text-align: center; }
+  .btn:active { transform: scale(0.97); }
+  .btn-primary { background: #2980b9; color: #fff; }
+  .btn-secondary { background: #f0f0f0; color: #555; }
+  .btn-orange { background: #e67e22; color: #fff; }
+  .input-group { display: flex; align-items: center; gap: 4px; font-size: 12px; color: #666; }
+  .input-group input { width: 42px; padding: 6px 4px; border: 1px solid #ddd; border-radius: 4px; text-align: center; font-size: 13px; }
+  .ticket-list { display: flex; flex-direction: column; gap: 10px; }
+  .ticket-item { border: 1px solid #eee; border-radius: 8px; padding: 12px; background: #fafafa; display: flex; align-items: flex-start; gap: 10px; }
+  .ticket-index { background: #2980b9; color: #fff; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 13px; flex-shrink: 0; }
+  .ticket-body { flex: 1; min-width: 0; }
+  .ticket-nums { margin-bottom: 6px; }
+  .ticket-nums .ball { width: 26px; height: 26px; line-height: 26px; font-size: 11px; }
+  .ticket-desc { font-size: 11px; color: #777; line-height: 1.7; background: #fff; padding: 8px 10px; border-radius: 6px; border: 1px solid #f0f0f0; margin-top: 6px; }
+  .ticket-del { background: none; border: none; color: #ccc; cursor: pointer; font-size: 20px; padding: 0 4px; flex-shrink: 0; }
+  .empty-tip { text-align: center; color: #aaa; padding: 24px; font-size: 13px; }
+  .analysis-box { background: #f0f7ff; border: 1px solid #b8d4f0; border-radius: 8px; padding: 10px 12px; font-size: 12px; line-height: 1.8; color: #555; }
+  .analysis-box strong { color: #1a5276; }
+  .analysis-box ul { margin-left: 16px; margin-top: 4px; }
+  .analysis-box li { margin-bottom: 2px; }
+  .footer-bar { position: fixed; bottom: 0; left: 0; right: 0; background: #2c2c2c; display: flex; justify-content: flex-start; gap: 2px; padding: 8px 10px; z-index: 100; box-shadow: 0 -2px 6px rgba(0,0,0,0.2); overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .footer-bar::-webkit-scrollbar { display: none; }
+  .footer-btn { padding: 7px 14px; background: #3a3a3a; color: #bbb; border: none; border-radius: 4px; font-size: 12px; cursor: pointer; transition: all 0.2s; white-space: nowrap; flex-shrink: 0; }
+  .footer-btn:active { background: #2980b9; color: #fff; }
+  .stat-row { display: flex; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
+  .stat-item { background: #f7f7f7; padding: 6px 10px; border-radius: 5px; font-size: 11px; }
+  .stat-item .label { color: #888; }
+  .stat-item .value { font-weight: bold; color: #2980b9; font-size: 14px; margin-left: 3px; }
+  .loading { text-align: center; padding: 40px; color: #999; font-size: 14px; }
+  @media (min-width: 600px) {
+    .container { max-width: 720px; margin: 0 auto; padding: 14px; }
+    .number-grid { grid-template-columns: repeat(10, 1fr); }
+    .freq-grid { grid-template-columns: repeat(10, 1fr); }
+    .freq-grid.back-grid { grid-template-columns: repeat(6, 1fr); }
+    .header h1 { font-size: 22px; }
+    .ball { width: 28px; height: 28px; line-height: 28px; font-size: 11px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>大乐透选号工具</h1>
+  <p>前区1-35选5 | 后区1-12选2 | 数据自动更新</p>
+</div>
+
+<div class="container">
+  <div id="loading" class="loading">正在加载开奖数据...</div>
+  <div id="mainContent" style="display:none;">
+
+    <div class="card">
+      <div class="card-title">
+        <span>历史开奖</span>
+        <div class="tabs">
+          <div class="tab active" data-range="5">5天</div>
+          <div class="tab" data-range="10">10天</div>
+          <div class="tab" data-range="30">30天</div>
+        </div>
+      </div>
+      <div class="stat-row" id="historyStats"></div>
+      <div class="table-wrap">
+        <table class="history-table" id="historyTable">
+          <thead><tr><th>期号</th><th>日期</th><th>前区</th><th>后区</th><th>和值</th><th>奇偶</th><th>大小</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">
+        <span>频次 & 冷热</span>
+        <div class="tabs">
+          <div class="tab active" data-freq="5">5天</div>
+          <div class="tab" data-freq="10">10天</div>
+          <div class="tab" data-freq="30">30天</div>
+        </div>
+      </div>
+      <div style="margin-bottom:6px;font-size:12px;color:#888;">前区频次（1-35）</div>
+      <div class="freq-grid" id="frontFreqGrid"></div>
+      <div style="margin-bottom:6px;font-size:12px;color:#888;">后区频次（1-12）</div>
+      <div class="freq-grid back-grid" id="backFreqGrid"></div>
+      <div class="freq-legend">
+        <span><i class="legend-box" style="background:#ffe0e0;border:1px solid #ff9999;"></i>热</span>
+        <span><i class="legend-box" style="background:#fff3e0;border:1px solid #ffcc80;"></i>温</span>
+        <span><i class="legend-box" style="background:#e3f2fd;border:1px solid #90caf9;"></i>冷</span>
+        <span><i class="legend-box" style="background:#f5f5f5;border:1px solid #e0e0e0;"></i>未出</span>
+      </div>
+      <div class="analysis-box" id="analysisBox" style="margin-top:10px;"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span>选号中心</span></div>
+      <div class="picker-section">
+        <div>
+          <div class="picker-label">前区（已选 <span class="count" id="frontCount">0</span>/5）</div>
+          <div class="number-grid" id="frontGrid"></div>
+          <div class="picker-hint">点击号码选择，最多5个</div>
+        </div>
+        <div>
+          <div class="picker-label">后区（已选 <span class="count" id="backCount">0</span>/2）</div>
+          <div class="number-grid back-grid" id="backGrid"></div>
+          <div class="picker-hint">点击号码选择，最多2个</div>
+        </div>
+        <div class="action-row">
+          <button class="btn btn-primary" onclick="addManualTicket()">添加本组</button>
+          <button class="btn btn-secondary" onclick="clearSelection()">清空</button>
+        </div>
+        <div class="action-row" style="margin-top:0;">
+          <div class="input-group"><span>随机</span><input type="number" id="randomCount" value="5" min="1" max="20"><span>组</span></div>
+          <button class="btn btn-orange" onclick="generateRandom()">一键随机</button>
+          <button class="btn btn-secondary" onclick="clearAllTickets()">清空全部</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span>我的选号（<span id="ticketCount">0</span>组）</span></div>
+      <div class="ticket-list" id="ticketList"><div class="empty-tip">暂无选号，手动选号或一键随机生成</div></div>
+    </div>
+
+  </div>
+</div>
+
+<div class="footer-bar">
+  <button class="footer-btn">工作任务</button>
+  <button class="footer-btn">Turbo</button>
+  <button class="footer-btn">本地电脑</button>
+  <button class="footer-btn">项目</button>
+  <button class="footer-btn">按需确认</button>
+  <button class="footer-btn">节能</button>
+  <button class="footer-btn">连接器</button>
+</div>
+
+<script>
+let historyData = [];
+let selectedFront = new Set(), selectedBack = new Set(), tickets = [];
+let currentHistoryRange = 5, currentFreqRange = 5;
+let dataLoaded = false;
+
+function pad(n){return n<10?"0"+n:""+n;}
+function filterByDays(d){const c=new Date();c.setDate(c.getDate()-d);return historyData.filter(x=>new Date(x.date)>=c);}
+function getTopN(arr,max,n){const c={};for(let i=1;i<=max;i++)c[i]=0;arr.forEach(v=>c[v]++);return Object.entries(c).sort((a,b)=>b[1]-a[1]).slice(0,n).map(e=>+e[0]);}
+
+async function loadData(){
+  try{
+    const resp = await fetch("data/dlt.json?_t=" + Date.now());
+    if(!resp.ok) throw new Error("HTTP " + resp.status);
+    historyData = await resp.json();
+    dataLoaded = true;
+    document.getElementById("loading").style.display = "none";
+    document.getElementById("mainContent").style.display = "block";
+    renderHistory(); renderFreq(); renderPicker(); renderTickets();
+  }catch(e){
+    document.getElementById("loading").innerHTML = "数据加载失败：" + e.message + "<br>请确认 data/dlt.json 文件存在";
+  }
+}
+
+function renderHistory(){
+  if(!dataLoaded) return;
+  const data=filterByDays(currentHistoryRange);
+  document.querySelector("#historyTable tbody").innerHTML=data.map(d=>{
+    const fb=d.front.map(n=>`<span class="ball ball-front">${pad(n)}</span>`).join("");
+    const bb=d.back.map(n=>`<span class="ball ball-back">${pad(n)}</span>`).join("");
+    const sum=d.front.reduce((a,b)=>a+b,0),odd=d.front.filter(n=>n%2).length,big=d.front.filter(n=>n>=18).length;
+    return `<tr><td>${d.issue}</td><td>${d.date.slice(5)}</td><td>${fb}</td><td>${bb}</td><td>${sum}</td><td>${odd}:${5-odd}</td><td>${big}:${5-big}</td></tr>`;
+  }).join("");
+  const af=data.flatMap(d=>d.front),ab=data.flatMap(d=>d.back);
+  document.getElementById("historyStats").innerHTML=`
+    <div class="stat-item"><span class="label">期数</span><span class="value">${data.length}</span></div>
+    <div class="stat-item"><span class="label">均和</span><span class="value">${(af.reduce((a,b)=>a+b,0)/data.length).toFixed(0)}</span></div>
+    <div class="stat-item"><span class="label">热前</span><span class="value">${getTopN(af,35,3).map(pad).join(" ")}</span></div>
+    <div class="stat-item"><span class="label">热后</span><span class="value">${getTopN(ab,12,2).map(pad).join(" ")}</span></div>`;
+}
+
+function renderFreq(){
+  if(!dataLoaded) return;
+  const data=filterByDays(currentFreqRange);
+  const fc={},bc={};for(let i=1;i<=35;i++)fc[i]=0;for(let i=1;i<=12;i++)bc[i]=0;
+  data.forEach(d=>{d.front.forEach(n=>fc[n]++);d.back.forEach(n=>bc[n]++);});
+  const fa=(data.length*5)/35,ba=(data.length*2)/12;
+  function cell(num,cnt,avg){let cl="freq-none";if(cnt===0)cl="freq-none";else if(cnt>=avg*1.5)cl="freq-hot";else if(cnt<=avg*.5)cl="freq-cold";else cl="freq-warm";return `<div class="freq-cell ${cl}"><div class="num">${pad(num)}</div><div class="cnt">${cnt}</div></div>`;}
+  document.getElementById("frontFreqGrid").innerHTML=Array.from({length:35},(_,i)=>cell(i+1,fc[i+1],fa)).join("");
+  document.getElementById("backFreqGrid").innerHTML=Array.from({length:12},(_,i)=>cell(i+1,bc[i+1],ba)).join("");
+  const fs=Object.entries(fc).sort((a,b)=>b[1]-a[1]),bs=Object.entries(bc).sort((a,b)=>b[1]-a[1]);
+  const hf=fs.filter(([_,c])=>c>=fa*1.5&&c>0).map(([n])=>pad(+n));
+  const cf=fs.filter(([_,c])=>c<=fa*.5).map(([n])=>pad(+n));
+  const hb=bs.filter(([_,c])=>c>=ba*1.5&&c>0).map(([n])=>pad(+n));
+  const cb=bs.filter(([_,c])=>c<=ba*.5).map(([n])=>pad(+n));
+  document.getElementById("analysisBox").innerHTML=`<strong>近${currentFreqRange}天冷热分析（${data.length}期）：</strong><ul>
+    <li><strong>热号</strong>：前区${hf.length?hf.join("、"):"无"}；后区${hb.length?hb.join("、"):"无"}。</li>
+    <li><strong>冷号</strong>：前区${cf.length?cf.slice(0,6).join("、"):"无"}；后区${cb.length?cb.join("、"):"无"}。</li>
+    <li><strong>选号建议</strong>：前区2热+2温+1冷搭配，和值70-120，奇偶接近3:2；后区1热1冷或1奇1偶。</li>
+    <li style="color:#999;">※ 彩票为独立随机事件，仅供娱乐参考</li></ul>`;
+}
+
+function renderPicker(){
+  const fg=document.getElementById("frontGrid");fg.innerHTML="";
+  for(let i=1;i<=35;i++){const b=document.createElement("div");b.className="num-btn"+(selectedFront.has(i)?" selected-front":"");b.textContent=pad(i);b.onclick=()=>toggleFront(i);fg.appendChild(b);}
+  const bg=document.getElementById("backGrid");bg.innerHTML="";
+  for(let i=1;i<=12;i++){const b=document.createElement("div");b.className="num-btn"+(selectedBack.has(i)?" selected-back":"");b.textContent=pad(i);b.onclick=()=>toggleBack(i);bg.appendChild(b);}
+  document.getElementById("frontCount").textContent=selectedFront.size;
+  document.getElementById("backCount").textContent=selectedBack.size;
+}
+function toggleFront(n){if(selectedFront.has(n))selectedFront.delete(n);else{if(selectedFront.size>=5){alert("前区最多5个");return;}selectedFront.add(n);}renderPicker();}
+function toggleBack(n){if(selectedBack.has(n))selectedBack.delete(n);else{if(selectedBack.size>=2){alert("后区最多2个");return;}selectedBack.add(n);}renderPicker();}
+function clearSelection(){selectedFront.clear();selectedBack.clear();renderPicker();}
+
+function generateDesc(front,back){
+  const sorted=[...front].sort((a,b)=>a-b);
+  const sum=sorted.reduce((a,b)=>a+b,0),odd=sorted.filter(n=>n%2).length,big=sorted.filter(n=>n>=18).length;
+  const z1=sorted.filter(n=>n<=12).length,z2=sorted.filter(n=>n>=13&&n<=24).length,z3=sorted.filter(n=>n>=25).length;
+  let cons=0;for(let i=1;i<sorted.length;i++)if(sorted[i]===sorted[i-1]+1)cons++;
+  const tails={};sorted.forEach(n=>{const t=n%10;tails[t]=(tails[t]||0)+1;});const st=Object.values(tails).filter(c=>c>=2).length;
+  let hn=[],cn=[];
+  if(dataLoaded){
+    const d30=filterByDays(30),fc={};for(let i=1;i<=35;i++)fc[i]=0;d30.forEach(d=>d.front.forEach(n=>fc[n]++));const avg=(d30.length*5)/35;
+    hn=sorted.filter(n=>fc[n]>=avg*1.5);cn=sorted.filter(n=>fc[n]<=avg*.5);
+  }
+  const bs=[...back].sort((a,b)=>a-b),bo=bs.filter(n=>n%2).length,bb=bs.filter(n=>n>=7).length;
+  let x=`和值${sum}（${sum>=70&&sum<=120?"正常":sum<70?"偏小":"偏大"}），奇偶${odd}:${5-odd}，大小${big}:${5-big}，三区${z1}:${z2}:${z3}`;
+  if(cons>0)x+=`，${cons}组连号`;if(st>0)x+=`，${st}组同尾`;
+  x+="。";if(hn.length)x+=`热号${hn.map(pad).join("、")}`;if(cn.length)x+=`${hn.length?"、":""}冷号${cn.map(pad).join("、")}`;if(hn.length||cn.length)x+="，冷热搭配。";
+  x+=`后区${bs.map(pad).join("、")}（奇偶${bo}:${2-bo}，大小${bb}:${2-bb}）。`;
+  return x;
+}
+
+function addTicket(front,back){tickets.push({front:[...front].sort((a,b)=>a-b),back:[...back].sort((a,b)=>a-b),desc:generateDesc(front,back)});renderTickets();}
+function addManualTicket(){if(selectedFront.size!==5){alert("请选满5个前区");return;}if(selectedBack.size!==2){alert("请选满2个后区");return;}addTicket([...selectedFront],[...selectedBack]);clearSelection();}
+function generateRandom(){const c=Math.min(20,Math.max(1,parseInt(document.getElementById("randomCount").value)||5));for(let i=0;i<c;i++){const f=new Set();while(f.size<5)f.add(Math.floor(Math.random()*35)+1);const b=new Set();while(b.size<2)b.add(Math.floor(Math.random()*12)+1);addTicket([...f],[...b]);}}
+function deleteTicket(i){tickets.splice(i,1);renderTickets();}
+function clearAllTickets(){if(tickets.length&&confirm("清空全部选号？")){tickets=[];renderTickets();}}
+
+function renderTickets(){
+  document.getElementById("ticketCount").textContent=tickets.length;
+  const list=document.getElementById("ticketList");
+  if(!tickets.length){list.innerHTML='<div class="empty-tip">暂无选号，手动选号或一键随机生成</div>';return;}
+  list.innerHTML=tickets.map((t,i)=>{
+    const fb=t.front.map(n=>`<span class="ball ball-front">${pad(n)}</span>`).join("");
+    const bb=t.back.map(n=>`<span class="ball ball-back">${pad(n)}</span>`).join("");
+    return `<div class="ticket-item">
+      <div class="ticket-index">${i+1}</div>
+      <div class="ticket-body"><div class="ticket-nums">${fb} + ${bb}</div><div class="ticket-desc">${t.desc}</div></div>
+      <button class="ticket-del" onclick="deleteTicket(${i})">×</button>
+    </div>`;
+  }).join("");
+}
+
+document.querySelectorAll(".tab[data-range]").forEach(t=>{t.onclick=()=>{document.querySelectorAll(".tab[data-range]").forEach(x=>x.classList.remove("active"));t.classList.add("active");currentHistoryRange=+t.dataset.range;renderHistory();};});
+document.querySelectorAll(".tab[data-freq]").forEach(t=>{t.onclick=()=>{document.querySelectorAll(".tab[data-freq]").forEach(x=>x.classList.remove("active"));t.classList.add("active");currentFreqRange=+t.dataset.freq;renderFreq();};});
+document.querySelectorAll(".footer-btn").forEach(b=>{b.onclick=()=>alert("【"+b.textContent+"】演示按钮");});
+
+loadData();
+</script>
+</body>
+</html>
