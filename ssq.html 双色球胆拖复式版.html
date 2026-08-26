@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>双色球选号工具</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: #f0f2f5;
+    color: #333;
+    min-height: 100vh;
+    font-size: 14px;
+    -webkit-text-size-adjust: 100%;
+  }
+  body { padding-bottom: 70px; }
+  .header {
+    background: linear-gradient(135deg, #c41e3a 0%, #e63946 100%);
+    color: #fff;
+    padding: 16px 16px 14px;
+    text-align: center;
+    position: sticky; top: 0; z-index: 50;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+  }
+  .header h1 { font-size: 18px; letter-spacing: 2px; font-weight: 700; }
+  .header p { font-size: 11px; margin-top: 4px; opacity: 0.85; }
+  .container { padding: 10px; max-width: 100%; }
+  .card {
+    background: #fff; border-radius: 10px; padding: 14px 12px;
+    margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+  .card-title {
+    font-size: 15px; font-weight: 700; color: #c41e3a;
+    border-left: 3px solid #c41e3a; padding-left: 8px; margin-bottom: 12px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .tabs { display: flex; gap: 4px; }
+  .tab {
+    padding: 4px 10px; border: 1px solid #ddd; border-radius: 14px;
+    cursor: pointer; font-size: 11px; background: #fff; transition: all 0.2s; white-space: nowrap;
+  }
+  .tab.active { background: #c41e3a; color: #fff; border-color: #c41e3a; }
+  .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .history-table { width: 100%; border-collapse: collapse; font-size: 11px; min-width: 480px; }
+  .history-table th {
+    background: #fafafa; padding: 8px 4px; text-align: center;
+    border-bottom: 2px solid #eee; font-weight: 600; color: #666; white-space: nowrap;
+  }
+  .history-table td { padding: 7px 4px; text-align: center; border-bottom: 1px solid #f0f0f0; white-space: nowrap; }
+  .ball {
+    display: inline-block; width: 24px; height: 24px; line-height: 24px;
+    border-radius: 50%; font-size: 10px; font-weight: bold; text-align: center; margin: 0 1px;
+  }
+  .ball-red { background: #e63946; color: #fff; }
+  .ball-blue { background: #1d6fb8; color: #fff; }
+  .freq-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-bottom: 12px; }
+  .freq-grid.blue-grid { grid-template-columns: repeat(8, 1fr); }
+  .freq-cell { text-align: center; padding: 5px 1px; border-radius: 5px; font-size: 10px; }
+  .freq-cell .num { font-weight: bold; font-size: 12px; }
+  .freq-cell .cnt { font-size: 9px; color: #888; margin-top: 1px; }
+  .freq-hot { background: #ffe0e0; border: 1px solid #ff9999; }
+  .freq-warm { background: #fff3e0; border: 1px solid #ffcc80; }
+  .freq-cold { background: #e3f2fd; border: 1px solid #90caf9; }
+  .freq-none { background: #f5f5f5; border: 1px solid #e0e0e0; }
+  .freq-legend { display: flex; gap: 10px; font-size: 10px; color: #666; margin-top: 6px; flex-wrap: wrap; }
+  .freq-legend span { display: flex; align-items: center; gap: 3px; }
+  .legend-box { width: 12px; height: 12px; border-radius: 2px; display: inline-block; }
+  .picker-section { display: flex; flex-direction: column; gap: 16px; }
+  .picker-label { font-size: 13px; font-weight: 600; margin-bottom: 8px; color: #555; }
+  .picker-label .count { color: #c41e3a; font-weight: 700; }
+  .number-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; }
+  .number-grid.blue-grid { grid-template-columns: repeat(8, 1fr); }
+  .num-btn {
+    padding: 9px 0; border: 1px solid #ddd; border-radius: 6px; cursor: pointer;
+    font-size: 13px; font-weight: 600; background: #fff; transition: all 0.15s;
+    text-align: center; user-select: none;
+  }
+  .num-btn:active { transform: scale(0.95); }
+  .num-btn.selected-red { background: #e63946; color: #fff; border-color: #e63946; }
+  .num-btn.selected-blue { background: #1d6fb8; color: #fff; border-color: #1d6fb8; }
+  .picker-hint { font-size: 11px; color: #999; margin-top: 6px; }
+  .action-row { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; align-items: center; }
+  .btn {
+    padding: 10px 16px; border: none; border-radius: 6px; cursor: pointer;
+    font-size: 13px; font-weight: 600; transition: all 0.2s; flex: 1; min-width: 80px; text-align: center;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn-primary { background: #c41e3a; color: #fff; }
+  .btn-secondary { background: #f0f0f0; color: #555; }
+  .btn-blue { background: #1d6fb8; color: #fff; }
+  .input-group { display: flex; align-items: center; gap: 4px; font-size: 12px; color: #666; }
+  .input-group input { width: 42px; padding: 6px 4px; border: 1px solid #ddd; border-radius: 4px; text-align: center; font-size: 13px; }
+  .ticket-list { display: flex; flex-direction: column; gap: 10px; }
+  .ticket-item { border: 1px solid #eee; border-radius: 8px; padding: 12px; background: #fafafa; display: flex; align-items: flex-start; gap: 10px; }
+  .ticket-index { background: #c41e3a; color: #fff; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 13px; flex-shrink: 0; }
+  .ticket-body { flex: 1; min-width: 0; }
+  .ticket-nums { margin-bottom: 6px; }
+  .ticket-nums .ball { width: 26px; height: 26px; line-height: 26px; font-size: 11px; }
+  .ticket-desc { font-size: 11px; color: #777; line-height: 1.7; background: #fff; padding: 8px 10px; border-radius: 6px; border: 1px solid #f0f0f0; margin-top: 6px; }
+  .ticket-del { background: none; border: none; color: #ccc; cursor: pointer; font-size: 20px; padding: 0 4px; flex-shrink: 0; }
+  .empty-tip { text-align: center; color: #aaa; padding: 24px; font-size: 13px; }
+  .analysis-box { background: #fef5f5; border: 1px solid #f5d5d5; border-radius: 8px; padding: 10px 12px; font-size: 12px; line-height: 1.8; color: #555; }
+  .analysis-box strong { color: #c41e3a; }
+  .analysis-box ul { margin-left: 16px; margin-top: 4px; }
+  .analysis-box li { margin-bottom: 2px; }
+  .footer-bar { position: fixed; bottom: 0; left: 0; right: 0; background: #2c2c2c; display: flex; justify-content: flex-start; gap: 2px; padding: 8px 10px; z-index: 100; box-shadow: 0 -2px 6px rgba(0,0,0,0.2); overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .footer-bar::-webkit-scrollbar { display: none; }
+  .footer-btn { padding: 7px 14px; background: #3a3a3a; color: #bbb; border: none; border-radius: 4px; font-size: 12px; cursor: pointer; transition: all 0.2s; white-space: nowrap; flex-shrink: 0; }
+  .footer-btn:active { background: #c41e3a; color: #fff; }
+  .stat-row { display: flex; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
+  .stat-item { background: #f7f7f7; padding: 6px 10px; border-radius: 5px; font-size: 11px; }
+  .stat-item .label { color: #888; }
+  .stat-item .value { font-weight: bold; color: #c41e3a; font-size: 14px; margin-left: 3px; }
+  .loading { text-align: center; padding: 40px; color: #999; font-size: 14px; }
+  @media (min-width: 600px) {
+    .container { max-width: 720px; margin: 0 auto; padding: 14px; }
+    .number-grid { grid-template-columns: repeat(11, 1fr); }
+    .freq-grid { grid-template-columns: repeat(11, 1fr); }
+    .freq-grid.blue-grid { grid-template-columns: repeat(8, 1fr); }
+    .header h1 { font-size: 22px; }
+    .ball { width: 28px; height: 28px; line-height: 28px; font-size: 11px; }
+  }
+  .auth-mask{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.85);z-index:9999;display:flex;align-items:center;justify-content:center;flex-direction:column;}
+  .auth-box{background:#fff;border-radius:12px;padding:28px 24px;width:310px;text-align:center;box-shadow:0 8px 30px rgba(0,0,0,0.3);}
+  .auth-box h3{color:#c41e3a;margin-bottom:6px;font-size:18px;}
+  .auth-box p{color:#888;font-size:12px;margin-bottom:12px;line-height:1.6;}
+  .auth-device-id{background:#f5f5f5;padding:10px;border-radius:6px;font-family:monospace;font-size:18px;letter-spacing:3px;margin-bottom:12px;color:#333;user-select:text;font-weight:bold;}
+  .auth-box input{width:100%;padding:10px 12px;border:1px solid #ddd;border-radius:6px;font-size:14px;text-align:center;letter-spacing:4px;margin-bottom:10px;box-sizing:border-box;}
+  .auth-box button{width:100%;padding:10px;background:#c41e3a;color:#fff;border:none;border-radius:6px;font-size:14px;font-weight:600;cursor:pointer;margin-bottom:8px;}
+  .auth-btn-secondary{background:#f0f0f0;color:#555 !important;font-size:12px !important;padding:8px !important;}
+  .auth-error{color:#e63946;font-size:12px;margin-bottom:8px;min-height:16px;}
+  .admin-panel{display:none;text-align:left;margin-top:10px;border-top:1px solid #eee;padding-top:10px;}
+  .admin-panel label{font-size:12px;color:#666;display:block;margin-bottom:4px;}
+  .admin-panel input{letter-spacing:normal;text-align:left;margin-bottom:8px;font-size:13px;}
+  .admin-code-result{background:#e8f5e9;padding:10px;border-radius:6px;font-family:monospace;font-size:20px;text-align:center;margin-top:8px;color:#2e7d32;font-weight:bold;letter-spacing:4px;}
+  .play-tabs{display:flex;gap:0;margin-bottom:14px;border-bottom:2px solid #eee}
+  .play-tab{padding:8px 20px;cursor:pointer;font-size:14px;color:#888;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .2s}
+  .play-tab.active{color:#c41e3a;border-bottom-color:#c41e3a;font-weight:bold}
+  .play-panel{display:none}.play-panel.active{display:block}
+  .dt-row{margin-bottom:12px}
+  .dt-label{font-size:13px;color:#666;margin-bottom:6px;font-weight:600}
+  .dt-label .hint{color:#999;font-weight:normal;font-size:11px;margin-left:6px}
+  .bet-info{background:#fff8e1;border:1px solid #ffe082;border-radius:8px;padding:10px 14px;margin:10px 0;font-size:13px;color:#795548;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
+  .bet-info .bet-num{font-size:18px;font-weight:bold;color:#c41e3a}
+  .bet-info .bet-amount{font-size:16px;font-weight:bold;color:#333}
+  .num-btn.dan{background:#c41e3a!important;color:#fff!important;border-color:#c41e3a!important}
+  .num-btn.tuo{background:#f39c12!important;color:#fff!important;border-color:#f39c12!important}
+</style>
+</head>
+<body>
+
+<div class="auth-mask" id="authMask">
+  <div class="auth-box">
+    <h3>双色球选号工具</h3>
+    <p>本工具需激活后使用<br>请输入6位激活码</p>
+    <div class="auth-device-id" id="deviceIdDisplay">--------</div>
+    <div class="auth-error" id="authError"></div>
+    <input type="text" id="authInput" placeholder="请输入激活码" maxlength="6">
+    <button onclick="checkAuth()">激活设备</button>
+    <button class="auth-btn-secondary" onclick="toggleAdmin()">管理员入口</button>
+    <div class="admin-panel" id="adminPanel">
+      <label>管理员密码</label>
+      <input type="password" id="adminPwd" placeholder="请输入管理员密码">
+      <button onclick="adminLogin()">登录</button>
+      <div id="adminContent" style="display:none;margin-top:12px;">
+        <label>当前设备激活码</label>
+        <div class="admin-code-result" id="currentCode">------</div>
+        <label style="margin-top:10px;">输入设备ID生成激活码</label>
+        <input type="text" id="genDeviceId" placeholder="输入8位设备ID" maxlength="8">
+        <button onclick="genCode()">生成</button>
+        <div class="admin-code-result" id="genCodeResult" style="display:none;"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="header">
+  <h1>双色球选号工具</h1>
+  <p>红球1-33选6 | 蓝球1-16选1 | 数据自动更新</p>
+</div>
+
+<div class="container">
+  <div id="loading" class="loading">正在加载开奖数据...</div>
+  <div id="mainContent" style="display:none;">
+
+    <div class="card">
+      <div class="card-title">
+        <span>历史开奖</span>
+        <div class="tabs">
+          <div class="tab active" data-range="5">5天</div>
+          <div class="tab" data-range="10">10天</div>
+          <div class="tab" data-range="30">30天</div>
+        </div>
+      </div>
+      <div class="stat-row" id="historyStats"></div>
+      <div class="table-wrap">
+        <table class="history-table" id="historyTable">
+          <thead><tr><th>期号</th><th>日期</th><th>红球</th><th>蓝球</th><th>和值</th><th>奇偶</th><th>大小</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">
+        <span>频次 & 冷热</span>
+        <div class="tabs">
+          <div class="tab active" data-freq="5">5天</div>
+          <div class="tab" data-freq="10">10天</div>
+          <div class="tab" data-freq="30">30天</div>
+        </div>
+      </div>
+      <div style="margin-bottom:6px;font-size:12px;color:#888;">红球频次（1-33）</div>
+      <div class="freq-grid" id="redFreqGrid"></div>
+      <div style="margin-bottom:6px;font-size:12px;color:#888;">蓝球频次（1-16）</div>
+      <div class="freq-grid blue-grid" id="blueFreqGrid"></div>
+      <div class="freq-legend">
+        <span><i class="legend-box" style="background:#ffe0e0;border:1px solid #ff9999;"></i>热</span>
+        <span><i class="legend-box" style="background:#fff3e0;border:1px solid #ffcc80;"></i>温</span>
+        <span><i class="legend-box" style="background:#e3f2fd;border:1px solid #90caf9;"></i>冷</span>
+        <span><i class="legend-box" style="background:#f5f5f5;border:1px solid #e0e0e0;"></i>未出</span>
+      </div>
+      <div class="analysis-box" id="analysisBox" style="margin-top:10px;"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span>选号中心</span></div>
+      <div class="play-tabs">
+        <div class="play-tab active" onclick="switchSsqPlay('single',this)">单式</div>
+        <div class="play-tab" onclick="switchSsqPlay('dantuo',this)">胆拖</div>
+        <div class="play-tab" onclick="switchSsqPlay('fushi',this)">复式</div>
+      </div>
+      <!-- 单式 -->
+      <div class="play-panel active" id="ssq-single">
+        <div class="picker-section">
+          <div>
+            <div class="picker-label">红球（已选 <span class="count" id="redCount">0</span>/6）</div>
+            <div class="number-grid" id="redGrid"></div>
+            <div class="picker-hint">点击号码选择，最多6个</div>
+          </div>
+          <div>
+            <div class="picker-label">蓝球（已选 <span class="count" id="blueCount">0</span>/1）</div>
+            <div class="number-grid blue-grid" id="blueGrid"></div>
+            <div class="picker-hint">点击号码选择，最多1个</div>
+          </div>
+          <div class="action-row">
+            <button class="btn btn-primary" onclick="addManualTicket()">添加本组</button>
+            <button class="btn btn-secondary" onclick="clearSelection()">清空</button>
+          </div>
+        </div>
+      </div>
+      <!-- 胆拖 -->
+      <div class="play-panel" id="ssq-dantuo">
+        <div class="dt-row">
+          <div class="dt-label">红球胆码 <span class="hint">1-5个，每注必含</span>（已选 <span id="dtRedDanCount">0</span>/5）</div>
+          <div class="number-grid" id="dtRedDanGrid"></div>
+        </div>
+        <div class="dt-row">
+          <div class="dt-label">红球拖码 <span class="hint">与胆码凑满6个</span>（已选 <span id="dtRedTuoCount">0</span>）</div>
+          <div class="number-grid" id="dtRedTuoGrid"></div>
+        </div>
+        <div class="dt-row">
+          <div class="dt-label">蓝球 <span class="hint">选1-16个</span>（已选 <span id="dtBlueCount">0</span>）</div>
+          <div class="number-grid blue-grid" id="dtBlueGrid"></div>
+        </div>
+        <div class="bet-info" id="dtBetInfo"><span>请选择胆码、拖码和蓝球</span></div>
+        <div class="action-row">
+          <button class="btn btn-primary" onclick="addSsqDantuo()">添加胆拖</button>
+          <button class="btn btn-secondary" onclick="clearSsqDantuo()">清空</button>
+        </div>
+      </div>
+      <!-- 复式 -->
+      <div class="play-panel" id="ssq-fushi">
+        <div class="dt-row">
+          <div class="dt-label">红球复式 <span class="hint">选7-20个</span>（已选 <span id="fsRedCount">0</span>）</div>
+          <div class="number-grid" id="fsRedGrid"></div>
+        </div>
+        <div class="dt-row">
+          <div class="dt-label">蓝球复式 <span class="hint">选1-16个</span>（已选 <span id="fsBlueCount">0</span>）</div>
+          <div class="number-grid blue-grid" id="fsBlueGrid"></div>
+        </div>
+        <div class="bet-info" id="fsBetInfo"><span>请选择复式号码</span></div>
+        <div class="action-row">
+          <button class="btn btn-primary" onclick="addSsqFushi()">添加复式</button>
+          <button class="btn btn-secondary" onclick="clearSsqFushi()">清空</button>
+        </div>
+      </div>
+      <div class="action-row" style="margin-top:0;">
+        <div class="input-group"><span>随机</span><input type="number" id="randomCount" value="5" min="1" max="20"><span>组</span></div>
+        <button class="btn btn-blue" onclick="generateRandom()">一键随机</button>
+        <button class="btn btn-secondary" onclick="clearAllTickets()">清空全部</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span>我的选号（<span id="ticketCount">0</span>组）</span></div>
+      <div class="ticket-list" id="ticketList"><div class="empty-tip">暂无选号，手动选号或一键随机生成</div></div>
+    </div>
+
+  </div>
+</div>
+
+<div class="footer-bar">
+  <button class="footer-btn">工作任务</button>
+  <button class="footer-btn">Turbo</button>
+  <button class="footer-btn">本地电脑</button>
+  <button class="footer-btn">项目</button>
+  <button class="footer-btn">按需确认</button>
+  <button class="footer-btn">节能</button>
+  <button class="footer-btn">连接器</button>
+</div>
+
+<script>
+let historyData = [];
+let selectedRed = new Set(), selectedBlue = new Set(), tickets = [];
+let currentHistoryRange = 5, currentFreqRange = 5;
+let dataLoaded = false;
+
+function pad(n){return n<10?"0"+n:""+n;}
+function filterByDays(d){const c=new Date();c.setDate(c.getDate()-d);return historyData.filter(x=>new Date(x.date)>=c);}
+function getTopN(arr,max,n){const c={};for(let i=1;i<=max;i++)c[i]=0;arr.forEach(v=>c[v]++);return Object.entries(c).sort((a,b)=>b[1]-a[1]).slice(0,n).map(e=>+e[0]);}
+
+async function loadData(){
+  try{
+    const resp = await fetch("ssq.json?_t=" + Date.now());
+    if(!resp.ok) throw new Error("HTTP " + resp.status);
+    historyData = await resp.json();
+    dataLoaded = true;
+    document.getElementById("loading").style.display = "none";
+    document.getElementById("mainContent").style.display = "block";
+    renderHistory(); renderFreq(); renderPicker(); renderTickets(); renderDtGrid(); renderFsGrid();
+  }catch(e){
+    document.getElementById("loading").innerHTML = "数据加载失败：" + e.message + "<br>请确认 data/ssq.json 文件存在";
+  }
+}
+
+function renderHistory(){
+  if(!dataLoaded) return;
+  const data=filterByDays(currentHistoryRange);
+  document.querySelector("#historyTable tbody").innerHTML=data.map(d=>{
+    const rb=d.red.map(n=>`<span class="ball ball-red">${pad(n)}</span>`).join("");
+    const bb=`<span class="ball ball-blue">${pad(d.blue)}</span>`;
+    const sum=d.red.reduce((a,b)=>a+b,0),odd=d.red.filter(n=>n%2).length,big=d.red.filter(n=>n>=17).length;
+    return `<tr><td>${d.issue}</td><td>${d.date.slice(5)}</td><td>${rb}</td><td>${bb}</td><td>${sum}</td><td>${odd}:${6-odd}</td><td>${big}:${6-big}</td></tr>`;
+  }).join("");
+  const ar=data.flatMap(d=>d.red),ab=data.map(d=>d.blue);
+  document.getElementById("historyStats").innerHTML=`
+    <div class="stat-item"><span class="label">期数</span><span class="value">${data.length}</span></div>
+    <div class="stat-item"><span class="label">均和</span><span class="value">${(ar.reduce((a,b)=>a+b,0)/data.length).toFixed(0)}</span></div>
+    <div class="stat-item"><span class="label">热红</span><span class="value">${getTopN(ar,33,3).map(pad).join(" ")}</span></div>
+    <div class="stat-item"><span class="label">热蓝</span><span class="value">${getTopN(ab,16,2).map(pad).join(" ")}</span></div>`;
+}
+
+function renderFreq(){
+  if(!dataLoaded) return;
+  const data=filterByDays(currentFreqRange);
+  const rc={},bc={};for(let i=1;i<=33;i++)rc[i]=0;for(let i=1;i<=16;i++)bc[i]=0;
+  data.forEach(d=>{d.red.forEach(n=>rc[n]++);bc[d.blue]++;});
+  const ra=(data.length*6)/33,ba=data.length/16;
+  function cell(num,cnt,avg){let cl="freq-none";if(cnt===0)cl="freq-none";else if(cnt>=avg*1.5)cl="freq-hot";else if(cnt<=avg*.5)cl="freq-cold";else cl="freq-warm";return `<div class="freq-cell ${cl}"><div class="num">${pad(num)}</div><div class="cnt">${cnt}</div></div>`;}
+  document.getElementById("redFreqGrid").innerHTML=Array.from({length:33},(_,i)=>cell(i+1,rc[i+1],ra)).join("");
+  document.getElementById("blueFreqGrid").innerHTML=Array.from({length:16},(_,i)=>cell(i+1,bc[i+1],ba)).join("");
+  const rs=Object.entries(rc).sort((a,b)=>b[1]-a[1]),bs=Object.entries(bc).sort((a,b)=>b[1]-a[1]);
+  const hr=rs.filter(([_,c])=>c>=ra*1.5&&c>0).map(([n])=>pad(+n));
+  const cr=rs.filter(([_,c])=>c<=ra*.5).map(([n])=>pad(+n));
+  const hb=bs.filter(([_,c])=>c>=ba*1.5&&c>0).map(([n])=>pad(+n));
+  const cb=bs.filter(([_,c])=>c<=ba*.5).map(([n])=>pad(+n));
+  document.getElementById("analysisBox").innerHTML=`<strong>近${currentFreqRange}天冷热分析（${data.length}期）：</strong><ul>
+    <li><strong>热号</strong>：红球${hr.length?hr.join("、"):"无"}；蓝球${hb.length?hb.join("、"):"无"}。</li>
+    <li><strong>冷号</strong>：红球${cr.length?cr.slice(0,6).join("、"):"无"}；蓝球${cb.length?cb.join("、"):"无"}。</li>
+    <li><strong>选号建议</strong>：红球2热+2温+2冷搭配，和值80-130，奇偶接近3:3；蓝球热冷轮换。</li>
+    <li style="color:#999;">※ 彩票为独立随机事件，仅供娱乐参考</li></ul>`;
+}
+
+function renderPicker(){
+  const rg=document.getElementById("redGrid");rg.innerHTML="";
+  for(let i=1;i<=33;i++){const b=document.createElement("div");b.className="num-btn"+(selectedRed.has(i)?" selected-red":"");b.textContent=pad(i);b.onclick=()=>toggleRed(i);rg.appendChild(b);}
+  const bg=document.getElementById("blueGrid");bg.innerHTML="";
+  for(let i=1;i<=16;i++){const b=document.createElement("div");b.className="num-btn"+(selectedBlue.has(i)?" selected-blue":"");b.textContent=pad(i);b.onclick=()=>toggleBlue(i);bg.appendChild(b);}
+  document.getElementById("redCount").textContent=selectedRed.size;
+  document.getElementById("blueCount").textContent=selectedBlue.size;
+}
+function toggleRed(n){if(selectedRed.has(n))selectedRed.delete(n);else{if(selectedRed.size>=6){alert("红球最多6个");return;}selectedRed.add(n);}renderPicker();}
+function toggleBlue(n){if(selectedBlue.has(n))selectedBlue.delete(n);else{if(selectedBlue.size>=1){alert("蓝球最多1个");return;}selectedBlue.add(n);}renderPicker();}
+function clearSelection(){selectedRed.clear();selectedBlue.clear();renderPicker();}
+
+function generateDesc(red,blue){
+  const sorted=[...red].sort((a,b)=>a-b);
+  const sum=sorted.reduce((a,b)=>a+b,0),odd=sorted.filter(n=>n%2).length,big=sorted.filter(n=>n>=17).length;
+  const z1=sorted.filter(n=>n<=11).length,z2=sorted.filter(n=>n>=12&&n<=22).length,z3=sorted.filter(n=>n>=23).length;
+  let cons=0;for(let i=1;i<sorted.length;i++)if(sorted[i]===sorted[i-1]+1)cons++;
+  const tails={};sorted.forEach(n=>{const t=n%10;tails[t]=(tails[t]||0)+1;});const st=Object.values(tails).filter(c=>c>=2).length;
+  let hn=[],cn=[];
+  if(dataLoaded){
+    const d30=filterByDays(30),rc={};for(let i=1;i<=33;i++)rc[i]=0;d30.forEach(d=>d.red.forEach(n=>rc[n]++));const avg=(d30.length*6)/33;
+    hn=sorted.filter(n=>rc[n]>=avg*1.5);cn=sorted.filter(n=>rc[n]<=avg*.5);
+  }
+  let x=`和值${sum}（${sum>=80&&sum<=130?"正常":sum<80?"偏小":"偏大"}），奇偶${odd}:${6-odd}，大小${big}:${6-big}，三区${z1}:${z2}:${z3}`;
+  if(cons>0)x+=`，${cons}组连号`;if(st>0)x+=`，${st}组同尾`;
+  x+="。";if(hn.length)x+=`热号${hn.map(pad).join("、")}`;if(cn.length)x+=`${hn.length?"、":""}冷号${cn.map(pad).join("、")}`;if(hn.length||cn.length)x+="，冷热搭配。";
+  x+=`蓝球${pad(blue)}（${blue<=8?"小号":"大号"}${blue%2?"·奇数":"·偶数"}）。`;
+  return x;
+}
+
+function addTicket(red,blue){tickets.push({red:[...red].sort((a,b)=>a-b),blue,desc:generateDesc(red,blue)});renderTickets();}
+function addManualTicket(){if(selectedRed.size!==6){alert("请选满6个红球");return;}if(selectedBlue.size!==1){alert("请选1个蓝球");return;}addTicket([...selectedRed],[...selectedBlue][0]);clearSelection();}
+function generateRandom(){const c=Math.min(20,Math.max(1,parseInt(document.getElementById("randomCount").value)||5));for(let i=0;i<c;i++){const r=new Set();while(r.size<6)r.add(Math.floor(Math.random()*33)+1);const b=Math.floor(Math.random()*16)+1;addTicket([...r],b);}}
+function deleteTicket(i){tickets.splice(i,1);renderTickets();}
+function clearAllTickets(){if(tickets.length&&confirm("清空全部选号？")){tickets=[];renderTickets();}}
+// ===== 组合数 =====
+function C(n,k){if(k<0||k>n)return 0;if(k===0||k===n)return 1;k=Math.min(k,n-k);let r=1;for(let i=0;i<k;i++)r=r*(n-i)/(i+1);return Math.round(r);}
+// ===== 玩法切换 =====
+function switchSsqPlay(mode,tabEl){
+  document.querySelectorAll(".play-tab").forEach(t=>t.classList.remove("active"));
+  tabEl.classList.add("active");
+  document.querySelectorAll(".play-panel").forEach(p=>p.classList.remove("active"));
+  document.getElementById("ssq-"+mode).classList.add("active");
+}
+// ===== 胆拖 =====
+let dtRedDan=new Set(),dtRedTuo=new Set(),dtBlue=new Set();
+function renderDtGrid(){
+  const rdg=document.getElementById("dtRedDanGrid");rdg.innerHTML="";
+  for(let i=1;i<=33;i++){const b=document.createElement("div");b.className="num-btn"+(dtRedDan.has(i)?" dan":"")+(dtRedTuo.has(i)?" tuo":"");b.textContent=pad(i);b.onclick=()=>toggleDtNum("redDan",i);rdg.appendChild(b);}
+  const rtg=document.getElementById("dtRedTuoGrid");rtg.innerHTML="";
+  for(let i=1;i<=33;i++){const b=document.createElement("div");b.className="num-btn"+(dtRedDan.has(i)?" dan":"")+(dtRedTuo.has(i)?" tuo":"");b.textContent=pad(i);b.onclick=()=>toggleDtNum("redTuo",i);rtg.appendChild(b);}
+  const bg=document.getElementById("dtBlueGrid");bg.innerHTML="";
+  for(let i=1;i<=16;i++){const b=document.createElement("div");b.className="num-btn"+(dtBlue.has(i)?" selected-blue":"");b.textContent=pad(i);b.onclick=()=>toggleDtNum("blue",i);bg.appendChild(b);}
+  document.getElementById("dtRedDanCount").textContent=dtRedDan.size;
+  document.getElementById("dtRedTuoCount").textContent=dtRedTuo.size;
+  document.getElementById("dtBlueCount").textContent=dtBlue.size;
+  calcDtBet();
+}
+function toggleDtNum(type,n){
+  if(type==="redDan"){
+    if(dtRedDan.has(n))dtRedDan.delete(n);
+    else{if(dtRedDan.size>=5){alert("红球胆码最多5个");return;}dtRedTuo.delete(n);dtRedDan.add(n);}
+  }else if(type==="redTuo"){
+    if(dtRedTuo.has(n))dtRedTuo.delete(n);
+    else{if(dtRedDan.has(n)){alert("该号码已是胆码");return;}dtRedTuo.add(n);}
+  }else{
+    if(dtBlue.has(n))dtBlue.delete(n);else dtBlue.add(n);
+  }
+  renderDtGrid();
+}
+function calcDtBet(){
+  const rd=dtRedDan.size,rt=dtRedTuo.size,bl=dtBlue.size;
+  const info=document.getElementById("dtBetInfo");
+  if(rd===0&&rt===0&&bl===0){info.innerHTML="<span>请选择胆码、拖码和蓝球</span>";return;}
+  if(rd<1){info.innerHTML="<span style='color:#c41e3a'>红球胆码至少选1个</span>";return;}
+  if(rt<6-rd){info.innerHTML="<span style='color:#c41e3a'>红球拖码至少选"+(6-rd)+"个</span>";return;}
+  if(bl<1){info.innerHTML="<span style='color:#c41e3a'>蓝球至少选1个</span>";return;}
+  const redBet=C(rt,6-rd),total=redBet*bl;
+  info.innerHTML=`<span>红球 ${redBet} 注 × 蓝球 ${bl} 注 = <span class="bet-num">${total}</span> 注</span><span class="bet-amount">￥${total*2}</span>`;
+}
+function addSsqDantuo(){
+  const rd=dtRedDan.size,rt=dtRedTuo.size,bl=dtBlue.size;
+  if(rd<1||rt<6-rd||bl<1){alert("请选够胆码、拖码和蓝球");return;}
+  const total=C(rt,6-rd)*bl;
+  const desc=`胆拖：红球胆${[...dtRedDan].sort((a,b)=>a-b).map(pad).join("、")}拖${[...dtRedTuo].sort((a,b)=>a-b).map(pad).join("、")}；蓝球${[...dtBlue].sort((a,b)=>a-b).map(pad).join("、")}。共${total}注，￥${total*2}`;
+  tickets.push({red:[...dtRedDan,...dtRedTuo].sort((a,b)=>a-b),blue:[...dtBlue].sort((a,b)=>a-b),desc:desc,type:"胆拖"});
+  renderTickets();clearSsqDantuo();
+}
+function clearSsqDantuo(){dtRedDan.clear();dtRedTuo.clear();dtBlue.clear();renderDtGrid();}
+// ===== 复式 =====
+let fsRed=new Set(),fsBlue=new Set();
+function renderFsGrid(){
+  const rg=document.getElementById("fsRedGrid");rg.innerHTML="";
+  for(let i=1;i<=33;i++){const b=document.createElement("div");b.className="num-btn"+(fsRed.has(i)?" selected-red":"");b.textContent=pad(i);b.onclick=()=>toggleFsNum("red",i);rg.appendChild(b);}
+  const bg=document.getElementById("fsBlueGrid");bg.innerHTML="";
+  for(let i=1;i<=16;i++){const b=document.createElement("div");b.className="num-btn"+(fsBlue.has(i)?" selected-blue":"");b.textContent=pad(i);b.onclick=()=>toggleFsNum("blue",i);bg.appendChild(b);}
+  document.getElementById("fsRedCount").textContent=fsRed.size;
+  document.getElementById("fsBlueCount").textContent=fsBlue.size;
+  calcFsBet();
+}
+function toggleFsNum(type,n){
+  if(type==="red"){
+    if(fsRed.has(n))fsRed.delete(n);
+    else{if(fsRed.size>=20){alert("红球复式最多20个");return;}fsRed.add(n);}
+  }else{
+    if(fsBlue.has(n))fsBlue.delete(n);
+    else{if(fsBlue.size>=16){alert("蓝球最多16个");return;}fsBlue.add(n);}
+  }
+  renderFsGrid();
+}
+function calcFsBet(){
+  const r=fsRed.size,b=fsBlue.size;
+  const info=document.getElementById("fsBetInfo");
+  if(r===0&&b===0){info.innerHTML="<span>请选择复式号码</span>";return;}
+  if(r<7){info.innerHTML="<span style='color:#c41e3a'>红球至少选7个</span>";return;}
+  if(b<1){info.innerHTML="<span style='color:#c41e3a'>蓝球至少选1个</span>";return;}
+  const total=C(r,6)*b;
+  info.innerHTML=`<span>红球 ${C(r,6)} 注 × 蓝球 ${b} 注 = <span class="bet-num">${total}</span> 注</span><span class="bet-amount">￥${total*2}</span>`;
+}
+function addSsqFushi(){
+  const r=fsRed.size,b=fsBlue.size;
+  if(r<7||b<1){alert("请选够复式号码");return;}
+  const total=C(r,6)*b;
+  const desc=`复式：红球${[...fsRed].sort((a,b)=>a-b).map(pad).join("、")}（${r}个）；蓝球${[...fsBlue].sort((a,b)=>a-b).map(pad).join("、")}（${b}个）。共${total}注，￥${total*2}`;
+  tickets.push({red:[...fsRed].sort((a,b)=>a-b),blue:[...fsBlue].sort((a,b)=>a-b),desc:desc,type:"复式"});
+  renderTickets();clearSsqFushi();
+}
+function clearSsqFushi(){fsRed.clear();fsBlue.clear();renderFsGrid();}
+function renderTickets(){
+  document.getElementById("ticketCount").textContent=tickets.length;
+  const list=document.getElementById("ticketList");
+  if(!tickets.length){list.innerHTML='<div class="empty-tip">暂无选号，手动选号或一键随机生成</div>';return;}
+  list.innerHTML=tickets.map((t,i)=>{
+    const rb=t.red.map(n=>`<span class="ball ball-red">${pad(n)}</span>`).join("");
+    const blues=Array.isArray(t.blue)?t.blue:[t.blue];
+    const bb=blues.map(n=>`<span class="ball ball-blue">${pad(n)}</span>`).join("");
+    const typeTag=t.type?`<span style="background:${t.type==='胆拖'?'#c41e3a':'#f39c12'};color:#fff;padding:2px 8px;border-radius:10px;font-size:11px;margin-right:6px">${t.type}</span>`:"";
+    return `<div class="ticket-item">
+      <div class="ticket-index">${i+1}</div>
+      <div class="ticket-body"><div class="ticket-nums">${typeTag}${rb} + ${bb}</div><div class="ticket-desc">${t.desc}</div></div>
+      <button class="ticket-del" onclick="deleteTicket(${i})">×</button>
+    </div>`;
+  }).join("");
+}
+
+document.querySelectorAll(".tab[data-range]").forEach(t=>{t.onclick=()=>{document.querySelectorAll(".tab[data-range]").forEach(x=>x.classList.remove("active"));t.classList.add("active");currentHistoryRange=+t.dataset.range;renderHistory();};});
+document.querySelectorAll(".tab[data-freq]").forEach(t=>{t.onclick=()=>{document.querySelectorAll(".tab[data-freq]").forEach(x=>x.classList.remove("active"));t.classList.add("active");currentFreqRange=+t.dataset.freq;renderFreq();};});
+document.querySelectorAll(".footer-btn").forEach(b=>{b.onclick=()=>alert("【"+b.textContent+"】演示按钮");});
+
+// ===== 授权配置 =====
+const ADMIN_PASSWORD = "admin888";
+const AUTH_KEY = "ssq_device_auth";
+const DEVICE_KEY = "ssq_device_id";
+
+function getDeviceId(){
+  let id = localStorage.getItem(DEVICE_KEY);
+  if(!id){
+    const str = navigator.userAgent + screen.width + "x" + screen.height + navigator.language + new Date().getTimezoneOffset();
+    let h = 0;
+    for(let i=0;i<str.length;i++){ h = ((h<<5)-h) + str.charCodeAt(i); h |= 0; }
+    id = Math.abs(h).toString(36).toUpperCase().padStart(8,"0").slice(0,8);
+    localStorage.setItem(DEVICE_KEY, id);
+  }
+  return id;
+}
+function generateCode(deviceId){
+  let sum = 0;
+  for(let i=0;i<deviceId.length;i++) sum += deviceId.charCodeAt(i) * (i+1);
+  return ((sum * 7391 + 24680) % 1000000).toString().padStart(6,"0");
+}
+function checkAuth(){
+  const input = document.getElementById("authInput").value.trim();
+  const errorEl = document.getElementById("authError");
+  const deviceId = getDeviceId();
+  if(input === generateCode(deviceId) || input === ADMIN_PASSWORD){
+    localStorage.setItem(AUTH_KEY, "1");
+    document.getElementById("authMask").style.display = "none";
+    loadData();
+  }else{
+    errorEl.textContent = "激活码错误，请确认设备ID和激活码";
+    document.getElementById("authInput").value = "";
+  }
+}
+function toggleAdmin(){
+  const p = document.getElementById("adminPanel");
+  p.style.display = p.style.display === "block" ? "none" : "block";
+}
+function adminLogin(){
+  if(document.getElementById("adminPwd").value === ADMIN_PASSWORD){
+    document.getElementById("adminContent").style.display = "block";
+    document.getElementById("currentCode").textContent = generateCode(getDeviceId());
+  }else{ alert("管理员密码错误"); }
+}
+function genCode(){
+  const id = document.getElementById("genDeviceId").value.trim().toUpperCase();
+  if(id.length !== 8){ alert("请输入8位设备ID"); return; }
+  const r = document.getElementById("genCodeResult");
+  r.style.display = "block"; r.textContent = generateCode(id);
+}
+
+document.getElementById("deviceIdDisplay").textContent = getDeviceId();
+if(localStorage.getItem(AUTH_KEY) === "1"){
+  document.getElementById("authMask").style.display = "none";
+  loadData();
+}else{
+  document.getElementById("authInput").addEventListener("keydown", function(e){ if(e.key==="Enter") checkAuth(); });
+  document.getElementById("authInput").focus();
+}
+</script>
+</body>
+</html>
