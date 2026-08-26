@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>彩票选号娱乐工具</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;background:linear-gradient(135deg,#c0392b 0%,#e74c3c 50%,#ff6b6b 100%);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+.card{background:#fff;border-radius:20px;padding:40px 36px;max-width:720px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.title{text-align:center;margin-bottom:6px;font-size:28px;font-weight:bold;color:#333}
+.subtitle{text-align:center;color:#999;font-size:14px;margin-bottom:30px}
+.cards{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:24px}
+.game-card{border-radius:16px;padding:28px 24px;color:#fff;cursor:pointer;transition:transform .2s,box-shadow .2s;text-decoration:none;display:block}
+.game-card:hover{transform:translateY(-4px);box-shadow:0 12px 30px rgba(0,0,0,.2)}
+.game-card.fc{background:linear-gradient(135deg,#ff6b9d,#ee5a6f)}
+.game-card.tc{background:linear-gradient(135deg,#4facfe,#00f2fe)}
+.game-card .icon{font-size:40px;margin-bottom:12px}
+.game-card .name{font-size:22px;font-weight:bold;margin-bottom:6px}
+.game-card .desc{font-size:13px;opacity:.9;line-height:1.6}
+.game-card .games{font-size:12px;opacity:.85;margin-top:10px;line-height:1.8}
+.info{background:#f8f9fa;border-radius:12px;padding:16px 20px;font-size:13px;color:#666;line-height:2}
+.info strong{color:#333}
+.footer{text-align:center;margin-top:20px;font-size:12px;color:#bbb}
+.footer span{margin:0 4px;cursor:pointer}
+.footer span:hover{color:#667eea}
+@media(max-width:600px){.cards{grid-template-columns:1fr}.card{padding:24px 20px}.title{font-size:22px}}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="title">🎰 彩票选号娱乐工具</div>
+  <div class="subtitle">数据自动更新 · 冷热分析 · 手动/随机选号 · 走势图</div>
+  <div class="cards">
+    <a class="game-card fc" href="all.html?cat=fc">
+      <div class="icon">🎁</div>
+      <div class="name">福利彩票</div>
+      <div class="desc">双色球 · 福彩3D · 15选5 · 快乐8</div>
+      <div class="games">双色球：复式/胆拖/走势图<br>3D/15选5/快乐8：走势图+选号</div>
+    </a>
+    <a class="game-card tc" href="all.html?cat=tc">
+      <div class="icon">🏆</div>
+      <div class="name">体育彩票</div>
+      <div class="desc">大乐透 · 排列3 · 排列5 · 7星彩</div>
+      <div class="games">大乐透：复式/胆拖/走势图<br>排列3/5/7星彩：走势图+选号</div>
+    </a>
+  </div>
+  <div class="info">
+    <strong>📌 使用说明：</strong><br>
+    · 点击上方卡片进入对应彩票分类<br>
+    · 开奖数据每天自动更新（GitHub Actions）<br>
+    · 支持手动选号、一键随机生成多组号码<br>
+    · 每组号码附带组合逻辑说明<br>
+    · 本工具仅供娱乐参考，彩票有风险，投注需谨慎
+  </div>
+  <div class="footer">
+    <span onclick="alert('工作任务')">工作任务</span>·
+    <span onclick="alert('Turbo')">Turbo</span>·
+    <span onclick="alert('本地电脑')">本地电脑</span>·
+    <span onclick="alert('项目')">项目</span>·
+    <span onclick="alert('按需确认')">按需确认</span>·
+    <span onclick="alert('节能')">节能</span>·
+    <span onclick="alert('连接器')">连接器</span>
+  </div>
+</div>
+</body>
+</html>
