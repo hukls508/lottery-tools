@@ -291,22 +291,25 @@ function renderHistory(key){
   const data=st.data.slice(0,st.range);
   let rows='';
   if(g.type==='lotto'){
+    const mid=Math.ceil(g.redMax/2);
     data.forEach(d=>{
       const reds=d.red.map(n=>`<span class="ball ${g.redClass}">${pad(n)}</span>`).join('');
       const blues=g.blueMax>0?d.blue.map(n=>`<span class="ball ${g.blueClass}">${pad(n)}</span>`).join(''):'';
       const sum=d.red.reduce((a,b)=>a+b,0);
       const odd=d.red.filter(n=>n%2).length;
-      rows+=`<tr><td>${d.issue}</td><td>${d.date.slice(5)}</td><td>${reds}${blues?' + '+blues:''}</td><td>${sum}</td><td>${odd}:${d.red.length-odd}</td></tr>`;
+      const big=d.red.filter(n=>n>mid).length;
+      rows+=`<tr><td>${d.issue}</td><td>${d.date.slice(5)}</td><td>${reds}${blues?' + '+blues:''}</td><td>${sum}</td><td>${odd}:${d.red.length-odd}</td><td>${big}:${d.red.length-big}</td></tr>`;
     });
   }else{
     data.forEach(d=>{
       const balls=d.digits.map((n,i)=>`<span class="ball ${i===d.digits.length-1&&g.maxes[i]>=14?'ball-special':'ball-digit'}">${n}</span>`).join('');
       const sum=d.digits.reduce((a,b)=>a+b,0);
       const odd=d.digits.filter(n=>n%2).length;
-      rows+=`<tr><td>${d.issue}</td><td>${d.date.slice(5)}</td><td>${balls}</td><td>${sum}</td><td>${odd}:${d.digits.length-odd}</td></tr>`;
+      const big=d.digits.filter((n,i)=>n>Math.ceil(g.maxes[i]/2)).length;
+      rows+=`<tr><td>${d.issue}</td><td>${d.date.slice(5)}</td><td>${balls}</td><td>${sum}</td><td>${odd}:${d.digits.length-odd}</td><td>${big}:${d.digits.length-big}</td></tr>`;
     });
   }
-  const cols=g.type==='lotto'?'<th>期号</th><th>日期</th><th>开奖号码</th><th>和值</th><th>奇偶</th>':'<th>期号</th><th>日期</th><th>开奖号码</th><th>和值</th><th>奇偶</th>';
+  const cols='<th>期号</th><th>日期</th><th>开奖号码</th><th>和值</th><th>奇偶</th><th>大小</th>';
   return `<div class="card"><div class="card-title"><span>历史开奖</span><div class="tabs">${[5,10,30].map(n=>`<div class="tab ${st.range===n?'active':''}" onclick="setRange('${key}',${n})">${n}天</div>`).join('')}</div></div><div class="table-wrap"><table class="history-table"><thead><tr>${cols}</tr></thead><tbody>${rows}</tbody></table></div></div>`;
 }
 function setRange(key,n){gameState[key].range=n;renderGame();}
@@ -580,7 +583,8 @@ function initDigitPicker(key){
 function lottoDesc(red,blue,g){
   const sorted=[...red].sort((a,b)=>a-b);
   const sum=sorted.reduce((a,b)=>a+b,0), odd=sorted.filter(n=>n%2).length;
-  let x=`和值${sum}，奇偶${odd}:${red.length-odd}`;
+  const mid=Math.ceil(g.redMax/2), big=sorted.filter(n=>n>mid).length;
+  let x=`和值${sum}，奇偶${odd}:${red.length-odd}，大小${big}:${red.length-big}`;
   let cons=0;for(let i=1;i<sorted.length;i++)if(sorted[i]===sorted[i-1]+1)cons++;
   if(cons>0)x+=`，${cons}组连号`;
   if(blue&&blue.length)x+=`。蓝球${blue.map(pad).join('、')}`;
