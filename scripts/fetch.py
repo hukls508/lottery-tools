@@ -137,49 +137,47 @@ def extract_digit_balls(html, count):
 # ===== 双色球（从500彩票网历史数据抓取）=====
 def fetch_ssq():
     print("[双色球] 开始抓取...")
-    # 用500彩票网历史数据页面
     url = "https://datachart.500.com/ssq/history/newinc/history.php?start=2026001&end=2026999"
     html = fetch_html(url)
     if not html:
         print("[双色球] 抓取失败，跳过")
         return []
     
-    # 解析表格行
-    rows = re.findall(r'<tr[^>]*class="t_tr1"[^>]*>(.*?)</tr>', html, re.DOTALL)
-    if not rows:
-        rows = re.findall(r'<tr[^>]*>(.*?)</tr>', html, re.DOTALL)
+    # 方法1：直接从HTML提取所有数字，找双色球模式
+    # 模式：期号(7位) + 6红(1-33) + 1蓝(1-16)
+    all_nums = [int(x) for x in re.findall(r'\b(\d{1,7})\b', html)]
     
-    print(f"[双色球] 找到 {len(rows)} 行数据")
-    
-    for row in rows[:10]:
-        # 提取所有td中的内容
-        tds = re.findall(r'<td[^>]*>(.*?)</td>', row, re.DOTALL)
-        nums = []
-        for td in tds:
-            clean = re.sub(r'<[^>]+>', '', td).strip()
-            if clean.isdigit():
-                nums.append(int(clean))
-        
-        print(f"[双色球] 一行数字: {nums[:15]}")
-        
-        # 双色球格式：期号(7位) + 6红 + 1蓝 + 其他
-        # 找到第一个大于10000的数字作为期号起点
-        start_idx = -1
-        for i, n in enumerate(nums):
-            if n > 20000 and n < 300000:  # 期号范围
-                start_idx = i
-                break
-        
-        if start_idx >= 0 and len(nums) >= start_idx + 8:
-            issue = str(nums[start_idx])
-            red = nums[start_idx+1:start_idx+7]
-            blue = [nums[start_idx+7]]
-            date_match = re.search(r'(\d{4}-\d{2}-\d{2})', row)
-            date = date_match.group(1) if date_match else ""
+    for i in range(len(all_nums) - 8):
+        # 找期号（7位，2026开头）
+        if 2026001 <= all_nums[i] <= 2026999:
+            issue = str(all_nums[i])
+            red = all_nums[i+1:i+7]
+            blue = [all_nums[i+7]]
             
-            if len(red) == 6 and len(blue) == 1:
+            if all(1 <= n <= 33 for n in red) and 1 <= blue[0] <= 16:
+                # 提取日期
+                date_match = re.search(r'(\d{4}-\d{2}-\d{2})', html[max(0, i*5-200):i*5+500])
+                date = date_match.group(1) if date_match else ""
+                print(f"[双色球] 获取到最新一期: {issue} {date} 红:{red} 蓝:{blue}")
+                return [{"issue": issue, "date": date, "red": red, "blue": blue[0]}]
+    
+    # 方法2：解析表格行
+    rows = re.findall(r'<tr[^>]*>(.*?)</tr>', html, re.DOTALL)
+    for row in rows[:20]:
+        # 提取所有数字（包括在em、span、li等标签中的）
+        nums = [int(x) for x in re.findall(r'>(\d{1,2})<', row)]
+        if len(nums) >= 7:
+            # 找期号
+            issue_match = re.search(r'>(\d{7})<', row)
+            if issue_match:
+                issue = issue_match.group(1)
+                red = nums[:6]
+                blue = [nums[6]]
+                date_match = re.search(r'(\d{4}-\d{2}-\d{2})', row)
+                date = date_match.group(1) if date_match else ""
+                
                 if all(1 <= n <= 33 for n in red) and 1 <= blue[0] <= 16:
-                    print(f"[双色球] 获取到最新一期: {issue} {date} 红:{red} 蓝:{blue}")
+                    print(f"[双色球] 从表格获取到: {issue} {date} 红:{red} 蓝:{blue}")
                     return [{"issue": issue, "date": date, "red": red, "blue": blue[0]}]
     
     print(f"[双色球] 解析失败，跳过")
