@@ -107,10 +107,12 @@ async function loadLatest(){
   results.forEach(({lot,item})=>{
     let nums='';
     if(lot.type==='lotto'){
-      const red=item.red||item.front||[];
-      const blue=item.blue||item.back||[];
+      let red=item.red||item.front||[];
+      let blue=item.blue!==undefined?item.blue:(item.back||[]);
+      if(!Array.isArray(red))red=[red];
+      if(!Array.isArray(blue))blue=[blue];
       nums=red.map(n=>`<span class="ball ${lot.redClass}">${pad(n)}</span>`).join('');
-      if(blue&&blue.length)nums+=blue.map(n=>`<span class="ball ${lot.blueClass}">${pad(n)}</span>`).join('');
+      if(blue&&blue.length&&blue[0]!==undefined)nums+=blue.map(n=>`<span class="ball ${lot.blueClass}">${pad(n)}</span>`).join('');
     }else{
       const digits=item.digits||[];
       nums=digits.map((n,i)=>`<span class="ball ${lot.specialLast&&i===digits.length-1?'ball-special':'ball-digit'}">${n}</span>`).join('');
