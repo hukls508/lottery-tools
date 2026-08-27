@@ -7,32 +7,36 @@
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;background:linear-gradient(135deg,#c0392b 0%,#e74c3c 50%,#ff6b6b 100%);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
-.card{background:#fff;border-radius:20px;padding:36px 32px;max-width:760px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.3)}
-.title{text-align:center;margin-bottom:6px;font-size:26px;font-weight:bold;color:#333}
+.card{background:#fff;border-radius:24px;padding:36px 32px;max-width:760px;width:100%;box-shadow:0 25px 80px rgba(0,0,0,.25),0 10px 30px rgba(0,0,0,.15)}
+.title{text-align:center;margin-bottom:6px;font-size:28px;font-weight:bold;color:#333;letter-spacing:1px}
 .subtitle{text-align:center;color:#999;font-size:13px;margin-bottom:24px}
 .cards{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}
-.game-card{border-radius:14px;padding:22px 20px;color:#fff;cursor:pointer;transition:transform .2s,box-shadow .2s;text-decoration:none;display:block}
-.game-card:hover{transform:translateY(-3px);box-shadow:0 10px 25px rgba(0,0,0,.2)}
-.game-card.fc{background:linear-gradient(135deg,#ff6b9d,#ee5a6f)}
-.game-card.tc{background:linear-gradient(135deg,#4facfe,#00f2fe)}
-.game-card .icon{font-size:32px;margin-bottom:8px}
-.game-card .name{font-size:20px;font-weight:bold;margin-bottom:4px}
-.game-card .desc{font-size:12px;opacity:.9;line-height:1.5}
+.game-card{border-radius:16px;padding:24px 20px;color:#fff;cursor:pointer;transition:all .3s;text-decoration:none;display:block;position:relative;overflow:hidden}
+.game-card::before{content:'';position:absolute;top:-50%;right:-50%;width:100%;height:100%;background:radial-gradient(circle,rgba(255,255,255,.2) 0%,transparent 70%);transition:transform .5s}
+.game-card:hover{transform:translateY(-5px);box-shadow:0 15px 40px rgba(0,0,0,.2)}
+.game-card:hover::before{transform:translate(-20%,-20%)}
+.game-card.fc{background:linear-gradient(135deg,#ff6b9d 0%,#ee5a6f 100%)}
+.game-card.tc{background:linear-gradient(135deg,#4facfe 0%,#00f2fe 100%)}
+.game-card .icon{font-size:36px;margin-bottom:10px;position:relative;z-index:1}
+.game-card .name{font-size:22px;font-weight:bold;margin-bottom:6px;position:relative;z-index:1}
+.game-card .desc{font-size:12px;opacity:.95;line-height:1.6;position:relative;z-index:1}
 .latest-section{background:#f8f9fa;border-radius:12px;padding:16px;margin-bottom:16px}
 .latest-title{font-size:16px;font-weight:bold;color:#333;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center}
 .latest-title .date{font-size:12px;color:#999;font-weight:normal}
 .latest-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.lottery-item{background:#fff;border-radius:8px;padding:10px 12px;border:1px solid #eee}
-.lottery-item .lt-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.lottery-item{background:#fff;border-radius:10px;padding:12px;border:1px solid #eee;transition:all .25s;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.lottery-item:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,.08);border-color:#667eea}
+.lottery-item .lt-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
 .lottery-item .lt-name{font-size:13px;font-weight:bold;color:#333}
 .lottery-item .lt-issue{font-size:11px;color:#999}
-.lottery-item .lt-nums{display:flex;flex-wrap:wrap;gap:3px}
-.ball{display:inline-block;width:22px;height:22px;line-height:22px;text-align:center;border-radius:50%;font-size:11px;font-weight:bold}
-.ball-red{background:#e74c3c;color:#fff}
-.ball-blue{background:#3498db;color:#fff}
-.ball-digit{background:#95a5a6;color:#fff}
-.ball-special{background:#e67e22;color:#fff}
-.lottery-item .lt-date{font-size:10px;color:#bbb;margin-top:4px;text-align:right}
+.lottery-item .lt-nums{display:flex;flex-wrap:wrap;gap:4px}
+.ball{display:inline-block;width:24px;height:24px;line-height:24px;text-align:center;border-radius:50%;font-size:11px;font-weight:bold;box-shadow:0 2px 4px rgba(0,0,0,.2),inset 0 1px 2px rgba(255,255,255,.3);transition:transform .2s}
+.ball:hover{transform:scale(1.2)}
+.ball-red{background:linear-gradient(135deg,#ff6b6b,#e74c3c);color:#fff}
+.ball-blue{background:linear-gradient(135deg,#74b9ff,#3498db);color:#fff}
+.ball-digit{background:linear-gradient(135deg,#b2bec3,#95a5a6);color:#fff}
+.ball-special{background:linear-gradient(135deg,#ffeaa7,#e67e22);color:#fff}
+.lottery-item .lt-date{font-size:10px;color:#bbb;margin-top:6px;text-align:right}
 .loading-tip{text-align:center;color:#999;font-size:12px;padding:20px}
 .info{background:#f8f9fa;border-radius:12px;padding:14px 18px;font-size:12px;color:#666;line-height:1.9}
 .info strong{color:#333}

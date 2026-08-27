@@ -6,19 +6,22 @@
 <title>彩票选号娱乐工具（综合版）</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;background:#f0f2f5;color:#333;padding-bottom:60px}
-.header{background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;padding:16px 20px;text-align:center}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;background:linear-gradient(135deg,#f5f7fa 0%,#e4e8ec 100%);background-attachment:fixed;color:#333;padding-bottom:60px}
+.header{background:linear-gradient(135deg,#667eea 0%,#764ba2 50%,#f093fb 100%);color:#fff;padding:18px 20px;text-align:center;box-shadow:0 4px 20px rgba(102,126,234,.3);position:relative;overflow:hidden}
+.header::before{content:'';position:absolute;top:-50%;left:-50%;width:200%;height:200%;background:radial-gradient(circle,rgba(255,255,255,.1) 0%,transparent 60%);animation:shimmer 8s infinite}
+@keyframes shimmer{0%,100%{transform:translate(0,0)}50%{transform:translate(5%,5%)}}
 .header h1{font-size:22px;margin-bottom:4px}
 .header p{font-size:12px;opacity:.9}
 .main-tabs{display:flex;background:#fff;border-bottom:2px solid #eee;position:sticky;top:0;z-index:100}
-.main-tab{flex:1;padding:12px;text-align:center;cursor:pointer;font-size:15px;font-weight:600;color:#888;border-bottom:3px solid transparent;transition:all .2s}
-.main-tab.active{color:#667eea;border-bottom-color:#667eea}
-.sub-tabs{display:flex;flex-wrap:wrap;background:#fff;padding:8px 12px;gap:6px;border-bottom:1px solid #eee}
-.sub-tab{padding:6px 14px;background:#f0f0f0;border-radius:16px;cursor:pointer;font-size:13px;color:#666;transition:all .2s}
-.sub-tab.active{background:#667eea;color:#fff}
+.main-tab{flex:1;padding:14px;text-align:center;cursor:pointer;font-size:15px;font-weight:600;color:#888;border-bottom:3px solid transparent;transition:all .3s;background:#fff}
+.main-tab.active{color:#667eea;border-bottom-color:#667eea;background:linear-gradient(180deg,#f8f9ff,#fff)}
+.sub-tab{padding:7px 16px;background:#f0f0f0;border-radius:18px;cursor:pointer;font-size:13px;color:#666;transition:all .25s}
+.sub-tab.active{background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;box-shadow:0 2px 8px rgba(102,126,234,.3)}
+.sub-tab:hover:not(.active){background:#e0e0e0}
 .container{padding:12px;max-width:1100px;margin:0 auto}
 .game-panel{display:none}.game-panel.active{display:block}
-.card{background:#fff;border-radius:10px;padding:14px;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.card{background:#fff;border-radius:14px;padding:16px;margin-bottom:14px;box-shadow:0 2px 12px rgba(0,0,0,.06),0 1px 3px rgba(0,0,0,.04);transition:box-shadow .3s,transform .3s}
+.card:hover{box-shadow:0 4px 20px rgba(0,0,0,.08),0 2px 6px rgba(0,0,0,.05)}
 .card-title{font-size:15px;font-weight:bold;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center}
 .tabs{display:flex;gap:4px}
 .tab{padding:4px 12px;background:#f0f0f0;border-radius:12px;cursor:pointer;font-size:12px;color:#666}
@@ -29,16 +32,19 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Micr
 .stat-item .value{font-size:16px;font-weight:bold;color:#333}
 .table-wrap{overflow-x:auto}
 .history-table{width:100%;border-collapse:collapse;font-size:12px}
-.history-table th,.history-table td{border:1px solid #eee;padding:5px 4px;text-align:center}
-.history-table th{background:#f5f5f5;color:#666;font-weight:600}
-.ball{display:inline-block;width:24px;height:24px;line-height:24px;text-align:center;border-radius:50%;font-size:12px;font-weight:bold;margin:0 1px}
-.ball-red{background:#e74c3c;color:#fff}
-.ball-blue{background:#3498db;color:#fff}
-.ball-orange{background:#f39c12;color:#fff}
-.ball-green{background:#27ae60;color:#fff}
-.ball-purple{background:#9b59b6;color:#fff}
-.ball-digit{background:#95a5a6;color:#fff}
-.ball-special{background:#e67e22;color:#fff}
+.history-table th,.history-table td{border:1px solid #eee;padding:7px 5px;text-align:center}
+.history-table th{background:linear-gradient(135deg,#f8f9fa,#e9ecef);color:#555;font-weight:600}
+.history-table tbody tr:nth-child(even){background:#fafbfc}
+.history-table tbody tr:hover{background:#f0f4ff}
+.ball{display:inline-block;width:26px;height:26px;line-height:26px;text-align:center;border-radius:50%;font-size:12px;font-weight:bold;margin:0 1px;box-shadow:0 2px 4px rgba(0,0,0,.2),inset 0 1px 2px rgba(255,255,255,.3);transition:transform .2s}
+.ball:hover{transform:scale(1.15)}
+.ball-red{background:linear-gradient(135deg,#ff6b6b,#e74c3c);color:#fff}
+.ball-blue{background:linear-gradient(135deg,#74b9ff,#3498db);color:#fff}
+.ball-orange{background:linear-gradient(135deg,#fdcb6e,#f39c12);color:#fff}
+.ball-green{background:linear-gradient(135deg,#55efc4,#27ae60);color:#fff}
+.ball-purple{background:linear-gradient(135deg,#a29bfe,#9b59b6);color:#fff}
+.ball-digit{background:linear-gradient(135deg,#b2bec3,#95a5a6);color:#fff}
+.ball-special{background:linear-gradient(135deg,#ffeaa7,#e67e22);color:#fff}
 .freq-grid{display:grid;grid-template-columns:repeat(11,1fr);gap:4px;margin-bottom:8px}
 .freq-cell{text-align:center;padding:4px 2px;border-radius:6px;font-size:11px}
 .freq-cell .num{font-weight:bold}
@@ -69,44 +75,47 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Micr
 .trend-tab{padding:4px 12px;background:#f0f0f0;border-radius:12px;cursor:pointer;font-size:12px;color:#666}
 .trend-tab.active{background:#667eea;color:#fff}
 .play-tabs{display:flex;gap:0;margin-bottom:12px;border-bottom:2px solid #eee}
-.play-tab{padding:8px 16px;cursor:pointer;font-size:13px;color:#888;border-bottom:2px solid transparent;margin-bottom:-2px}
-.play-tab.active{color:#e74c3c;border-bottom-color:#e74c3c;font-weight:bold}
+.play-tab{padding:10px 18px;cursor:pointer;font-size:13px;color:#888;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .25s;font-weight:500}
+.play-tab.active{color:#e74c3c;border-bottom-color:#e74c3c;font-weight:bold;background:#fff5f5}
 .play-panel{display:none}.play-panel.active{display:block}
 .picker-label{font-size:13px;font-weight:600;margin-bottom:6px;color:#555}
 .picker-label .count{color:#e74c3c;font-weight:700}
 .picker-label .hint{color:#999;font-weight:normal;font-size:11px;margin-left:6px}
 .number-grid{display:grid;grid-template-columns:repeat(11,1fr);gap:4px;margin-bottom:10px}
 .number-grid.blue-grid{grid-template-columns:repeat(8,1fr)}
-.num-btn{padding:6px 0;text-align:center;border:1px solid #ddd;border-radius:6px;cursor:pointer;font-size:13px;background:#fff;transition:all .15s;user-select:none}
-.num-btn:hover{border-color:#667eea}
-.num-btn.selected-front{background:#e74c3c;color:#fff;border-color:#e74c3c}
-.num-btn.selected-back{background:#3498db;color:#fff;border-color:#3498db}
-.num-btn.selected-red{background:#e74c3c;color:#fff;border-color:#e74c3c}
-.num-btn.selected-blue{background:#3498db;color:#fff;border-color:#3498db}
-.num-btn.dan{background:#c0392b!important;color:#fff!important;border-color:#c0392b!important}
-.num-btn.tuo{background:#e67e22!important;color:#fff!important;border-color:#e67e22!important}
+.num-btn{padding:7px 0;text-align:center;border:1px solid #e0e0e0;border-radius:8px;cursor:pointer;font-size:13px;background:#fff;transition:all .2s;user-select:none;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+.num-btn:hover{border-color:#667eea;transform:scale(1.05);box-shadow:0 2px 8px rgba(102,126,234,.2)}
+.num-btn.selected-front{background:linear-gradient(135deg,#ff6b6b,#e74c3c);color:#fff;border-color:#e74c3c;transform:scale(1.05)}
+.num-btn.selected-back{background:linear-gradient(135deg,#74b9ff,#3498db);color:#fff;border-color:#3498db;transform:scale(1.05)}
+.num-btn.selected-red{background:linear-gradient(135deg,#ff6b6b,#e74c3c);color:#fff;border-color:#e74c3c;transform:scale(1.05)}
+.num-btn.selected-blue{background:linear-gradient(135deg,#74b9ff,#3498db);color:#fff;border-color:#3498db;transform:scale(1.05)}
+.num-btn.dan{background:linear-gradient(135deg,#c0392b,#922b21)!important;color:#fff!important;border-color:#c0392b!important}
+.num-btn.tuo{background:linear-gradient(135deg,#e67e22,#d35400)!important;color:#fff!important;border-color:#e67e22!important}
 .digit-row{display:flex;gap:8px;justify-content:center;margin-bottom:10px;flex-wrap:wrap}
 .digit-box{text-align:center}
 .digit-box label{display:block;font-size:11px;color:#888;margin-bottom:2px}
 .digit-box select{padding:6px 8px;border:1px solid #ddd;border-radius:6px;font-size:14px}
 .action-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:10px}
-.btn{padding:8px 18px;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600;transition:all .15s}
-.btn-primary{background:#667eea;color:#fff}
-.btn-primary:hover{background:#5568d3}
-.btn-orange{background:#f39c12;color:#fff}
-.btn-orange:hover{background:#e08e0b}
-.btn-green{background:#27ae60;color:#fff}
-.btn-green:hover{background:#219a52}
-.btn-secondary{background:#ecf0f1;color:#555}
-.btn-secondary:hover{background:#d5dbdb}
+.btn{padding:9px 20px;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;transition:all .2s;box-shadow:0 2px 8px rgba(0,0,0,.1)}
+.btn:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,.15)}
+.btn:active{transform:translateY(0)}
+.btn-primary{background:linear-gradient(135deg,#667eea,#764ba2);color:#fff}
+.btn-primary:hover{background:linear-gradient(135deg,#5568d3,#6a3f8f)}
+.btn-orange{background:linear-gradient(135deg,#fdcb6e,#f39c12);color:#fff}
+.btn-orange:hover{background:linear-gradient(135deg,#f9c74f,#e08e0b)}
+.btn-green{background:linear-gradient(135deg,#55efc4,#27ae60);color:#fff}
+.btn-green:hover{background:linear-gradient(135deg,#45d9a8,#219a52)}
+.btn-secondary{background:linear-gradient(135deg,#ecf0f1,#dfe6e9);color:#555}
+.btn-secondary:hover{background:linear-gradient(135deg,#dfe6e9,#b2bec3)}
 .input-group{display:flex;align-items:center;gap:4px;font-size:13px;color:#666}
 .input-group input{width:50px;padding:6px;border:1px solid #ddd;border-radius:4px;text-align:center}
 .bet-info{background:#fff8e1;border:1px solid #ffe082;border-radius:8px;padding:10px 14px;margin:10px 0;font-size:13px;color:#795548;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
 .bet-info .bet-num{font-size:18px;font-weight:bold;color:#e74c3c}
 .bet-info .bet-amount{font-size:16px;font-weight:bold;color:#333}
 .ticket-list{margin-top:8px}
-.ticket-item{display:flex;align-items:center;gap:10px;padding:10px;border-bottom:1px solid #f0f0f0}
-.ticket-index{width:24px;height:24px;line-height:24px;text-align:center;background:#667eea;color:#fff;border-radius:50%;font-size:12px;font-weight:bold;flex-shrink:0}
+.ticket-item{display:flex;align-items:center;gap:10px;padding:12px;border-bottom:1px solid #f0f0f0;transition:background .2s}
+.ticket-item:hover{background:#f8f9ff}
+.ticket-index{width:28px;height:28px;line-height:28px;text-align:center;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border-radius:50%;font-size:12px;font-weight:bold;flex-shrink:0;box-shadow:0 2px 6px rgba(102,126,234,.3)}
 .ticket-body{flex:1;min-width:0}
 .ticket-nums{margin-bottom:4px;font-size:13px}
 .ticket-desc{font-size:11px;color:#888;line-height:1.5}
@@ -114,9 +123,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Micr
 .ticket-del:hover{color:#e74c3c}
 .empty-tip{text-align:center;color:#bbb;padding:20px;font-size:13px}
 .loading{text-align:center;padding:40px;color:#999}
-.footer{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #eee;padding:8px;display:flex;gap:4px;justify-content:center;flex-wrap:wrap;z-index:100}
-.footer-btn{padding:5px 10px;font-size:11px;background:#f0f0f0;border:none;border-radius:4px;cursor:pointer;color:#666}
-.footer-btn:hover{background:#e0e0e0}
+.footer{position:fixed;bottom:0;left:0;right:0;background:rgba(255,255,255,.95);backdrop-filter:blur(10px);border-top:1px solid #eee;padding:10px;display:flex;gap:6px;justify-content:center;flex-wrap:wrap;z-index:100;box-shadow:0 -2px 10px rgba(0,0,0,.05)}
+.footer-btn{padding:6px 12px;font-size:11px;background:linear-gradient(135deg,#f8f9fa,#e9ecef);border:none;border-radius:6px;cursor:pointer;color:#666;transition:all .2s}
+.footer-btn:hover{background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;transform:translateY(-1px)}
 .auth-mask{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.85);z-index:9999;display:flex;align-items:center;justify-content:center;flex-direction:column}
 .auth-box{background:#fff;border-radius:12px;padding:28px 24px;width:320px;text-align:center;box-shadow:0 8px 30px rgba(0,0,0,0.3)}
 .auth-box h3{color:#c0392b;margin-bottom:6px;font-size:18px}
