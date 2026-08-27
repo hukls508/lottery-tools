@@ -580,21 +580,53 @@ function initDigitPicker(key){
 }
 
 // ===== 添加票 =====
-function lottoDesc(red,blue,g){
+function lottoDesc(red,blue,g,key){
   const sorted=[...red].sort((a,b)=>a-b);
   const sum=sorted.reduce((a,b)=>a+b,0), odd=sorted.filter(n=>n%2).length;
   const mid=Math.ceil(g.redMax/2), big=sorted.filter(n=>n>mid).length;
-  let x=`和值${sum}，奇偶${odd}:${red.length-odd}，大小${big}:${red.length-big}`;
+  const zone1=Math.ceil(g.redMax/3), zone2=Math.ceil(g.redMax*2/3);
+  const z1=sorted.filter(n=>n<=zone1).length;
+  const z2=sorted.filter(n=>n>zone1&&n<=zone2).length;
+  const z3=sorted.filter(n=>n>zone2).length;
+  const avgSum=g.redPick*(g.redMax+1)/2;
+  let sumRange='正常区间';
+  if(sum<avgSum*0.8)sumRange='偏小';
+  else if(sum>avgSum*1.2)sumRange='偏大';
   let cons=0;for(let i=1;i<sorted.length;i++)if(sorted[i]===sorted[i-1]+1)cons++;
+  const tails={};sorted.forEach(n=>{const t=n%10;tails[t]=(tails[t]||0)+1;});
+  const sameTail=Object.values(tails).filter(v=>v>=2).length;
+  let hotNums=[],coldNums=[];
+  if(key&&gameState[key]&&gameState[key].data.length){
+    const data=gameState[key].data.slice(0,30);
+    const fc={};for(let i=1;i<=g.redMax;i++)fc[i]=0;
+    data.forEach(d=>d.red.forEach(n=>fc[n]++));
+    const avg=(data.length*g.redPick)/g.redMax;
+    hotNums=Object.entries(fc).filter(([_,c])=>c>=avg*1.5&&c>0).map(([n])=>+n);
+    coldNums=Object.entries(fc).filter(([_,c])=>c<=avg*.5).map(([n])=>+n);
+  }
+  const hasHot=sorted.filter(n=>hotNums.includes(n));
+  const hasCold=sorted.filter(n=>coldNums.includes(n));
+  let x=`前区和值${sum}（${sumRange}），奇偶比${odd}:${red.length-odd}，大小比${big}:${red.length-big}，三区比${z1}:${z2}:${z3}`;
   if(cons>0)x+=`，${cons}组连号`;
-  if(blue&&blue.length)x+=`。蓝球${blue.map(pad).join('、')}`;
-  return x+'。';
+  if(sameTail>0)x+=`，${sameTail}组同尾号`;
+  x+='。';
+  if(hasHot.length||hasCold.length){
+    if(hasHot.length)x+=`包含热号${hasHot.map(pad).join('、')}`;
+    if(hasCold.length)x+=`${hasHot.length?'，':''}冷号${hasCold.map(pad).join('、')}`;
+    x+='，冷热搭配。';
+  }
+  if(blue&&blue.length&&g.blueMax>0){
+    const bOdd=blue.filter(n=>n%2).length;
+    const bMid=Math.ceil(g.blueMax/2), bBig=blue.filter(n=>n>bMid).length;
+    x+=`后区${blue.map(pad).join('、')}（奇偶${bOdd}:${blue.length-bOdd}，大小${bBig}:${blue.length-bBig}）。`;
+  }
+  return x;
 }
 function addSingle(key){
   const g=GAMES[key], st=gameState[key];
   if(st.selRed.size!==g.redPick){alert('请选满'+g.redPick+'个红球');return;}
   if(g.blueMax>0&&st.selBlue.size!==g.bluePick){alert('请选满'+g.bluePick+'个蓝球');return;}
-  st.tickets.push({red:[...st.selRed].sort((a,b)=>a-b),blue:[...st.selBlue].sort((a,b)=>a-b),desc:lottoDesc([...st.selRed],[...st.selBlue],g),type:'单式'});
+  st.tickets.push({red:[...st.selRed].sort((a,b)=>a-b),blue:[...st.selBlue].sort((a,b)=>a-b),desc:lottoDesc([...st.selRed],[...st.selBlue],g,key),type:'单式'});
   st.selRed.clear();st.selBlue.clear();renderGame();
 }
 function clearSingle(key){const st=gameState[key];st.selRed.clear();st.selBlue.clear();initLottoPicker(key);}
@@ -669,7 +701,7 @@ function genRandom(key){
         // 单式随机
         const red=new Set();while(red.size<g.redPick)red.add(Math.floor(Math.random()*g.redMax)+1);
         const blue=new Set();if(g.blueMax>0)while(blue.size<g.bluePick)blue.add(Math.floor(Math.random()*g.blueMax)+1);
-        st.tickets.push({red:[...red].sort((a,b)=>a-b),blue:[...blue].sort((a,b)=>a-b),desc:lottoDesc([...red],[...blue],g),type:'单式'});
+        st.tickets.push({red:[...red].sort((a,b)=>a-b),blue:[...blue].sort((a,b)=>a-b),desc:lottoDesc([...red],[...blue],g,key),type:'单式'});
       }
     }else{
       const digits=Array.from({length:g.digits},(_,j)=>Math.floor(Math.random()*(g.maxes[j]+1)));
