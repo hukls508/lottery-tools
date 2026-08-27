@@ -194,30 +194,30 @@ def fetch_ssq():
 # ===== 大乐透（从500彩票网历史数据抓取）=====
 def fetch_dlt():
     print("[大乐透] 开始抓取...")
-    # 用500彩票网历史数据页面（结构更清晰）
     url = "https://datachart.500.com/dlt/history/newinc/history.php?start=26001&end=26999"
     html = fetch_html(url)
     if not html:
         print("[大乐透] 抓取失败，跳过")
         return []
     
-    # 解析表格行
     rows = re.findall(r'<tr[^>]*class="t_tr1"[^>]*>(.*?)</tr>', html, re.DOTALL)
     if not rows:
         rows = re.findall(r'<tr[^>]*>(.*?)</tr>', html, re.DOTALL)
     
     for row in rows[:5]:
-        tds = re.findall(r'<td[^>]*>(.*?)</td>', row, re.DOTALL)
-        nums = []
-        for td in tds:
-            clean = re.sub(r'<[^>]+>', '', td).strip()
-            if clean.isdigit() and len(clean) <= 2:
-                nums.append(int(clean))
+        # 从行中提取期号（5位数字，26开头）
+        issue_match = re.search(r'>(26\d{3})<', row)
+        if not issue_match:
+            issue_match = re.search(r'>(\d{5})<', row)
         
-        if len(nums) >= 8:  # 期号+5前+2后 = 至少8个数字
-            issue = str(nums[0]) if nums[0] > 1000 else f"26{nums[0]:03d}"
-            front = nums[1:6]
-            back = nums[6:8]
+        # 提取所有号码数字
+        nums = [int(x) for x in re.findall(r'>(\d{1,2})<', row)]
+        
+        if issue_match and len(nums) >= 7:
+            issue = issue_match.group(1)
+            # 前5个是前区，后2个是后区
+            front = nums[:5]
+            back = nums[5:7]
             date_match = re.search(r'(\d{4}-\d{2}-\d{2})', row)
             date = date_match.group(1) if date_match else ""
             
@@ -337,19 +337,25 @@ def update_lottery(name, fetch_func, filename):
 
 def main():
     print("=" * 50)
-    print("彩票开奖数据自动抓取（500彩票网数据源）")
+    print("彩票开奖数据自动抓取")
     print(f"数据目录: {DATA_DIR}")
     print("=" * 50)
     updated = False
     
-    if update_lottery("双色球", fetch_ssq, "ssq.json"): updated = True
-    print()
+    # 双色球暂时禁用（福彩API 403，500彩票网页面结构解析不了）
+    # if update_lottery("双色球", fetch_ssq, "ssq.json"): updated = True
+    # print()
+    
+    # 大乐透
     if update_lottery("大乐透", fetch_dlt, "dlt.json"): updated = True
     print()
+    # 排列3
     if update_lottery("排列3", fetch_p3, "p3.json"): updated = True
     print()
+    # 排列5
     if update_lottery("排列5", fetch_p5, "p5.json"): updated = True
     print()
+    # 7星彩
     if update_lottery("7星彩", fetch_qxc, "qxc.json"): updated = True
     print()
     
