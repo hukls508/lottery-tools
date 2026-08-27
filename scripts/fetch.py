@@ -80,11 +80,21 @@ def extract_all_balls(html):
                 n = int(x)
                 if 0 <= n <= 35:
                     balls.append(n)
+    
+    # 如果上面的方法没找到，直接提取所有两位数字（01-35）
+    if not balls:
+        all_digits = re.findall(r'\b(\d{2})\b', html)
+        for x in all_digits:
+            n = int(x)
+            if 1 <= n <= 35:
+                balls.append(n)
+    
     return balls
 
 def extract_lotto_balls(html, red_count, blue_count, red_max, blue_max):
     """提取乐透型号码（去重）"""
     all_balls = extract_all_balls(html)
+    
     # 去重但保持顺序
     seen = set()
     unique = []
@@ -93,16 +103,23 @@ def extract_lotto_balls(html, red_count, blue_count, red_max, blue_max):
             seen.add(n)
             unique.append(n)
     
-    # 筛选有效号码
+    # 方法1：尝试找到连续的 red_count+blue_count 个数字，符合红蓝区间
+    total = red_count + blue_count
+    for i in range(len(unique) - total + 1):
+        candidate = unique[i:i+total]
+        red_part = candidate[:red_count]
+        blue_part = candidate[red_count:]
+        if all(1 <= n <= red_max for n in red_part) and all(1 <= n <= blue_max for n in blue_part):
+            return red_part, blue_part
+    
+    # 方法2：按区间筛选
     red_valid = [n for n in unique if 1 <= n <= red_max]
     blue_valid = [n for n in unique if 1 <= n <= blue_max]
     
-    # 尝试从位置区分：前red_count个是红，接下来blue_count个是蓝
     if len(red_valid) >= red_count and len(blue_valid) >= blue_count:
-        # 用原始顺序取前red_count个作为红球，接下来的作为蓝球
         red = red_valid[:red_count]
-        # 蓝球从剩余的里面取
-        remaining = [n for n in unique if n not in red and 1 <= n <= blue_max]
+        # 蓝球从不在红球中的数字里取
+        remaining = [n for n in blue_valid if n not in red]
         blue = remaining[:blue_count] if remaining else blue_valid[:blue_count]
         return red, blue
     
