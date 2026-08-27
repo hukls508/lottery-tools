@@ -64,15 +64,22 @@ def extract_all_balls(html):
         r'class="ball[^"]*"[^>]*>(\d+)<',
         r'class="qiu[^"]*"[^>]*>(\d+)<',
         r'class="num[^"]*"[^>]*>(\d+)<',
-        r'<li[^>]*class="[^"]*ball[^"]*"[^>]*>(\d+)<',
+        r'class="hao[^"]*"[^>]*>(\d+)<',
+        r'class="code[^"]*"[^>]*>(\d+)<',
+        r'<li[^>]*>(\d{1,2})</li>',
+        r'<li[^>]*class="[^"]*"[^>]*>(\d{1,2})<',
         r'<em[^>]*>(\d+)</em>',
-        r'<span[^>]*class="[^"]*"[^>]*>(\d{1,2})</span>',
+        r'<i[^>]*>(\d+)</i>',
+        r'<span[^>]*>(\d{1,2})</span>',
+        r'<div[^>]*class="[^"]*ball[^"]*"[^>]*>(\d+)<',
     ]
     for pat in patterns:
         found = re.findall(pat, html)
         for x in found:
             if x.isdigit() and len(x) <= 2:
-                balls.append(int(x))
+                n = int(x)
+                if 0 <= n <= 35:
+                    balls.append(n)
     return balls
 
 def extract_lotto_balls(html, red_count, blue_count, red_max, blue_max):
