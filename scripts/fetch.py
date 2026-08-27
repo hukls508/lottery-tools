@@ -134,52 +134,52 @@ def extract_digit_balls(html, count):
         return digits[:count]
     return digits
 
-# ===== 双色球（从500彩票网XML数据抓取）=====
+# ===== 双色球（从免费API抓取）=====
 def fetch_ssq():
     print("[双色球] 开始抓取...")
-    # 用500彩票网XML数据（结构更清晰）
-    url = "https://kaijiang.500.com/static/info/kaijiang/xml/ssq/list.xml"
-    html = fetch_html(url)
-    if not html:
-        print("[双色球] XML抓取失败，尝试历史数据页面...")
-        # 备用：历史数据页面
-        url2 = "https://datachart.500.com/ssq/history/newinc/history.php?limit=30"
-        html = fetch_html(url2)
     
-    if not html:
-        print("[双色球] 抓取失败，跳过")
-        return []
+    # 方法1：用免费API
+    try:
+        url = "https://api.apiopen.top/api/getLottery?code=ssq&count=1"
+        req = urllib.request.Request(url, headers=HEADERS)
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+        if data and data.get("code") == 200:
+            result = data.get("result", [])
+            if result:
+                item = result[0]
+                issue = item.get("code", "")
+                date = item.get("date", "")
+                red = [int(x) for x in item.get("red", "").split(",")]
+                blue = [int(item.get("blue", "0"))]
+                if len(red) == 6 and len(blue) == 1:
+                    if all(1 <= n <= 33 for n in red) and 1 <= blue[0] <= 16:
+                        print(f"[双色球] 从API获取到: {issue} {date} 红:{red} 蓝:{blue}")
+                        return [{"issue": issue, "date": date, "red": red, "blue": blue[0]}]
+    except Exception as e:
+        print(f"[双色球] API抓取失败: {e}")
     
-    # 方法1：解析XML格式
-    # 查找最新一期的标签
-    issue_match = re.search(r'<row[^>]*expect="(\d+)"[^>]*opencode="([^"]+)"[^>]*opentime="([^"]+)"', html)
-    if issue_match:
-        issue = issue_match.group(1)
-        opencode = issue_match.group(2)
-        opentime = issue_match.group(3)
-        # opencode格式：红球,红球,红球,红球,红球,红球+蓝球
-        parts = opencode.split('+')
-        if len(parts) == 2:
-            red = [int(x) for x in parts[0].split(',')]
-            blue = [int(parts[1])]
-            date = opentime.split(' ')[0] if ' ' in opentime else opentime
-            if len(red) == 6 and len(blue) == 1:
-                if all(1 <= n <= 33 for n in red) and 1 <= blue[0] <= 16:
-                    print(f"[双色球] 从XML获取到: {issue} {date} 红:{red} 蓝:{blue}")
-                    return [{"issue": issue, "date": date, "red": red, "blue": blue[0]}]
-    
-    # 方法2：直接从HTML提取所有数字，找双色球模式
-    all_nums = [int(x) for x in re.findall(r'\b(\d{1,7})\b', html)]
-    for i in range(len(all_nums) - 8):
-        if 2026001 <= all_nums[i] <= 2026999:
-            issue = str(all_nums[i])
-            red = all_nums[i+1:i+7]
-            blue = [all_nums[i+7]]
-            if all(1 <= n <= 33 for n in red) and 1 <= blue[0] <= 16:
-                date_match = re.search(r'(\d{4}-\d{2}-\d{2})', html[max(0, i*5-200):i*5+500])
-                date = date_match.group(1) if date_match else ""
-                print(f"[双色球] 从数字匹配获取到: {issue} {date} 红:{red} 蓝:{blue}")
-                return [{"issue": issue, "date": date, "red": red, "blue": blue[0]}]
+    # 方法2：500彩票网XML
+    try:
+        url = "https://kaijiang.500.com/static/info/kaijiang/xml/ssq/list.xml"
+        html = fetch_html(url)
+        if html:
+            issue_match = re.search(r'<row[^>]*expect="(\d+)"[^>]*opencode="([^"]+)"[^>]*opentime="([^"]+)"', html)
+            if issue_match:
+                issue = issue_match.group(1)
+                opencode = issue_match.group(2)
+                opentime = issue_match.group(3)
+                parts = opencode.split('+')
+                if len(parts) == 2:
+                    red = [int(x) for x in parts[0].split(',')]
+                    blue = [int(parts[1])]
+                    date = opentime.split(' ')[0] if ' ' in opentime else opentime
+                    if len(red) == 6 and len(blue) == 1:
+                        if all(1 <= n <= 33 for n in red) and 1 <= blue[0] <= 16:
+                            print(f"[双色球] 从XML获取到: {issue} {date} 红:{red} 蓝:{blue}")
+                            return [{"issue": issue, "date": date, "red": red, "blue": blue[0]}]
+    except Exception as e:
+        print(f"[双色球] XML抓取失败: {e}")
     
     print(f"[双色球] 解析失败，跳过")
     return []
