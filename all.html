@@ -275,6 +275,8 @@ function renderGame(){
   html+=renderFreq(key);
   // 遗漏值分析
   if(g.type==='lotto')html+=renderMissing(key);
+  // 杀号推荐
+  if(g.type==='lotto')html+=renderKillNum(key);
   // 走势图
   html+=renderTrendSection(key);
   // 选号中心
@@ -429,6 +431,75 @@ function renderMissing(key){
   return html;
 }
 
+// ===== 杀号推荐 =====
+function renderKillNum(key){
+  const g=GAMES[key], st=gameState[key];
+  const data=st.data.slice(0,30);
+  const recent5=st.data.slice(0,5);
+  const calcScore=(max)=>{
+    const freq={},miss={},recent={};
+    for(let i=1;i<=max;i++){freq[i]=0;miss[i]=0;recent[i]=0;}
+    data.forEach(d=>d.red.forEach(n=>freq[n]++));
+    recent5.forEach(d=>d.red.forEach(n=>recent[n]++));
+    // 计算当前遗漏
+    for(let i=1;i<=max;i++){
+      for(let j=0;j<data.length;j++){
+        if(data[j].red.includes(i))break;
+        miss[i]++;
+      }
+    }
+    const avgFreq=(data.length*g.redPick)/max;
+    const list=[];
+    for(let i=1;i<=max;i++){
+      let score=100, reason=[];
+      // 频次过高（热过头，可能回调）
+      if(freq[i]>=avgFreq*1.8){score-=30;reason.push('过热');}
+      else if(freq[i]>=avgFreq*1.5){score-=15;reason.push('偏热');}
+      // 频次过低（太冷，可能继续冷）
+      if(freq[i]===0){score-=25;reason.push('未出');}
+      else if(freq[i]<=avgFreq*0.3){score-=15;reason.push('偏冷');}
+      // 遗漏过长
+      if(miss[i]>=avgFreq*3){score-=20;reason.push(`遗漏${miss[i]}期`);}
+      else if(miss[i]>=avgFreq*2){score-=10;reason.push(`遗漏${miss[i]}期`);}
+      // 近期连续出现
+      if(recent[i]>=3){score-=15;reason.push('近5期出3+');}
+      list.push({num:i,score,freq:freq[i],miss:miss[i],recent:recent[i],reason:reason.join('、')||'正常'});
+    }
+    list.sort((a,b)=>a.score-b.score);
+    return list;
+  };
+  const redList=calcScore(g.redMax);
+  const killCount=Math.min(6,Math.max(4,Math.round(g.redMax*0.15)));
+  const killRed=redList.slice(0,killCount);
+  let html=`<div class="card"><div class="card-title"><span>🔪 杀号推荐（近30期分析）</span><span style="font-size:11px;color:#e74c3c">仅供参考</span></div>`;
+  html+=`<div style="background:#fff5f5;border:1px solid #ffcdd2;border-radius:8px;padding:12px;margin-bottom:10px">
+    <div style="font-size:13px;color:#c62828;margin-bottom:8px"><strong>推荐绝杀红球（${killCount}个）：</strong></div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">
+      ${killRed.map(k=>`<span class="ball ball-red">${pad(k.num)}</span>`).join('')}
+    </div>
+    <div style="font-size:11px;color:#666;line-height:1.8">
+      ${killRed.map(k=>`<span style="margin-right:10px">${pad(k.num)}：${k.reason}</span>`).join('')}
+    </div>
+  </div>`;
+  // 蓝球杀号
+  if(g.blueMax>0){
+    const blueList=calcScore(g.blueMax);
+    const killBlue=blueList.slice(0,2);
+    html+=`<div style="background:#e3f2fd;border:1px solid #90caf9;border-radius:8px;padding:12px">
+      <div style="font-size:13px;color:#1565c0;margin-bottom:8px"><strong>推荐绝杀蓝球（2个）：</strong></div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">
+        ${killBlue.map(k=>`<span class="ball ball-blue">${pad(k.num)}</span>`).join('')}
+      </div>
+      <div style="font-size:11px;color:#666;line-height:1.8">
+        ${killBlue.map(k=>`<span style="margin-right:10px">${pad(k.num)}：${k.reason}</span>`).join('')}
+      </div>
+    </div>`;
+  }
+  html+=`<div style="font-size:11px;color:#999;margin-top:10px;text-align:center">※ 杀号基于历史数据统计，彩票为独立随机事件，仅供娱乐参考</div>`;
+  html+=`</div>`;
+  return html;
+}
+
 // ===== 走势图 =====
 function renderTrendSection(key){
   const g=GAMES[key], st=gameState[key];
@@ -491,6 +562,7 @@ function renderPicker(key){
     if(g.supportFS)modes.push(['fushi','复式']);
     if(g.supportDT)modes.push(['dantuo','胆拖']);
     modes.push(['filter','条件缩水']);
+    modes.push(['smart','智能推荐']);
     html+=`<div class="play-tabs">${modes.map(([m,n])=>`<div class="play-tab ${st.playMode===m?'active':''}" onclick="setPlayMode('${key}','${m}',this)">${n}</div>`).join('')}</div>`;
     html+=`<div class="play-panel ${st.playMode==='single'?'active':''}" id="panel-single"><div class="picker-label">红球（已选 <span class="count" id="redCount">0</span>/${g.redPick}）</div><div class="number-grid" id="redGrid"></div>`;
     if(g.blueMax>0)html+=`<div class="picker-label" style="margin-top:10px">蓝球（已选 <span class="count" id="blueCount">0</span>/${g.bluePick}）</div><div class="number-grid blue-grid" id="blueGrid"></div>`;
@@ -536,6 +608,18 @@ function renderPicker(key){
         <button class="btn btn-primary" onclick="genFilter('${key}')">开始缩水</button>
       </div>
       <div id="fResult" style="margin-top:10px;font-size:12px;color:#666"></div>
+    </div>`;
+    // 智能推荐面板
+    html+=`<div class="play-panel ${st.playMode==='smart'?'active':''}" id="panel-smart">
+      <div style="background:#f3e5f5;border-radius:8px;padding:12px;margin-bottom:10px;font-size:12px;color:#6a1b9a;line-height:1.8">
+        <strong>🤖 智能推荐说明：</strong><br>
+        综合冷热号、遗漏值、和值、奇偶比、大小比、三区比、012路比等8大指标，从1000组随机号码中筛选出评分最高的5组推荐号码。
+      </div>
+      <div class="action-row">
+        <div class="input-group"><span>生成</span><input type="number" id="sCount" value="5" min="1" max="10"><span>组</span></div>
+        <button class="btn btn-primary" style="background:#9c27b0" onclick="genSmart('${key}')">🎯 生成智能推荐</button>
+      </div>
+      <div id="sResult" style="margin-top:10px"></div>
     </div>`;
   }else{
     // 数字型
@@ -852,6 +936,87 @@ function genFilter(key){
     }
   }
   document.getElementById('fResult').textContent=`尝试${tries}次，成功生成${found}组符合条件的号码${found<count?'（条件太严格，部分条件无法满足）':''}`;
+  renderGame();
+}
+function genSmart(key){
+  const g=GAMES[key], st=gameState[key];
+  const count=Math.min(10,Math.max(1,parseInt(document.getElementById('sCount').value)||5));
+  const data=st.data.slice(0,30);
+  // 计算热号冷号
+  const fc={};for(let i=1;i<=g.redMax;i++)fc[i]=0;
+  data.forEach(d=>d.red.forEach(n=>fc[n]++));
+  const avgFreq=(data.length*g.redPick)/g.redMax;
+  const hotNums=Object.entries(fc).filter(([_,c])=>c>=avgFreq*1.5&&c>0).map(([n])=>+n);
+  const coldNums=Object.entries(fc).filter(([_,c])=>c<=avgFreq*.5).map(([n])=>+n);
+  // 计算遗漏
+  const miss={};for(let i=1;i<=g.redMax;i++)miss[i]=0;
+  for(let i=1;i<=g.redMax;i++){for(let j=0;j<data.length;j++){if(data[j].red.includes(i))break;miss[i]++;}}
+  const avgMiss=avgFreq;
+  const mid=Math.ceil(g.redMax/2), z1=Math.ceil(g.redMax/3), z2=Math.ceil(g.redMax*2/3);
+  const avgSum=g.redPick*(g.redMax+1)/2;
+  // 评分函数
+  const score=(red)=>{
+    let s=0, reasons=[];
+    const sum=red.reduce((a,b)=>a+b,0);
+    const odd=red.filter(n=>n%2).length, big=red.filter(n=>n>mid).length;
+    const za=red.filter(n=>n<=z1).length, zb=red.filter(n=>n>z1&&n<=z2).length, zc=red.filter(n=>n>z2).length;
+    const ra=red.filter(n=>n%3===0).length, rb=red.filter(n=>n%3===1).length, rc=red.filter(n=>n%3===2).length;
+    // 和值评分（20分）
+    const sumDiff=Math.abs(sum-avgSum);
+    if(sumDiff<=avgSum*0.1){s+=20;reasons.push('和值理想');}
+    else if(sumDiff<=avgSum*0.2){s+=15;reasons.push('和值正常');}
+    else if(sumDiff<=avgSum*0.3){s+=8;}
+    // 奇偶比（15分）
+    const oddDiff=Math.abs(odd-g.redPick/2);
+    if(oddDiff<=0.5){s+=15;reasons.push('奇偶均衡');}
+    else if(oddDiff<=1){s+=10;}
+    else if(oddDiff<=1.5){s+=5;}
+    // 大小比（15分）
+    const bigDiff=Math.abs(big-g.redPick/2);
+    if(bigDiff<=0.5){s+=15;reasons.push('大小均衡');}
+    else if(bigDiff<=1){s+=10;}
+    else if(bigDiff<=1.5){s+=5;}
+    // 三区比（15分）
+    const zoneDiff=Math.abs(za-g.redPick/3)+Math.abs(zb-g.redPick/3)+Math.abs(zc-g.redPick/3);
+    if(zoneDiff<=1){s+=15;reasons.push('三区均衡');}
+    else if(zoneDiff<=2){s+=10;}
+    else if(zoneDiff<=3){s+=5;}
+    // 012路（10分）
+    const roadDiff=Math.abs(ra-g.redPick/3)+Math.abs(rb-g.redPick/3)+Math.abs(rc-g.redPick/3);
+    if(roadDiff<=1){s+=10;reasons.push('012路均衡');}
+    else if(roadDiff<=2){s+=7;}
+    else if(roadDiff<=3){s+=3;}
+    // 冷热搭配（15分）
+    const hasHot=red.filter(n=>hotNums.includes(n)).length;
+    const hasCold=red.filter(n=>coldNums.includes(n)).length;
+    if(hasHot>=1&&hasCold>=1){s+=15;reasons.push('冷热搭配');}
+    else if(hasHot>=1||hasCold>=1){s+=10;}
+    else{s+=5;}
+    // 遗漏适中（10分）
+    const missScore=red.filter(n=>miss[n]>=avgMiss*0.5&&miss[n]<=avgMiss*2).length;
+    if(missScore>=g.redPick*0.6){s+=10;reasons.push('遗漏适中');}
+    else if(missScore>=g.redPick*0.4){s+=6;}
+    return {score:Math.round(s),reasons};
+  };
+  // 生成1000组，取评分最高的
+  const candidates=[];
+  for(let i=0;i<1000;i++){
+    const red=new Set();while(red.size<g.redPick)red.add(Math.floor(Math.random()*g.redMax)+1);
+    const redArr=[...red].sort((a,b)=>a-b);
+    const r=score(redArr);
+    candidates.push({red:redArr,score:r.score,reasons:r.reasons});
+  }
+  candidates.sort((a,b)=>b.score-a.score);
+  const selected=candidates.slice(0,count);
+  // 添加到选号列表
+  selected.forEach(item=>{
+    const blue=new Set();
+    if(g.blueMax>0)while(blue.size<g.bluePick)blue.add(Math.floor(Math.random()*g.blueMax)+1);
+    const blueArr=[...blue].sort((a,b)=>a-b);
+    const detail=lottoDesc(item.red,blueArr,g,key);
+    st.tickets.push({red:item.red,blue:blueArr,desc:`【智能推荐 ${item.score}分】${item.reasons.join('、')}。${detail}`,type:'智能推荐'});
+  });
+  document.getElementById('sResult').innerHTML=`<div style="font-size:12px;color:#6a1b9a">已生成${count}组智能推荐号码，评分范围 ${selected[selected.length-1].score}-${selected[0].score}分，已添加到选号列表</div>`;
   renderGame();
 }
 function clearAllTickets(key){if(gameState[key].tickets.length&&confirm('清空全部选号？')){gameState[key].tickets=[];renderGame();}}
