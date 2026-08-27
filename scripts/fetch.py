@@ -134,52 +134,59 @@ def extract_digit_balls(html, count):
         return digits[:count]
     return digits
 
-# ===== 双色球（从免费API抓取）=====
+# ===== 双色球（福彩官网API）=====
 def fetch_ssq():
     print("[双色球] 开始抓取...")
     
-    # 方法1：用免费API
+    # 方法1：福彩官网API（加Referer）
     try:
-        url = "https://api.apiopen.top/api/getLottery?code=ssq&count=1"
-        req = urllib.request.Request(url, headers=HEADERS)
+        url = "https://www.cwl.gov.cn/cwl_admin/front/cwlkj/search/kjxx/findDrawNotice?name=ssq&issueCount=1"
+        headers = dict(HEADERS)
+        headers["Referer"] = "https://www.cwl.gov.cn/ygkj/wqkjgg/ssq/"
+        headers["Host"] = "www.cwl.gov.cn"
+        req = urllib.request.Request(url, headers=headers)
         with urllib.request.urlopen(req, timeout=15) as resp:
             data = json.loads(resp.read().decode("utf-8"))
-        if data and data.get("code") == 200:
+        if data and data.get("state") == 0:
             result = data.get("result", [])
             if result:
                 item = result[0]
                 issue = item.get("code", "")
-                date = item.get("date", "")
+                date = item.get("date", "").split("(")[0].strip()
                 red = [int(x) for x in item.get("red", "").split(",")]
                 blue = [int(item.get("blue", "0"))]
                 if len(red) == 6 and len(blue) == 1:
                     if all(1 <= n <= 33 for n in red) and 1 <= blue[0] <= 16:
-                        print(f"[双色球] 从API获取到: {issue} {date} 红:{red} 蓝:{blue}")
+                        print(f"[双色球] 从福彩API获取到: {issue} {date} 红:{red} 蓝:{blue}")
                         return [{"issue": issue, "date": date, "red": red, "blue": blue[0]}]
     except Exception as e:
-        print(f"[双色球] API抓取失败: {e}")
+        print(f"[双色球] 福彩API抓取失败: {e}")
     
-    # 方法2：500彩票网XML
+    # 方法2：500彩票网历史数据（和大乐透同样的方法）
     try:
-        url = "https://kaijiang.500.com/static/info/kaijiang/xml/ssq/list.xml"
+        url = "https://datachart.500.com/ssq/history/newinc/history.php?start=2026001&end=2026999"
         html = fetch_html(url)
         if html:
-            issue_match = re.search(r'<row[^>]*expect="(\d+)"[^>]*opencode="([^"]+)"[^>]*opentime="([^"]+)"', html)
-            if issue_match:
-                issue = issue_match.group(1)
-                opencode = issue_match.group(2)
-                opentime = issue_match.group(3)
-                parts = opencode.split('+')
-                if len(parts) == 2:
-                    red = [int(x) for x in parts[0].split(',')]
-                    blue = [int(parts[1])]
-                    date = opentime.split(' ')[0] if ' ' in opentime else opentime
-                    if len(red) == 6 and len(blue) == 1:
+            rows = re.findall(r'<tr[^>]*class="t_tr1"[^>]*>(.*?)</tr>', html, re.DOTALL)
+            if not rows:
+                rows = re.findall(r'<tr[^>]*>(.*?)</tr>', html, re.DOTALL)
+            for row in rows[:10]:
+                # 提取所有数字（包括在各种标签中的）
+                nums = [int(x) for x in re.findall(r'>(\d{1,2})<', row)]
+                if len(nums) >= 8:
+                    # 找期号（7位）
+                    issue_match = re.search(r'>(\d{7})<', row)
+                    if issue_match:
+                        issue = issue_match.group(1)
+                        red = nums[:6]
+                        blue = [nums[6]]
+                        date_match = re.search(r'(\d{4}-\d{2}-\d{2})', row)
+                        date = date_match.group(1) if date_match else ""
                         if all(1 <= n <= 33 for n in red) and 1 <= blue[0] <= 16:
-                            print(f"[双色球] 从XML获取到: {issue} {date} 红:{red} 蓝:{blue}")
+                            print(f"[双色球] 从500历史数据获取到: {issue} {date} 红:{red} 蓝:{blue}")
                             return [{"issue": issue, "date": date, "red": red, "blue": blue[0]}]
     except Exception as e:
-        print(f"[双色球] XML抓取失败: {e}")
+        print(f"[双色球] 500历史数据抓取失败: {e}")
     
     print(f"[双色球] 解析失败，跳过")
     return []
