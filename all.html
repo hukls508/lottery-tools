@@ -636,7 +636,8 @@ function addFushi(key){
   if(g.blueMax>0&&st.fsBlue.size<g.bluePick+1){alert('蓝球至少选'+(g.bluePick+1)+'个');return;}
   const blueBet=g.blueMax>0?C(st.fsBlue.size,g.bluePick):1;
   const total=C(st.fsRed.size,g.redPick)*blueBet;
-  const desc=`复式：红球${[...st.fsRed].sort((a,b)=>a-b).map(pad).join('、')}（${st.fsRed.size}个）${g.blueMax>0?`；蓝球${[...st.fsBlue].sort((a,b)=>a-b).map(pad).join('、')}（${st.fsBlue.size}个）`:''}。共${total}注，￥${total*2}`;
+  const detail=lottoDesc([...st.fsRed],[...st.fsBlue],g,key);
+  const desc=`复式：红球${[...st.fsRed].sort((a,b)=>a-b).map(pad).join('、')}（${st.fsRed.size}个）${g.blueMax>0?`；蓝球${[...st.fsBlue].sort((a,b)=>a-b).map(pad).join('、')}（${st.fsBlue.size}个）`:''}。共${total}注，￥${total*2}。${detail}`;
   st.tickets.push({red:[...st.fsRed].sort((a,b)=>a-b),blue:[...st.fsBlue].sort((a,b)=>a-b),desc,type:'复式'});
   st.fsRed.clear();st.fsBlue.clear();renderGame();
 }
@@ -650,7 +651,10 @@ function addDantuo(key){
   const redBet=C(rt,g.redPick-rd);
   const blueBet=g.blueMax>0?C(bt,g.bluePick-bd):1;
   const total=redBet*blueBet;
-  const desc=`胆拖：红球胆${[...st.dtRedDan].sort((a,b)=>a-b).map(pad).join('、')}拖${[...st.dtRedTuo].sort((a,b)=>a-b).map(pad).join('、')}${g.blueMax>0?`；蓝球胆${st.dtBlueDan.size?[...st.dtBlueDan].map(pad).join('、'):'无'}拖${[...st.dtBlueTuo].sort((a,b)=>a-b).map(pad).join('、')}`:''}。共${total}注，￥${total*2}`;
+  const allRed=[...st.dtRedDan,...st.dtRedTuo];
+  const allBlue=[...st.dtBlueDan,...st.dtBlueTuo];
+  const detail=lottoDesc(allRed,allBlue,g,key);
+  const desc=`胆拖：红球胆${[...st.dtRedDan].sort((a,b)=>a-b).map(pad).join('、')}拖${[...st.dtRedTuo].sort((a,b)=>a-b).map(pad).join('、')}${g.blueMax>0?`；蓝球胆${st.dtBlueDan.size?[...st.dtBlueDan].map(pad).join('、'):'无'}拖${[...st.dtBlueTuo].sort((a,b)=>a-b).map(pad).join('、')}`:''}。共${total}注，￥${total*2}。${detail}`;
   st.tickets.push({red:[...st.dtRedDan,...st.dtRedTuo].sort((a,b)=>a-b),blue:[...st.dtBlueDan,...st.dtBlueTuo].sort((a,b)=>a-b),desc,type:'胆拖'});
   st.dtRedDan.clear();st.dtRedTuo.clear();st.dtBlueDan.clear();st.dtBlueTuo.clear();renderGame();
 }
@@ -677,7 +681,8 @@ function genRandom(key){
         if(g.blueMax>0){const blueCount=Math.min(g.blueMax, g.bluePick+1+Math.floor(Math.random()*3));while(blue.size<blueCount)blue.add(Math.floor(Math.random()*g.blueMax)+1);}
         const blueBet=g.blueMax>0?C(blue.size,g.bluePick):1;
         const total=C(red.size,g.redPick)*blueBet;
-        const desc=`复式：红球${[...red].sort((a,b)=>a-b).map(pad).join('、')}（${red.size}个）${g.blueMax>0?`；蓝球${[...blue].sort((a,b)=>a-b).map(pad).join('、')}（${blue.size}个）`:''}。共${total}注，￥${total*2}`;
+        const detail=lottoDesc([...red],[...blue],g,key);
+        const desc=`复式：红球${[...red].sort((a,b)=>a-b).map(pad).join('、')}（${red.size}个）${g.blueMax>0?`；蓝球${[...blue].sort((a,b)=>a-b).map(pad).join('、')}（${blue.size}个）`:''}。共${total}注，￥${total*2}。${detail}`;
         st.tickets.push({red:[...red].sort((a,b)=>a-b),blue:[...blue].sort((a,b)=>a-b),desc,type:'复式'});
       }else if(st.playMode==='dantuo'&&g.supportDT){
         // 胆拖随机：红球胆1-4个，拖码5-10个，蓝球胆0-1个，拖码2-4个
@@ -695,7 +700,10 @@ function genRandom(key){
         const redBet=C(redTuo.size,g.redPick-redDan.size);
         const blueBet=g.blueMax>0?C(blueTuo.size,g.bluePick-blueDan.size):1;
         const total=redBet*blueBet;
-        const desc=`胆拖：红球胆${[...redDan].sort((a,b)=>a-b).map(pad).join('、')}拖${[...redTuo].sort((a,b)=>a-b).map(pad).join('、')}${g.blueMax>0?`；蓝球胆${blueDan.size?[...blueDan].map(pad).join('、'):'无'}拖${[...blueTuo].sort((a,b)=>a-b).map(pad).join('、')}`:''}。共${total}注，￥${total*2}`;
+        const allRed=[...redDan,...redTuo];
+        const allBlue=[...blueDan,...blueTuo];
+        const detail=lottoDesc(allRed,allBlue,g,key);
+        const desc=`胆拖：红球胆${[...redDan].sort((a,b)=>a-b).map(pad).join('、')}拖${[...redTuo].sort((a,b)=>a-b).map(pad).join('、')}${g.blueMax>0?`；蓝球胆${blueDan.size?[...blueDan].map(pad).join('、'):'无'}拖${[...blueTuo].sort((a,b)=>a-b).map(pad).join('、')}`:''}。共${total}注，￥${total*2}。${detail}`;
         st.tickets.push({red:[...redDan,...redTuo].sort((a,b)=>a-b),blue:[...blueDan,...blueTuo].sort((a,b)=>a-b),desc,type:'胆拖'});
       }else{
         // 单式随机
