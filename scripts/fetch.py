@@ -1,4 +1,3 @@
-
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
@@ -36,7 +35,6 @@ def fetch_html(url, retries=3, delay=2):
 
 def parse_date_from_html(html):
     """从HTML中提取开奖日期"""
-    # 尝试多种日期格式
     patterns = [
         r'(\d{4})年(\d{1,2})月(\d{1,2})日',
         r'(\d{4})-(\d{1,2})-(\d{1,2})',
@@ -52,21 +50,65 @@ def parse_date_from_html(html):
 
 def parse_issue_from_html(html):
     """从HTML中提取期号"""
-    # 尝试匹配5-7位数字期号
     for m in re.finditer(r'>(\d{5,7})<', html):
         issue = m.group(1)
-        # 排除年份等明显不是期号的数字
-        if not issue.startswith('202') or len(issue) != 4:
+        if not (issue.startswith('202') and len(issue) == 4):
             return issue
     return ""
 
-def extract_balls(html, class_patterns):
-    """根据class模式提取号码球"""
+def extract_all_balls(html):
+    """提取所有号码球（不去重，保持顺序）"""
     balls = []
-    for pat in class_patterns:
+    # 匹配各种class的号码球
+    patterns = [
+        r'class="ball[^"]*"[^>]*>(\d+)<',
+        r'class="qiu[^"]*"[^>]*>(\d+)<',
+        r'class="num[^"]*"[^>]*>(\d+)<',
+        r'<li[^>]*class="[^"]*ball[^"]*"[^>]*>(\d+)<',
+        r'<em[^>]*>(\d+)</em>',
+        r'<span[^>]*class="[^"]*"[^>]*>(\d{1,2})</span>',
+    ]
+    for pat in patterns:
         found = re.findall(pat, html)
-        balls.extend([int(x) for x in found if x.isdigit()])
+        for x in found:
+            if x.isdigit() and len(x) <= 2:
+                balls.append(int(x))
     return balls
+
+def extract_lotto_balls(html, red_count, blue_count, red_max, blue_max):
+    """提取乐透型号码（去重）"""
+    all_balls = extract_all_balls(html)
+    # 去重但保持顺序
+    seen = set()
+    unique = []
+    for n in all_balls:
+        if n not in seen:
+            seen.add(n)
+            unique.append(n)
+    
+    # 筛选有效号码
+    red_valid = [n for n in unique if 1 <= n <= red_max]
+    blue_valid = [n for n in unique if 1 <= n <= blue_max]
+    
+    # 尝试从位置区分：前red_count个是红，接下来blue_count个是蓝
+    if len(red_valid) >= red_count and len(blue_valid) >= blue_count:
+        # 用原始顺序取前red_count个作为红球，接下来的作为蓝球
+        red = red_valid[:red_count]
+        # 蓝球从剩余的里面取
+        remaining = [n for n in unique if n not in red and 1 <= n <= blue_max]
+        blue = remaining[:blue_count] if remaining else blue_valid[:blue_count]
+        return red, blue
+    
+    return [], []
+
+def extract_digit_balls(html, count):
+    """提取数字型号码（不去重）"""
+    all_balls = extract_all_balls(html)
+    # 数字型只取0-9
+    digits = [n for n in all_balls if 0 <= n <= 9]
+    if len(digits) >= count:
+        return digits[:count]
+    return digits
 
 # ===== 双色球 =====
 def fetch_ssq():
@@ -79,18 +121,9 @@ def fetch_ssq():
     
     issue = parse_issue_from_html(html)
     date = parse_date_from_html(html)
+    red, blue = extract_lotto_balls(html, 6, 1, 33, 16)
     
-    # 提取红球（ball_red）和蓝球（ball_blue）
-    red = extract_balls(html, [r'ball_red[^>]*>(\d+)<', r'class="ball[^"]*red[^"]*"[^>]*>(\d+)<'])
-    blue = extract_balls(html, [r'ball_blue[^>]*>(\d+)<', r'class="ball[^"]*blue[^"]*"[^>]*>(\d+)<'])
-    
-    # 去重并保持顺序
-    red = list(dict.fromkeys(red))
-    blue = list(dict.fromkeys(blue))
-    
-    if len(red) >= 6 and len(blue) >= 1:
-        red = red[:6]
-        blue = blue[:1]
+    if len(red) == 6 and len(blue) == 1:
         if all(1 <= n <= 33 for n in red) and 1 <= blue[0] <= 16:
             print(f"[双色球] 获取到最新一期: {issue} {date} 红:{red} 蓝:{blue}")
             return [{"issue": issue, "date": date, "red": red, "blue": blue[0]}]
@@ -109,17 +142,9 @@ def fetch_dlt():
     
     issue = parse_issue_from_html(html)
     date = parse_date_from_html(html)
+    front, back = extract_lotto_balls(html, 5, 2, 35, 12)
     
-    # 提取前区（ball_red）和后区（ball_blue）
-    front = extract_balls(html, [r'ball_red[^>]*>(\d+)<', r'class="ball[^"]*red[^"]*"[^>]*>(\d+)<'])
-    back = extract_balls(html, [r'ball_blue[^>]*>(\d+)<', r'class="ball[^"]*blue[^"]*"[^>]*>(\d+)<'])
-    
-    front = list(dict.fromkeys(front))
-    back = list(dict.fromkeys(back))
-    
-    if len(front) >= 5 and len(back) >= 2:
-        front = front[:5]
-        back = back[:2]
+    if len(front) == 5 and len(back) == 2:
         if all(1 <= n <= 35 for n in front) and all(1 <= n <= 12 for n in back):
             print(f"[大乐透] 获取到最新一期: {issue} {date} 前:{front} 后:{back}")
             return [{"issue": issue, "date": date, "front": front, "back": back}]
@@ -138,17 +163,9 @@ def fetch_p3():
     
     issue = parse_issue_from_html(html)
     date = parse_date_from_html(html)
+    digits = extract_digit_balls(html, 3)
     
-    # 提取号码（ball_orange 或 ball_red）
-    digits = extract_balls(html, [
-        r'ball_orange[^>]*>(\d+)<',
-        r'ball_red[^>]*>(\d+)<',
-        r'class="ball[^"]*"[^>]*>(\d+)<'
-    ])
-    digits = list(dict.fromkeys(digits))
-    
-    if len(digits) >= 3:
-        digits = digits[:3]
+    if len(digits) == 3:
         if all(0 <= n <= 9 for n in digits):
             print(f"[排列3] 获取到最新一期: {issue} {date} {digits}")
             return [{"issue": issue, "date": date, "digits": digits}]
@@ -167,16 +184,9 @@ def fetch_p5():
     
     issue = parse_issue_from_html(html)
     date = parse_date_from_html(html)
+    digits = extract_digit_balls(html, 5)
     
-    digits = extract_balls(html, [
-        r'ball_orange[^>]*>(\d+)<',
-        r'ball_red[^>]*>(\d+)<',
-        r'class="ball[^"]*"[^>]*>(\d+)<'
-    ])
-    digits = list(dict.fromkeys(digits))
-    
-    if len(digits) >= 5:
-        digits = digits[:5]
+    if len(digits) == 5:
         if all(0 <= n <= 9 for n in digits):
             print(f"[排列5] 获取到最新一期: {issue} {date} {digits}")
             return [{"issue": issue, "date": date, "digits": digits}]
@@ -195,12 +205,9 @@ def fetch_qxc():
     
     issue = parse_issue_from_html(html)
     date = parse_date_from_html(html)
-    
-    digits = extract_balls(html, [
-        r'ball_orange[^>]*>(\d+)<',
-        r'class="ball[^"]*"[^>]*>(\d+)<'
-    ])
-    digits = list(dict.fromkeys(digits))
+    # 7星彩前6位是0-9，最后一位是0-14
+    all_balls = extract_all_balls(html)
+    digits = [n for n in all_balls if 0 <= n <= 14]
     
     if len(digits) >= 7:
         digits = digits[:7]
@@ -258,19 +265,14 @@ def main():
     print("=" * 50)
     updated = False
     
-    # 双色球
     if update_lottery("双色球", fetch_ssq, "ssq.json"): updated = True
     print()
-    # 大乐透
     if update_lottery("大乐透", fetch_dlt, "dlt.json"): updated = True
     print()
-    # 排列3
     if update_lottery("排列3", fetch_p3, "p3.json"): updated = True
     print()
-    # 排列5
     if update_lottery("排列5", fetch_p5, "p5.json"): updated = True
     print()
-    # 7星彩
     if update_lottery("7星彩", fetch_qxc, "qxc.json"): updated = True
     print()
     
