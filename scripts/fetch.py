@@ -134,46 +134,71 @@ def extract_digit_balls(html, count):
         return digits[:count]
     return digits
 
-# ===== 双色球 =====
+# ===== 双色球（从中彩网抓取）=====
 def fetch_ssq():
     print("[双色球] 开始抓取...")
+    # 尝试500彩票网
     url = "https://kaijiang.500.com/ssq.shtml"
     html = fetch_html(url)
-    if not html:
-        print("[双色球] 抓取失败，跳过")
-        return []
-    
-    issue = parse_issue_from_html(html)
-    date = parse_date_from_html(html)
-    red, blue = extract_lotto_balls(html, 6, 1, 33, 16)
-    
-    if len(red) == 6 and len(blue) == 1:
-        if all(1 <= n <= 33 for n in red) and 1 <= blue[0] <= 16:
-            print(f"[双色球] 获取到最新一期: {issue} {date} 红:{red} 蓝:{blue}")
+    if html:
+        issue = parse_issue_from_html(html)
+        date = parse_date_from_html(html)
+        red, blue = extract_lotto_balls(html, 6, 1, 33, 16)
+        if len(red) == 6 and len(blue) == 1:
+            print(f"[双色球] 从500彩票网获取到: {issue} {date} 红:{red} 蓝:{blue}")
             return [{"issue": issue, "date": date, "red": red, "blue": blue[0]}]
     
-    print(f"[双色球] 解析失败 red:{red} blue:{blue}，跳过")
+    # 备用：从中彩网抓取
+    print("[双色球] 500彩票网失败，尝试中彩网...")
+    url2 = "https://www.zhcw.com/kjxx/ssq/"
+    html2 = fetch_html(url2)
+    if html2:
+        # 中彩网页面编码可能是utf-8
+        try:
+            html2 = html2.encode('latin-1').decode('utf-8')
+        except:
+            pass
+        issue = parse_issue_from_html(html2)
+        date = parse_date_from_html(html2)
+        red, blue = extract_lotto_balls(html2, 6, 1, 33, 16)
+        if len(red) == 6 and len(blue) == 1:
+            print(f"[双色球] 从中彩网获取到: {issue} {date} 红:{red} 蓝:{blue}")
+            return [{"issue": issue, "date": date, "red": red, "blue": blue[0]}]
+    
+    print(f"[双色球] 解析失败，跳过")
     return []
 
-# ===== 大乐透 =====
+# ===== 大乐透（从中彩网抓取）=====
 def fetch_dlt():
     print("[大乐透] 开始抓取...")
+    # 尝试500彩票网
     url = "https://kaijiang.500.com/dlt.shtml"
     html = fetch_html(url)
-    if not html:
-        print("[大乐透] 抓取失败，跳过")
-        return []
-    
-    issue = parse_issue_from_html(html)
-    date = parse_date_from_html(html)
-    front, back = extract_lotto_balls(html, 5, 2, 35, 12)
-    
-    if len(front) == 5 and len(back) == 2:
-        if all(1 <= n <= 35 for n in front) and all(1 <= n <= 12 for n in back):
-            print(f"[大乐透] 获取到最新一期: {issue} {date} 前:{front} 后:{back}")
+    if html:
+        issue = parse_issue_from_html(html)
+        date = parse_date_from_html(html)
+        front, back = extract_lotto_balls(html, 5, 2, 35, 12)
+        if len(front) == 5 and len(back) == 2:
+            print(f"[大乐透] 从500彩票网获取到: {issue} {date} 前:{front} 后:{back}")
             return [{"issue": issue, "date": date, "front": front, "back": back}]
     
-    print(f"[大乐透] 解析失败 front:{front} back:{back}，跳过")
+    # 备用：从中彩网抓取
+    print("[大乐透] 500彩票网失败，尝试中彩网...")
+    url2 = "https://www.zhcw.com/kjxx/dlt/"
+    html2 = fetch_html(url2)
+    if html2:
+        try:
+            html2 = html2.encode('latin-1').decode('utf-8')
+        except:
+            pass
+        issue = parse_issue_from_html(html2)
+        date = parse_date_from_html(html2)
+        front, back = extract_lotto_balls(html2, 5, 2, 35, 12)
+        if len(front) == 5 and len(back) == 2:
+            print(f"[大乐透] 从中彩网获取到: {issue} {date} 前:{front} 后:{back}")
+            return [{"issue": issue, "date": date, "front": front, "back": back}]
+    
+    print(f"[大乐透] 解析失败，跳过")
     return []
 
 # ===== 排列3 =====
