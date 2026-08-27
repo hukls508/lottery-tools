@@ -137,34 +137,43 @@ def extract_digit_balls(html, count):
 # ===== 双色球（从500彩票网历史数据抓取）=====
 def fetch_ssq():
     print("[双色球] 开始抓取...")
-    # 用500彩票网历史数据页面（结构更清晰）
+    # 用500彩票网历史数据页面
     url = "https://datachart.500.com/ssq/history/newinc/history.php?start=2026001&end=2026999"
     html = fetch_html(url)
     if not html:
         print("[双色球] 抓取失败，跳过")
         return []
     
-    # 解析表格行，每一行是一期数据
-    # 格式：期号 日期 红球1 红球2 ... 红球6 蓝球 ...
+    # 解析表格行
     rows = re.findall(r'<tr[^>]*class="t_tr1"[^>]*>(.*?)</tr>', html, re.DOTALL)
     if not rows:
         rows = re.findall(r'<tr[^>]*>(.*?)</tr>', html, re.DOTALL)
     
-    for row in rows[:5]:  # 只看前5期
-        # 提取所有td中的数字
+    print(f"[双色球] 找到 {len(rows)} 行数据")
+    
+    for row in rows[:10]:
+        # 提取所有td中的内容
         tds = re.findall(r'<td[^>]*>(.*?)</td>', row, re.DOTALL)
         nums = []
         for td in tds:
-            # 提取td中的数字（去除标签）
             clean = re.sub(r'<[^>]+>', '', td).strip()
-            if clean.isdigit() and len(clean) <= 2:
+            if clean.isdigit():
                 nums.append(int(clean))
         
-        if len(nums) >= 8:  # 期号+6红+1蓝 = 至少8个数字
-            issue = str(nums[0]) if nums[0] > 1000 else f"2026{nums[0]:03d}"
-            red = nums[1:7]
-            blue = [nums[7]]
-            # 提取日期
+        print(f"[双色球] 一行数字: {nums[:15]}")
+        
+        # 双色球格式：期号(7位) + 6红 + 1蓝 + 其他
+        # 找到第一个大于10000的数字作为期号起点
+        start_idx = -1
+        for i, n in enumerate(nums):
+            if n > 20000 and n < 300000:  # 期号范围
+                start_idx = i
+                break
+        
+        if start_idx >= 0 and len(nums) >= start_idx + 8:
+            issue = str(nums[start_idx])
+            red = nums[start_idx+1:start_idx+7]
+            blue = [nums[start_idx+7]]
             date_match = re.search(r'(\d{4}-\d{2}-\d{2})', row)
             date = date_match.group(1) if date_match else ""
             
