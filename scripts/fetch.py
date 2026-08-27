@@ -134,69 +134,82 @@ def extract_digit_balls(html, count):
         return digits[:count]
     return digits
 
-# ===== 双色球（从中彩网抓取）=====
+# ===== 双色球（从500彩票网历史数据抓取）=====
 def fetch_ssq():
     print("[双色球] 开始抓取...")
-    # 尝试500彩票网
-    url = "https://kaijiang.500.com/ssq.shtml"
+    # 用500彩票网历史数据页面（结构更清晰）
+    url = "https://datachart.500.com/ssq/history/newinc/history.php?start=2026001&end=2026999"
     html = fetch_html(url)
-    if html:
-        issue = parse_issue_from_html(html)
-        date = parse_date_from_html(html)
-        red, blue = extract_lotto_balls(html, 6, 1, 33, 16)
-        if len(red) == 6 and len(blue) == 1:
-            print(f"[双色球] 从500彩票网获取到: {issue} {date} 红:{red} 蓝:{blue}")
-            return [{"issue": issue, "date": date, "red": red, "blue": blue[0]}]
+    if not html:
+        print("[双色球] 抓取失败，跳过")
+        return []
     
-    # 备用：从中彩网抓取
-    print("[双色球] 500彩票网失败，尝试中彩网...")
-    url2 = "https://www.zhcw.com/kjxx/ssq/"
-    html2 = fetch_html(url2)
-    if html2:
-        # 中彩网页面编码可能是utf-8
-        try:
-            html2 = html2.encode('latin-1').decode('utf-8')
-        except:
-            pass
-        issue = parse_issue_from_html(html2)
-        date = parse_date_from_html(html2)
-        red, blue = extract_lotto_balls(html2, 6, 1, 33, 16)
-        if len(red) == 6 and len(blue) == 1:
-            print(f"[双色球] 从中彩网获取到: {issue} {date} 红:{red} 蓝:{blue}")
-            return [{"issue": issue, "date": date, "red": red, "blue": blue[0]}]
+    # 解析表格行，每一行是一期数据
+    # 格式：期号 日期 红球1 红球2 ... 红球6 蓝球 ...
+    rows = re.findall(r'<tr[^>]*class="t_tr1"[^>]*>(.*?)</tr>', html, re.DOTALL)
+    if not rows:
+        rows = re.findall(r'<tr[^>]*>(.*?)</tr>', html, re.DOTALL)
+    
+    for row in rows[:5]:  # 只看前5期
+        # 提取所有td中的数字
+        tds = re.findall(r'<td[^>]*>(.*?)</td>', row, re.DOTALL)
+        nums = []
+        for td in tds:
+            # 提取td中的数字（去除标签）
+            clean = re.sub(r'<[^>]+>', '', td).strip()
+            if clean.isdigit() and len(clean) <= 2:
+                nums.append(int(clean))
+        
+        if len(nums) >= 8:  # 期号+6红+1蓝 = 至少8个数字
+            issue = str(nums[0]) if nums[0] > 1000 else f"2026{nums[0]:03d}"
+            red = nums[1:7]
+            blue = [nums[7]]
+            # 提取日期
+            date_match = re.search(r'(\d{4}-\d{2}-\d{2})', row)
+            date = date_match.group(1) if date_match else ""
+            
+            if len(red) == 6 and len(blue) == 1:
+                if all(1 <= n <= 33 for n in red) and 1 <= blue[0] <= 16:
+                    print(f"[双色球] 获取到最新一期: {issue} {date} 红:{red} 蓝:{blue}")
+                    return [{"issue": issue, "date": date, "red": red, "blue": blue[0]}]
     
     print(f"[双色球] 解析失败，跳过")
     return []
 
-# ===== 大乐透（从中彩网抓取）=====
+# ===== 大乐透（从500彩票网历史数据抓取）=====
 def fetch_dlt():
     print("[大乐透] 开始抓取...")
-    # 尝试500彩票网
-    url = "https://kaijiang.500.com/dlt.shtml"
+    # 用500彩票网历史数据页面（结构更清晰）
+    url = "https://datachart.500.com/dlt/history/newinc/history.php?start=26001&end=26999"
     html = fetch_html(url)
-    if html:
-        issue = parse_issue_from_html(html)
-        date = parse_date_from_html(html)
-        front, back = extract_lotto_balls(html, 5, 2, 35, 12)
-        if len(front) == 5 and len(back) == 2:
-            print(f"[大乐透] 从500彩票网获取到: {issue} {date} 前:{front} 后:{back}")
-            return [{"issue": issue, "date": date, "front": front, "back": back}]
+    if not html:
+        print("[大乐透] 抓取失败，跳过")
+        return []
     
-    # 备用：从中彩网抓取
-    print("[大乐透] 500彩票网失败，尝试中彩网...")
-    url2 = "https://www.zhcw.com/kjxx/dlt/"
-    html2 = fetch_html(url2)
-    if html2:
-        try:
-            html2 = html2.encode('latin-1').decode('utf-8')
-        except:
-            pass
-        issue = parse_issue_from_html(html2)
-        date = parse_date_from_html(html2)
-        front, back = extract_lotto_balls(html2, 5, 2, 35, 12)
-        if len(front) == 5 and len(back) == 2:
-            print(f"[大乐透] 从中彩网获取到: {issue} {date} 前:{front} 后:{back}")
-            return [{"issue": issue, "date": date, "front": front, "back": back}]
+    # 解析表格行
+    rows = re.findall(r'<tr[^>]*class="t_tr1"[^>]*>(.*?)</tr>', html, re.DOTALL)
+    if not rows:
+        rows = re.findall(r'<tr[^>]*>(.*?)</tr>', html, re.DOTALL)
+    
+    for row in rows[:5]:
+        tds = re.findall(r'<td[^>]*>(.*?)</td>', row, re.DOTALL)
+        nums = []
+        for td in tds:
+            clean = re.sub(r'<[^>]+>', '', td).strip()
+            if clean.isdigit() and len(clean) <= 2:
+                nums.append(int(clean))
+        
+        if len(nums) >= 8:  # 期号+5前+2后 = 至少8个数字
+            issue = str(nums[0]) if nums[0] > 1000 else f"26{nums[0]:03d}"
+            front = nums[1:6]
+            back = nums[6:8]
+            date_match = re.search(r'(\d{4}-\d{2}-\d{2})', row)
+            date = date_match.group(1) if date_match else ""
+            
+            if len(front) == 5 and len(back) == 2:
+                if all(1 <= n <= 35 for n in front) and all(1 <= n <= 12 for n in back):
+                    print(f"[大乐透] 获取到最新一期: {issue} {date} 前:{front} 后:{back}")
+                    return [{"issue": issue, "date": date, "front": front, "back": back}]
     
     print(f"[大乐透] 解析失败，跳过")
     return []
