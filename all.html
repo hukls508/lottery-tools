@@ -251,7 +251,7 @@ async function loadGameData(key){
     // 统一数据格式
     gameState[key].data=raw.map(d=>{
       if(g.type==='lotto'){
-        let red=d.red||d.front||[];
+        let red=d.red||d.front||d.numbers||[];
         let blue=d.blue!==undefined?d.blue:(d.back||[]);
         if(!Array.isArray(red))red=[red];
         if(!Array.isArray(blue))blue=[blue];
@@ -302,12 +302,13 @@ function renderHistory(key){
   if(g.type==='lotto'){
     const mid=Math.ceil(g.redMax/2);
     data.forEach(d=>{
-      const reds=d.red.map(n=>`<span class="ball ${g.redClass}">${pad(n)}</span>`).join('');
-      const blues=g.blueMax>0?d.blue.map(n=>`<span class="ball ${g.blueClass}">${pad(n)}</span>`).join(''):'';
-      const sum=d.red.reduce((a,b)=>a+b,0);
-      const odd=d.red.filter(n=>n%2).length;
-      const big=d.red.filter(n=>n>mid).length;
-      rows+=`<tr><td>${d.issue}</td><td>${d.date.slice(5)}</td><td>${reds}${blues?' + '+blues:''}</td><td>${sum}</td><td>${odd}:${d.red.length-odd}</td><td>${big}:${d.red.length-big}</td></tr>`;
+      const reds=(d.red||d.numbers).map(n=>`<span class="ball ${g.redClass}">${pad(n)}</span>`).join('');
+      const blues=g.blueMax>0&&d.blue?d.blue.map(n=>`<span class="ball ${g.blueClass}">${pad(n)}</span>`).join(''):'';
+      const redArr=d.red||d.numbers;
+      const sum=redArr.reduce((a,b)=>a+b,0);
+      const odd=redArr.filter(n=>n%2).length;
+      const big=redArr.filter(n=>n>mid).length;
+      rows+=`<tr><td>${d.issue}</td><td>${d.date.slice(5)}</td><td>${reds}${blues?' + '+blues:''}</td><td>${sum}</td><td>${odd}:${redArr.length-odd}</td><td>${big}:${redArr.length-big}</td></tr>`;
     });
   }else{
     data.forEach(d=>{
