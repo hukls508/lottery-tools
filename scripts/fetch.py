@@ -205,29 +205,36 @@ def fetch_dlt():
         rows = re.findall(r'<tr[^>]*>(.*?)</tr>', html, re.DOTALL)
     
     for row in rows[:5]:
-        # 提取期号：从链接或第一个td中提取5位数字
-        issue_match = re.search(r'<a[^>]*>(26\d{3})</a>', row)
-        if not issue_match:
-            issue_match = re.search(r'>(26\d{3})<', row)
-        if not issue_match:
-            issue_match = re.search(r'>(\d{5})<', row)
+        # 提取所有td内容
+        tds = re.findall(r'<td[^>]*>(.*?)</td>', row, re.DOTALL)
+        if len(tds) < 9:
+            continue
         
+        # 第一个td是期号，提取5位数字
+        issue_text = re.sub(r'<[^>]+>', '', tds[0]).strip()
+        issue_match = re.search(r'(26\d{3})', issue_text)
+        if not issue_match:
+            # 尝试从整个行中找期号链接
+            issue_match = re.search(r'<a[^>]*>(26\d{3})</a>', row)
         if not issue_match:
             continue
-            
+        
         issue = issue_match.group(1)
         
-        # 提取所有号码数字（排除期号）
-        all_nums = [int(x) for x in re.findall(r'>(\d{1,2})<', row)]
-        # 排除期号相关数字
-        issue_int = int(issue)
-        nums = [n for n in all_nums if n != issue_int and n != int(issue[-3:])]
+        # 提取号码球（带chartball class的）
+        balls = re.findall(r'class="chartball\d+"[^>]*>(\d{1,2})<', row)
+        if len(balls) < 7:
+            # 备用：从td中提取1-2位数字，跳过期号和日期
+            balls = []
+            for td in tds[2:10]:
+                num_match = re.search(r'>(\d{1,2})<', td)
+                if num_match:
+                    balls.append(num_match.group(1))
         
-        # 前5个是前区，后2个是后区
-        if len(nums) >= 7:
-            front = nums[:5]
-            back = nums[5:7]
-            date_match = re.search(r'(\d{4}-\d{2}-\d{2})', row)
+        if len(balls) >= 7:
+            front = [int(x) for x in balls[:5]]
+            back = [int(x) for x in balls[5:7]]
+            date_match = re.search(r'(\d{4}-\d{2}-\d{2})', tds[1] if len(tds) > 1 else row)
             date = date_match.group(1) if date_match else ""
             
             if len(front) == 5 and len(back) == 2:
