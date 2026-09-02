@@ -334,6 +334,109 @@ def fetch_qxc():
     print(f"[7星彩] 解析失败 digits:{digits}，跳过")
     return []
 
+# ===== 福彩3D（福彩官网API）=====
+def fetch_3d():
+    print("[3D] 开始抓取...")
+    try:
+        url = "https://www.cwl.gov.cn/cwl_admin/front/cwlkj/search/kjxx/findDrawNotice?name=3d&issueCount=1"
+        headers = dict(HEADERS)
+        headers["Referer"] = "https://www.cwl.gov.cn/ygkj/wqkjgg/3d/"
+        req = urllib.request.Request(url, headers=headers)
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+        if data and data.get("state") == 0:
+            result = data.get("result", [])
+            if result:
+                item = result[0]
+                issue = item.get("code", "")
+                date = item.get("date", "").split("(")[0].strip()
+                digits = [int(x) for x in item.get("red", "").split(",")]
+                if len(digits) == 3:
+                    if all(0 <= n <= 9 for n in digits):
+                        print(f"[3D] 获取到最新一期: {issue} {date} {digits}")
+                        return [{"issue": issue, "date": date, "digits": digits}]
+    except Exception as e:
+        print(f"[3D] 福彩API抓取失败: {e}")
+    
+    # 备用：500彩票网
+    try:
+        url = "https://kaijiang.500.com/sd.shtml"
+        html = fetch_html(url)
+        if html:
+            issue = parse_issue_from_html(html)
+            date = parse_date_from_html(html)
+            digits = extract_digit_balls(html, 3)
+            if len(digits) == 3 and all(0 <= n <= 9 for n in digits):
+                print(f"[3D] 从500获取到: {issue} {date} {digits}")
+                return [{"issue": issue, "date": date, "digits": digits}]
+    except Exception as e:
+        print(f"[3D] 500抓取失败: {e}")
+    
+    print(f"[3D] 解析失败，跳过")
+    return []
+
+# ===== 快乐8（福彩官网API）=====
+def fetch_kl8():
+    print("[快乐8] 开始抓取...")
+    try:
+        url = "https://www.cwl.gov.cn/cwl_admin/front/cwlkj/search/kjxx/findDrawNotice?name=kl8&issueCount=1"
+        headers = dict(HEADERS)
+        headers["Referer"] = "https://www.cwl.gov.cn/ygkj/wqkjgg/kl8/"
+        req = urllib.request.Request(url, headers=headers)
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+        if data and data.get("state") == 0:
+            result = data.get("result", [])
+            if result:
+                item = result[0]
+                issue = item.get("code", "")
+                date = item.get("date", "").split("(")[0].strip()
+                numbers = [int(x) for x in item.get("red", "").split(",")]
+                if len(numbers) == 20:
+                    if all(1 <= n <= 80 for n in numbers):
+                        print(f"[快乐8] 获取到最新一期: {issue} {date}")
+                        return [{"issue": issue, "date": date, "numbers": numbers}]
+    except Exception as e:
+        print(f"[快乐8] 福彩API抓取失败: {e}")
+    
+    print(f"[快乐8] 解析失败，跳过")
+    return []
+
+# ===== 15选5（备用源，地方彩种即将停售）=====
+def fetch_15x5():
+    print("[15选5] 开始抓取...")
+    try:
+        url = "https://www.jxfczx.cn/report/15X5_WinMessage.aspx"
+        headers = dict(HEADERS)
+        req = urllib.request.Request(url, headers=headers)
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            html = resp.read().decode("utf-8", errors="ignore")
+        issue_match = re.search(r'2026(\d{3})', html)
+        if issue_match:
+            issue = "2026" + issue_match.group(1)
+            date_match = re.search(r'(\d{4})[.\-/](\d{1,2})[.\-/](\d{1,2})', html)
+            date = date_match.group(0) if date_match else ""
+            # 提取5个1-15的数字
+            all_nums = re.findall(r'>(\d{1,2})<', html)
+            valid_nums = [int(n) for n in all_nums if 1 <= int(n) <= 15]
+            # 去重保持顺序
+            seen = set()
+            numbers = []
+            for n in valid_nums:
+                if n not in seen:
+                    seen.add(n)
+                    numbers.append(n)
+                if len(numbers) == 5:
+                    break
+            if len(numbers) == 5:
+                print(f"[15选5] 获取到最新一期: {issue} {date} {numbers}")
+                return [{"issue": issue, "date": date, "numbers": numbers}]
+    except Exception as e:
+        print(f"[15选5] 抓取失败: {e}")
+    
+    print(f"[15选5] 解析失败，跳过（地方彩种，源不稳定）")
+    return []
+
 # ===== 通用函数 =====
 def load_json(filepath):
     if not os.path.exists(filepath):
@@ -388,6 +491,9 @@ def main():
     # 大乐透
     if update_lottery("大乐透", fetch_dlt, "dlt.json"): updated = True
     print()
+    # 3D
+    if update_lottery("3D", fetch_3d, "3d.json"): updated = True
+    print()
     # 排列3
     if update_lottery("排列3", fetch_p3, "p3.json"): updated = True
     print()
@@ -396,6 +502,9 @@ def main():
     print()
     # 7星彩
     if update_lottery("7星彩", fetch_qxc, "qxc.json"): updated = True
+    print()
+    # 快乐8
+    if update_lottery("快乐8", fetch_kl8, "kl8.json"): updated = True
     print()
     
     print("=" * 50)
