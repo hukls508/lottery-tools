@@ -1,0 +1,37 @@
+name: 自动更新开奖数据
+
+on:
+  # 每天北京时间22:30自动运行（UTC 14:30）
+  # 双色球周二/四/日21:15开奖，大乐透周一/三/六21:25开奖
+  schedule:
+    - cron: '30 14 * * *'
+  # 支持手动触发
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 设置 Python 环境
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: 运行抓取脚本
+        id: fetch
+        run: python scripts/fetch.py
+
+      - name: 提交更新
+        if: steps.fetch.outputs.updated == 'true'
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add data/*.json
+          git commit -m "自动更新开奖数据 $(date '+%Y-%m-%d')"
+          git push
