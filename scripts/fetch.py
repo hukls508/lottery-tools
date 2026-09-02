@@ -138,12 +138,11 @@ def extract_digit_balls(html, count):
 def fetch_ssq():
     print("[双色球] 开始抓取...")
     
-    # 方法1：福彩官网API（加Referer）
+    # 福彩官网API
     try:
         url = "https://www.cwl.gov.cn/cwl_admin/front/cwlkj/search/kjxx/findDrawNotice?name=ssq&issueCount=1"
         headers = dict(HEADERS)
         headers["Referer"] = "https://www.cwl.gov.cn/ygkj/wqkjgg/ssq/"
-        headers["Host"] = "www.cwl.gov.cn"
         req = urllib.request.Request(url, headers=headers)
         with urllib.request.urlopen(req, timeout=15) as resp:
             data = json.loads(resp.read().decode("utf-8"))
@@ -162,31 +161,48 @@ def fetch_ssq():
     except Exception as e:
         print(f"[双色球] 福彩API抓取失败: {e}")
     
-    # 方法2：500彩票网历史数据（和大乐透同样的方法）
+    # 备用：500彩票网
     try:
         url = "https://datachart.500.com/ssq/history/newinc/history.php?start=2026001&end=2026999"
         html = fetch_html(url)
         if html:
-            rows = re.findall(r'<tr[^>]*class="t_tr1"[^>]*>(.*?)</tr>', html, re.DOTALL)
-            if not rows:
-                rows = re.findall(r'<tr[^>]*>(.*?)</tr>', html, re.DOTALL)
-            for row in rows[:10]:
-                # 提取所有数字（包括在各种标签中的）
-                nums = [int(x) for x in re.findall(r'>(\d{1,2})<', row)]
-                if len(nums) >= 8:
-                    # 找期号（7位）
-                    issue_match = re.search(r'>(\d{7})<', row)
-                    if issue_match:
-                        issue = issue_match.group(1)
-                        red = nums[:6]
-                        blue = [nums[6]]
-                        date_match = re.search(r'(\d{4}-\d{2}-\d{2})', row)
-                        date = date_match.group(1) if date_match else ""
-                        if all(1 <= n <= 33 for n in red) and 1 <= blue[0] <= 16:
-                            print(f"[双色球] 从500历史数据获取到: {issue} {date} 红:{red} 蓝:{blue}")
-                            return [{"issue": issue, "date": date, "red": red, "blue": blue[0]}]
+            rows = re.findall(r'<tr[^>]*>(.*?)</tr>', html, re.DOTALL)
+            for row in rows:
+                if not re.search(r'2026\d{3}', row):
+                    continue
+                tds = re.findall(r'<td[^>]*>(.*?)</td>', row, re.DOTALL)
+                if len(tds) < 8:
+                    continue
+                # 期号
+                issue = ""
+                for td in tds[:3]:
+                    text = re.sub(r'<[^>]+>', '', td).strip()
+                    m = re.search(r'(2026\d{3})', text)
+                    if m:
+                        issue = m.group(1)
+                        break
+                if not issue:
+                    continue
+                # 号码
+                all_nums = []
+                for td in tds:
+                    text = re.sub(r'<[^>]+>', '', td).strip()
+                    if text.isdigit() and 1 <= int(text) <= 33:
+                        all_nums.append(int(text))
+                if len(all_nums) >= 7:
+                    red = all_nums[:6]
+                    blue = [all_nums[6]]
+                    date = ""
+                    for td in tds:
+                        m = re.search(r'(\d{4}-\d{2}-\d{2})', td)
+                        if m:
+                            date = m.group(1)
+                            break
+                    if all(1 <= n <= 33 for n in red) and 1 <= blue[0] <= 16:
+                        print(f"[双色球] 从500获取到: {issue} {date} 红:{red} 蓝:{blue}")
+                        return [{"issue": issue, "date": date, "red": red, "blue": blue[0]}]
     except Exception as e:
-        print(f"[双色球] 500历史数据抓取失败: {e}")
+        print(f"[双色球] 500抓取失败: {e}")
     
     print(f"[双色球] 解析失败，跳过")
     return []
@@ -201,46 +217,53 @@ def fetch_dlt():
         return []
     
     rows = re.findall(r'<tr[^>]*class="t_tr1"[^>]*>(.*?)</tr>', html, re.DOTALL)
-    if not rows:
-        rows = re.findall(r'<tr[^>]*>(.*?)</tr>', html, re.DOTALL)
     
-    for row in rows[:5]:
-        # 提取所有td内容
+    for row in rows:
         tds = re.findall(r'<td[^>]*>(.*?)</td>', row, re.DOTALL)
-        if len(tds) < 9:
+        if len(tds) < 10:
             continue
         
-        # 第一个td是期号，提取5位数字
-        issue_text = re.sub(r'<[^>]+>', '', tds[0]).strip()
-        issue_match = re.search(r'(26\d{3})', issue_text)
-        if not issue_match:
-            # 尝试从整个行中找期号链接
-            issue_match = re.search(r'<a[^>]*>(26\d{3})</a>', row)
-        if not issue_match:
+        # 期号：找26开头的5位数字
+        issue = ""
+        for td in tds[:3]:
+            text = re.sub(r'<[^>]+>', '', td).strip()
+            m = re.search(r'(26\d{3})', text)
+            if m:
+                issue = m.group(1)
+                break
+        if not issue:
             continue
         
-        issue = issue_match.group(1)
+        # 前区号码：cfont2类，5个
+        front_balls = re.findall(r'class="cfont2"[^>]*>(\d{1,2})<', row)
+        # 后区号码：cfont4类，2个
+        back_balls = re.findall(r'class="cfont4"[^>]*>(\d{1,2})<', row)
         
-        # 提取号码球（带chartball class的）
-        balls = re.findall(r'class="chartball\d+"[^>]*>(\d{1,2})<', row)
-        if len(balls) < 7:
-            # 备用：从td中提取1-2位数字，跳过期号和日期
-            balls = []
-            for td in tds[2:10]:
-                num_match = re.search(r'>(\d{1,2})<', td)
-                if num_match:
-                    balls.append(num_match.group(1))
+        # 备用方案：从td中提取
+        if len(front_balls) < 5 or len(back_balls) < 2:
+            all_nums = []
+            for td in tds[2:9]:
+                text = re.sub(r'<[^>]+>', '', td).strip()
+                if text.isdigit() and 1 <= int(text) <= 35:
+                    all_nums.append(int(text))
+            if len(all_nums) >= 7:
+                front_balls = [str(x) for x in all_nums[:5]]
+                back_balls = [str(x) for x in all_nums[5:7]]
         
-        if len(balls) >= 7:
-            front = [int(x) for x in balls[:5]]
-            back = [int(x) for x in balls[5:7]]
-            date_match = re.search(r'(\d{4}-\d{2}-\d{2})', tds[1] if len(tds) > 1 else row)
-            date = date_match.group(1) if date_match else ""
+        if len(front_balls) >= 5 and len(back_balls) >= 2:
+            front = [int(x) for x in front_balls[:5]]
+            back = [int(x) for x in back_balls[:2]]
+            # 日期：找YYYY-MM-DD格式
+            date = ""
+            for td in tds:
+                m = re.search(r'(\d{4}-\d{2}-\d{2})', td)
+                if m:
+                    date = m.group(1)
+                    break
             
-            if len(front) == 5 and len(back) == 2:
-                if all(1 <= n <= 35 for n in front) and all(1 <= n <= 12 for n in back):
-                    print(f"[大乐透] 获取到最新一期: {issue} {date} 前:{front} 后:{back}")
-                    return [{"issue": issue, "date": date, "front": front, "back": back}]
+            if all(1 <= n <= 35 for n in front) and all(1 <= n <= 12 for n in back):
+                print(f"[大乐透] 获取到最新一期: {issue} {date} 前:{front} 后:{back}")
+                return [{"issue": issue, "date": date, "front": front, "back": back}]
     
     print(f"[大乐透] 解析失败，跳过")
     return []
@@ -358,9 +381,9 @@ def main():
     print("=" * 50)
     updated = False
     
-    # 双色球暂时禁用（福彩API 403，500彩票网页面结构解析不了）
-    # if update_lottery("双色球", fetch_ssq, "ssq.json"): updated = True
-    # print()
+    # 双色球
+    if update_lottery("双色球", fetch_ssq, "ssq.json"): updated = True
+    print()
     
     # 大乐透
     if update_lottery("大乐透", fetch_dlt, "dlt.json"): updated = True
