@@ -143,6 +143,8 @@ def fetch_ssq():
         url = "https://www.cwl.gov.cn/cwl_admin/front/cwlkj/search/kjxx/findDrawNotice?name=ssq&issueCount=1"
         headers = dict(HEADERS)
         headers["Referer"] = "https://www.cwl.gov.cn/ygkj/wqkjgg/ssq/"
+        headers["X-Requested-With"] = "XMLHttpRequest"
+        headers["Accept"] = "application/json, text/javascript, */*; q=0.01"
         req = urllib.request.Request(url, headers=headers)
         with urllib.request.urlopen(req, timeout=15) as resp:
             data = json.loads(resp.read().decode("utf-8"))
@@ -161,46 +163,35 @@ def fetch_ssq():
     except Exception as e:
         print(f"[双色球] 福彩API抓取失败: {e}")
     
-    # 备用：500彩票网
+    # 备用：500彩票网（直接获取，简化解析）
     try:
         url = "https://datachart.500.com/ssq/history/newinc/history.php?start=2026001&end=2026999"
-        html = fetch_html(url)
-        if html:
-            rows = re.findall(r'<tr[^>]*>(.*?)</tr>', html, re.DOTALL)
-            for row in rows:
-                if not re.search(r'2026\d{3}', row):
-                    continue
-                tds = re.findall(r'<td[^>]*>(.*?)</td>', row, re.DOTALL)
-                if len(tds) < 8:
-                    continue
-                # 期号
-                issue = ""
-                for td in tds[:3]:
-                    text = re.sub(r'<[^>]+>', '', td).strip()
-                    m = re.search(r'(2026\d{3})', text)
-                    if m:
-                        issue = m.group(1)
-                        break
-                if not issue:
-                    continue
-                # 号码
-                all_nums = []
-                for td in tds:
-                    text = re.sub(r'<[^>]+>', '', td).strip()
-                    if text.isdigit() and 1 <= int(text) <= 33:
-                        all_nums.append(int(text))
-                if len(all_nums) >= 7:
-                    red = all_nums[:6]
-                    blue = [all_nums[6]]
-                    date = ""
-                    for td in tds:
-                        m = re.search(r'(\d{4}-\d{2}-\d{2})', td)
-                        if m:
-                            date = m.group(1)
-                            break
-                    if all(1 <= n <= 33 for n in red) and 1 <= blue[0] <= 16:
-                        print(f"[双色球] 从500获取到: {issue} {date} 红:{red} 蓝:{blue}")
-                        return [{"issue": issue, "date": date, "red": red, "blue": blue[0]}]
+        headers = dict(HEADERS)
+        headers["Referer"] = "https://datachart.500.com/ssq/history/"
+        req = urllib.request.Request(url, headers=headers)
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            html = resp.read().decode("gbk", errors="ignore")
+        # 提取每行数据
+        rows = re.findall(r'<tr[^>]*>(.*?)</tr>', html, re.DOTALL)
+        for row in rows:
+            issue_match = re.search(r'(2026\d{3})', row)
+            if not issue_match:
+                continue
+            issue = issue_match.group(1)
+            date_match = re.search(r'(\d{4}-\d{2}-\d{2})', row)
+            date = date_match.group(1) if date_match else ""
+            # 提取所有1-33的数字，前6个红球，第7个蓝球
+            all_nums = []
+            for num_str in re.findall(r'>(\d{1,2})<', row):
+                n = int(num_str)
+                if 1 <= n <= 33:
+                    all_nums.append(n)
+            if len(all_nums) >= 7:
+                red = sorted(all_nums[:6])
+                blue = [all_nums[6]]
+                if len(red) == 6 and 1 <= blue[0] <= 16:
+                    print(f"[双色球] 从500获取到: {issue} {date} 红:{red} 蓝:{blue}")
+                    return [{"issue": issue, "date": date, "red": red, "blue": blue[0]}]
     except Exception as e:
         print(f"[双色球] 500抓取失败: {e}")
     
@@ -341,6 +332,8 @@ def fetch_3d():
         url = "https://www.cwl.gov.cn/cwl_admin/front/cwlkj/search/kjxx/findDrawNotice?name=3d&issueCount=1"
         headers = dict(HEADERS)
         headers["Referer"] = "https://www.cwl.gov.cn/ygkj/wqkjgg/3d/"
+        headers["X-Requested-With"] = "XMLHttpRequest"
+        headers["Accept"] = "application/json, text/javascript, */*; q=0.01"
         req = urllib.request.Request(url, headers=headers)
         with urllib.request.urlopen(req, timeout=15) as resp:
             data = json.loads(resp.read().decode("utf-8"))
@@ -382,6 +375,8 @@ def fetch_kl8():
         url = "https://www.cwl.gov.cn/cwl_admin/front/cwlkj/search/kjxx/findDrawNotice?name=kl8&issueCount=1"
         headers = dict(HEADERS)
         headers["Referer"] = "https://www.cwl.gov.cn/ygkj/wqkjgg/kl8/"
+        headers["X-Requested-With"] = "XMLHttpRequest"
+        headers["Accept"] = "application/json, text/javascript, */*; q=0.01"
         req = urllib.request.Request(url, headers=headers)
         with urllib.request.urlopen(req, timeout=15) as resp:
             data = json.loads(resp.read().decode("utf-8"))
