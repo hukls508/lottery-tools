@@ -187,7 +187,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Micr
 <div class="sub-tabs" id="fc-tabs">
   <div class="sub-tab active" onclick="switchGame('ssq',this)">双色球</div>
   <div class="sub-tab" onclick="switchGame('3d',this)">福彩3D</div>
-  <div class="sub-tab" onclick="switchGame('15x5',this)">15选5</div>
   <div class="sub-tab" onclick="switchGame('kl8',this)">快乐8</div>
 </div>
 <!-- 体育彩票子tab -->
@@ -215,7 +214,6 @@ function C(n,k){if(k<0||k>n)return 0;if(k===0||k===n)return 1;k=Math.min(k,n-k);
 const GAMES = {
   ssq:{name:'双色球',cat:'fc',type:'lotto',redMax:33,redPick:6,blueMax:16,bluePick:1,redClass:'ball-red',blueClass:'ball-blue',data:'data/ssq.json',supportDT:true,supportFS:true},
   '3d':{name:'福彩3D',cat:'fc',type:'digit',digits:3,maxes:[9,9,9],labels:['百位','十位','个位'],data:'data/3d.json',supportDT:false,supportFS:false},
-  '15x5':{name:'15选5',cat:'fc',type:'lotto',redMax:15,redPick:5,blueMax:0,bluePick:0,redClass:'ball-orange',blueClass:'',data:'data/15x5.json',supportDT:false,supportFS:true},
   kl8:{name:'快乐8',cat:'fc',type:'lotto',redMax:80,redPick:20,blueMax:0,bluePick:0,redClass:'ball-green',blueClass:'',data:'data/kl8.json',supportDT:false,supportFS:false,pickRange:[1,10]},
   dlt:{name:'大乐透',cat:'tc',type:'lotto',redMax:35,redPick:5,blueMax:12,bluePick:2,redClass:'ball-red',blueClass:'ball-blue',data:'data/dlt.json',supportDT:true,supportFS:true},
   p3:{name:'排列3',cat:'tc',type:'digit',digits:3,maxes:[9,9,9],labels:['百位','十位','个位'],data:'data/p3.json',supportDT:false,supportFS:false},
