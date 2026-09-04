@@ -23,6 +23,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Micr
 .game-card:hover::before{transform:translate(-20%,-20%)}
 .game-card.fc{background:linear-gradient(135deg,#ff6b9d 0%,#ee5a6f 100%)}
 .game-card.tc{background:linear-gradient(135deg,#4facfe 0%,#00f2fe 100%)}
+.game-card.lucky{background:linear-gradient(135deg,#f6d365 0%,#fda085 100%);grid-column:1/-1}
 .game-card .icon{font-size:36px;margin-bottom:10px;position:relative;z-index:1}
 .game-card .name{font-size:22px;font-weight:bold;margin-bottom:6px;position:relative;z-index:1}
 .game-card .desc{font-size:12px;opacity:.95;line-height:1.6;position:relative;z-index:1}
@@ -64,6 +65,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Micr
       <div class="icon">🏆</div>
       <div class="name">体育彩票</div>
       <div class="desc">大乐透 · 排列3 · 排列5 · 7星彩</div>
+    </a>
+    <a class="game-card lucky" href="lucky.html">
+      <div class="icon">🍀</div>
+      <div class="name">幸运数字生成</div>
+      <div class="desc">输入生日、幸运数字、生肖，生成专属于你的彩票号码 · 幸运指数评分</div>
     </a>
   </div>
   <div class="latest-section">

@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>幸运数字生成 - 锦鲤选号</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;background:linear-gradient(135deg,#f6d365 0%,#fda085 100%);min-height:100vh;padding:20px}
+.container{max-width:600px;margin:0 auto}
+.header{text-align:center;color:#fff;margin-bottom:20px;padding:20px 0}
+.header h1{font-size:28px;margin-bottom:8px;text-shadow:0 2px 10px rgba(0,0,0,.15)}
+.header p{font-size:14px;opacity:.9}
+.back-btn{display:inline-block;background:rgba(255,255,255,.25);color:#fff;padding:8px 16px;border-radius:20px;text-decoration:none;font-size:13px;margin-bottom:12px;backdrop-filter:blur(10px)}
+.tabs{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap}
+.tab{flex:1;min-width:70px;padding:12px 4px;text-align:center;background:rgba(255,255,255,.3);color:#fff;border-radius:12px;cursor:pointer;font-size:12px;font-weight:500;transition:all .3s;backdrop-filter:blur(10px)}
+.tab.active{background:#fff;color:#e67e22;box-shadow:0 4px 15px rgba(0,0,0,.15)}
+.tab .tab-icon{font-size:18px;display:block;margin-bottom:2px}
+.card{background:#fff;border-radius:20px;padding:24px;margin-bottom:16px;box-shadow:0 10px 40px rgba(0,0,0,.1)}
+.card-title{font-size:16px;font-weight:bold;color:#333;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.form-group{margin-bottom:16px}
+.form-label{display:block;font-size:13px;color:#666;margin-bottom:6px;font-weight:500}
+.form-input{width:100%;padding:12px 14px;border:1.5px solid #e0e0e0;border-radius:10px;font-size:14px;transition:border-color .3s;outline:none}
+.form-input:focus{border-color:#f6d365}
+.form-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.lucky-nums{display:flex;gap:8px;flex-wrap:wrap}
+.lucky-num{width:40px;height:40px;border-radius:50%;border:2px solid #e0e0e0;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:bold;color:#999;cursor:pointer;transition:all .25s;background:#f8f9fa}
+.lucky-num.selected{background:linear-gradient(135deg,#f6d365,#fda085);color:#fff;border-color:transparent;transform:scale(1.05);box-shadow:0 4px 12px rgba(253,160,133,.4)}
+.zodiac-grid,.constellation-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.zodiac-item,.constellation-item{padding:10px 4px;text-align:center;border:1.5px solid #e0e0e0;border-radius:10px;font-size:12px;cursor:pointer;transition:all .25s;background:#f8f9fa}
+.zodiac-item.selected,.constellation-item.selected{background:linear-gradient(135deg,#f6d365,#fda085);color:#fff;border-color:transparent}
+.game-select{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.game-option{padding:12px;text-align:center;border:1.5px solid #e0e0e0;border-radius:10px;font-size:13px;cursor:pointer;transition:all .25s;background:#f8f9fa;font-weight:500}
+.game-option.selected{background:linear-gradient(135deg,#f6d365,#fda085);color:#fff;border-color:transparent}
+.count-selector{display:flex;gap:10px;align-items:center}
+.count-btn{width:36px;height:36px;border-radius:50%;border:1.5px solid #e0e0e0;background:#fff;font-size:18px;cursor:pointer;transition:all .2s}
+.count-btn:hover{background:#f6d365;color:#fff;border-color:transparent}
+.count-num{font-size:20px;font-weight:bold;min-width:30px;text-align:center}
+.generate-btn{width:100%;padding:16px;background:linear-gradient(135deg,#f6d365,#fda085);color:#fff;border:none;border-radius:12px;font-size:16px;font-weight:bold;cursor:pointer;transition:all .3s;box-shadow:0 4px 15px rgba(253,160,133,.4)}
+.generate-btn:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(253,160,133,.5)}
+.generate-btn:disabled{background:#ccc;cursor:not-allowed;transform:none;box-shadow:none}
+.result-card{background:linear-gradient(135deg,#fff9e6 0%,#fff 100%);border:2px solid #f6d365;border-radius:16px;padding:20px;margin-bottom:14px;position:relative;overflow:hidden}
+.result-card::before{content:'🍀';position:absolute;top:10px;right:14px;font-size:24px;opacity:.3}
+.result-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.result-index{font-size:14px;font-weight:bold;color:#e67e22}
+.lucky-score{display:flex;align-items:center;gap:6px}
+.score-bar{width:80px;height:8px;background:#eee;border-radius:4px;overflow:hidden}
+.score-fill{height:100%;background:linear-gradient(90deg,#f6d365,#fda085);border-radius:4px;transition:width .5s}
+.score-text{font-size:12px;font-weight:bold;color:#e67e22}
+.result-nums{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.ball{display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:50%;font-size:14px;font-weight:bold;color:#fff;box-shadow:0 2px 6px rgba(0,0,0,.2),inset 0 1px 2px rgba(255,255,255,.3)}
+.ball-red{background:linear-gradient(135deg,#ff6b6b,#e74c3c)}
+.ball-blue{background:linear-gradient(135deg,#74b9ff,#3498db)}
+.ball-digit{background:linear-gradient(135deg,#ff6b6b,#e74c3c)}
+.result-desc{font-size:12px;color:#666;line-height:1.7;background:#fff;border-radius:8px;padding:10px 12px}
+.result-desc strong{color:#e67e22}
+.add-btn{display:inline-block;margin-top:10px;padding:8px 16px;background:#e67e22;color:#fff;border:none;border-radius:8px;font-size:12px;cursor:pointer;text-decoration:none}
+.tips{background:#fff8e1;border-left:4px solid #f6d365;padding:12px 16px;border-radius:8px;font-size:12px;color:#856404;line-height:1.7}
+.footer{text-align:center;color:#fff;font-size:11px;padding:20px 0;line-height:1.7;opacity:.9}
+@media(max-width:480px){.zodiac-grid,.constellation-grid{grid-template-columns:repeat(3,1fr)}.form-row{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+<div class="container">
+  <a href="index.html" class="back-btn">← 返回首页</a>
+  <div class="header">
+    <h1>🍀 专属号码生成</h1>
+    <p>每种方式每天可生成一次</p>
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('birthday')">
+      <span class="tab-icon">📅</span>生日选号
+    </div>
+    <div class="tab" onclick="switchTab('lucky')">
+      <span class="tab-icon">🍀</span>幸运数字
+    </div>
+    <div class="tab" onclick="switchTab('zodiac')">
+      <span class="tab-icon">🐉</span>生肖选号
+    </div>
+    <div class="tab" onclick="switchTab('constellation')">
+      <span class="tab-icon">⭐</span>星座选号
+    </div>
+  </div>
+
+  <!-- 生日选号 -->
+  <div id="panel-birthday">
+    <div class="card">
+      <div class="card-title">📅 输入你的生日</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">年</label>
+          <input type="number" id="birthYear" class="form-input" placeholder="1995" min="1950" max="2026">
+        </div>
+        <div class="form-group">
+          <label class="form-label">月</label>
+          <input type="number" id="birthMonth" class="form-input" placeholder="03" min="1" max="12">
+        </div>
+        <div class="form-group">
+          <label class="form-label">日</label>
+          <input type="number" id="birthDay" class="form-input" placeholder="27" min="1" max="31">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">选择彩种</label>
+        <div class="game-select" id="gameSelect-bd"></div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">生成注数</label>
+        <div class="count-selector">
+          <button class="count-btn" onclick="changeCount('bd',-1)">−</button>
+          <span class="count-num" id="countNum-bd">3</span>
+          <button class="count-btn" onclick="changeCount('bd',1)">+</button>
+          <span style="font-size:12px;color:#999;margin-left:10px">注（1-5组）</span>
+        </div>
+      </div>
+      <button class="generate-btn" id="genBtn-bd" onclick="generate('birthday')">✨ 生成生日专属号码</button>
+    </div>
+    <div id="results-birthday" style="display:none"></div>
+  </div>
+
+  <!-- 幸运数字 -->
+  <div id="panel-lucky" style="display:none">
+    <div class="card">
+      <div class="card-title">🍀 选择幸运数字（1-3个）</div>
+      <div class="lucky-nums" id="luckyNums"></div>
+      <div class="form-group" style="margin-top:16px">
+        <label class="form-label">选择彩种</label>
+        <div class="game-select" id="gameSelect-lk"></div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">生成注数</label>
+        <div class="count-selector">
+          <button class="count-btn" onclick="changeCount('lk',-1)">−</button>
+          <span class="count-num" id="countNum-lk">3</span>
+          <button class="count-btn" onclick="changeCount('lk',1)">+</button>
+          <span style="font-size:12px;color:#999;margin-left:10px">注（1-5组）</span>
+        </div>
+      </div>
+      <button class="generate-btn" id="genBtn-lk" onclick="generate('lucky')">✨ 生成幸运数字号码</button>
+    </div>
+    <div id="results-lucky" style="display:none"></div>
+  </div>
+
+  <!-- 生肖选号 -->
+  <div id="panel-zodiac" style="display:none">
+    <div class="card">
+      <div class="card-title">🐉 选择你的生肖</div>
+      <div class="zodiac-grid" id="zodiacGrid"></div>
+      <div class="form-group" style="margin-top:16px">
+        <label class="form-label">选择彩种</label>
+        <div class="game-select" id="gameSelect-zd"></div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">生成注数</label>
+        <div class="count-selector">
+          <button class="count-btn" onclick="changeCount('zd',-1)">−</button>
+          <span class="count-num" id="countNum-zd">3</span>
+          <button class="count-btn" onclick="changeCount('zd',1)">+</button>
+          <span style="font-size:12px;color:#999;margin-left:10px">注（1-5组）</span>
+        </div>
+      </div>
+      <button class="generate-btn" id="genBtn-zd" onclick="generate('zodiac')">✨ 生成生肖专属号码</button>
+    </div>
+    <div id="results-zodiac" style="display:none"></div>
+  </div>
+
+  <!-- 星座选号 -->
+  <div id="panel-constellation" style="display:none">
+    <div class="card">
+      <div class="card-title">⭐ 选择你的星座</div>
+      <div class="constellation-grid" id="constellationGrid"></div>
+      <div class="form-group" style="margin-top:16px">
+        <label class="form-label">选择彩种</label>
+        <div class="game-select" id="gameSelect-cs"></div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">生成注数</label>
+        <div class="count-selector">
+          <button class="count-btn" onclick="changeCount('cs',-1)">−</button>
+          <span class="count-num" id="countNum-cs">3</span>
+          <button class="count-btn" onclick="changeCount('cs',1)">+</button>
+          <span style="font-size:12px;color:#999;margin-left:10px">注（1-5组）</span>
+        </div>
+      </div>
+      <button class="generate-btn" id="genBtn-cs" onclick="generate('constellation')">✨ 生成星座专属号码</button>
+    </div>
+    <div id="results-constellation" style="display:none"></div>
+  </div>
+
+  <div class="tips" style="margin-top:16px">
+    <strong>💡 说明：</strong><br>
+    · 每种方式（生日/幸运数字/生肖/星座）每天可生成一次<br>
+    · 生成后当天无法再次生成，第二天0点重置<br>
+    · 仅供娱乐参考，彩票开奖为随机事件，理性购彩
+  </div>
+
+  <div class="footer">
+    ⚠️ 免责声明：本工具仅供娱乐参考，彩票开奖为独立随机事件<br>
+    过往数据不代表未来走势，不构成任何投注建议。彩票有风险，投注需谨慎。
+  </div>
+</div>
+
+<script>
+const ZODIAC_NUMS = {
+  '鼠':[2,14,26],'牛':[1,13,25],'虎':[3,15,27],'兔':[4,16,28],
+  '龙':[6,18,30],'蛇':[5,17,29],'马':[7,19,31],'羊':[8,20,32],
+  '猴':[9,21,33],'鸡':[10,22,12],'狗':[11,23,13],'猪':[12,24,14]
+};
+const ZODIACS = ['鼠','牛','虎','兔','龙','蛇','马','羊','猴','鸡','狗','猪'];
+
+const CONSTELLATION_NUMS = {
+  '白羊座':[1,9,17],'金牛座':[2,6,15],'双子座':[3,7,19],'巨蟹座':[4,8,22],
+  '狮子座':[5,10,21],'处女座':[6,12,25],'天秤座':[7,11,23],'天蝎座':[8,13,27],
+  '射手座':[9,14,29],'摩羯座':[10,16,28],'水瓶座':[11,18,31],'双鱼座':[12,20,33]
+};
+const CONSTELLATIONS = ['白羊座','金牛座','双子座','巨蟹座','狮子座','处女座','天秤座','天蝎座','射手座','摩羯座','水瓶座','双鱼座'];
+
+const GAMES = [
+  {key:'ssq',name:'双色球',red:6,redMax:33,blue:1,blueMax:16,type:'lotto'},
+  {key:'dlt',name:'大乐透',red:5,redMax:35,blue:2,blueMax:12,type:'lotto'},
+  {key:'3d',name:'福彩3D',digits:3,type:'digit'},
+  {key:'p3',name:'排列3',digits:3,type:'digit'},
+  {key:'p5',name:'排列5',digits:5,type:'digit'},
+  {key:'qxc',name:'7星彩',digits:7,type:'digit'}
+];
+
+const TABS = ['birthday','lucky','zodiac','constellation'];
+const TAB_KEYS = {birthday:'bd',lucky:'lk',zodiac:'zd',constellation:'cs'};
+
+let currentTab = 'birthday';
+let selectedLucky = [];
+let selectedZodiac = '';
+let selectedConstellation = '';
+let selectedGames = {birthday:'ssq',lucky:'ssq',zodiac:'ssq',constellation:'ssq'};
+let genCounts = {birthday:3,lucky:3,zodiac:3,constellation:3};
+
+function getToday(){return new Date().toISOString().slice(0,10);}
+function isGenerated(type){return false;}
+function setGenerated(type){localStorage.setItem('lucky_gen_'+type,getToday());}
+
+function switchTab(tab){
+  currentTab = tab;
+  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',TABS[i]===tab));
+  TABS.forEach(t=>{document.getElementById('panel-'+t).style.display = t===tab?'block':'none';});
+  checkLock();
+}
+
+function checkLock(){
+  TABS.forEach(type=>{
+    const btn = document.getElementById('genBtn-'+TAB_KEYS[type]);
+    if(btn&&isGenerated(type)){btn.disabled=true;btn.textContent='✅ 今日已生成，明天再来';}
+  });
+}
+
+function initLuckyNums(){
+  const container = document.getElementById('luckyNums');
+  for(let i=1;i<=33;i++){
+    const div = document.createElement('div');
+    div.className='lucky-num';div.textContent=String(i).padStart(2,'0');
+    div.onclick=()=>{
+      const idx=selectedLucky.indexOf(i);
+      if(idx>=0){selectedLucky.splice(idx,1);div.classList.remove('selected');}
+      else{if(selectedLucky.length>=3){alert('最多选3个幸运数字');return;}selectedLucky.push(i);div.classList.add('selected');}
+    };
+    container.appendChild(div);
+  }
+}
+
+function initZodiac(){
+  const grid=document.getElementById('zodiacGrid');
+  ZODIACS.forEach(z=>{
+    const div=document.createElement('div');div.className='zodiac-item';div.textContent=z;
+    div.onclick=()=>{document.querySelectorAll('#zodiacGrid .zodiac-item').forEach(i=>i.classList.remove('selected'));div.classList.add('selected');selectedZodiac=z;};
+    grid.appendChild(div);
+  });
+}
+
+function initConstellation(){
+  const grid=document.getElementById('constellationGrid');
+  CONSTELLATIONS.forEach(c=>{
+    const div=document.createElement('div');div.className='constellation-item';div.textContent=c;
+    div.onclick=()=>{document.querySelectorAll('#constellationGrid .constellation-item').forEach(i=>i.classList.remove('selected'));div.classList.add('selected');selectedConstellation=c;};
+    grid.appendChild(div);
+  });
+}
+
+function initGames(panelId,type){
+  const container=document.getElementById('gameSelect-'+panelId);
+  GAMES.forEach(g=>{
+    const div=document.createElement('div');
+    div.className='game-option'+(g.key===selectedGames[type]?' selected':'');
+    div.textContent=g.name;
+    div.onclick=()=>{container.querySelectorAll('.game-option').forEach(i=>i.classList.remove('selected'));div.classList.add('selected');selectedGames[type]=g.key;};
+    container.appendChild(div);
+  });
+}
+
+function changeCount(type,delta){
+  const key=TAB_KEYS[type];
+  genCounts[type]=Math.max(1,Math.min(5,genCounts[type]+delta));
+  document.getElementById('countNum-'+key).textContent=genCounts[type];
+}
+
+// 生成号码池
+function getPool(maxNum,type,exclude=[]){
+  let pool=[];
+  if(type==='birthday'){
+    const year=parseInt(document.getElementById('birthYear').value)||0;
+    const month=parseInt(document.getElementById('birthMonth').value)||0;
+    const day=parseInt(document.getElementById('birthDay').value)||0;
+    const special=[];
+    if(month>=1&&month<=maxNum)special.push(month);
+    if(day>=1&&day<=maxNum)special.push(day);
+    if(year){const y2=year%100;if(y2>=1&&y2<=maxNum)special.push(y2);const y1=year%10;if(y1>=1&&y1<=maxNum)special.push(y1);}
+    special.forEach(n=>{for(let i=0;i<3;i++)pool.push(n);});
+  }else if(type==='zodiac'){
+    if(selectedZodiac&&ZODIAC_NUMS[selectedZodiac]){ZODIAC_NUMS[selectedZodiac].forEach(n=>{if(n<=maxNum)for(let i=0;i<3;i++)pool.push(n);});}
+  }else if(type==='constellation'){
+    if(selectedConstellation&&CONSTELLATION_NUMS[selectedConstellation]){CONSTELLATION_NUMS[selectedConstellation].forEach(n=>{if(n<=maxNum)for(let i=0;i<3;i++)pool.push(n);});}
+  }
+  // type==='lucky' 特殊处理，在generate函数里单独处理
+  for(let i=1;i<=maxNum;i++){if(!exclude.includes(i))pool.push(i);}
+  return pool;
+}
+
+function weightedPick(pool,count){
+  const result=[];const available=[...pool];
+  while(result.length<count&&available.length>0){
+    const idx=Math.floor(Math.random()*available.length);
+    const n=available[idx];
+    if(!result.includes(n)){result.push(n);for(let i=available.length-1;i>=0;i--){if(available[i]===n)available.splice(i,1);}}
+  }
+  return result.sort((a,b)=>a-b);
+}
+
+function calcScore(nums,maxNum,type){
+  let matchCount=0,totalSpecial=0;
+  if(type==='birthday'){
+    const year=parseInt(document.getElementById('birthYear').value)||0;
+    const month=parseInt(document.getElementById('birthMonth').value)||0;
+    const day=parseInt(document.getElementById('birthDay').value)||0;
+    if(month>=1&&month<=maxNum){totalSpecial++;if(nums.includes(month))matchCount++;}
+    if(day>=1&&day<=maxNum){totalSpecial++;if(nums.includes(day))matchCount++;}
+    if(year){const y2=year%100;if(y2>=1&&y2<=maxNum){totalSpecial++;if(nums.includes(y2))matchCount++;}}
+  }else if(type==='lucky'){
+    selectedLucky.forEach(n=>{if(n<=maxNum){totalSpecial++;if(nums.includes(n))matchCount++;}});
+  }else if(type==='zodiac'){
+    if(selectedZodiac&&ZODIAC_NUMS[selectedZodiac]){ZODIAC_NUMS[selectedZodiac].forEach(n=>{if(n<=maxNum){totalSpecial++;if(nums.includes(n))matchCount++;}});}
+  }else if(type==='constellation'){
+    if(selectedConstellation&&CONSTELLATION_NUMS[selectedConstellation]){CONSTELLATION_NUMS[selectedConstellation].forEach(n=>{if(n<=maxNum){totalSpecial++;if(nums.includes(n))matchCount++;}});}
+  }
+  if(totalSpecial===0)return 50;
+  return Math.min(100,Math.round(40+(matchCount/totalSpecial)*60));
+}
+
+function genDesc(nums,maxNum,type,score){
+  const isHigh = score>=95;
+  if(type==='birthday'){
+    const month=parseInt(document.getElementById('birthMonth').value)||0;
+    const day=parseInt(document.getElementById('birthDay').value)||0;
+    const match=[];
+    if(month>=1&&month<=maxNum&&nums.includes(month))match.push(String(month).padStart(2,'0'));
+    if(day>=1&&day<=maxNum&&nums.includes(day))match.push(String(day).padStart(2,'0'));
+    if(match.length>0){
+      if(isHigh)return `🎂 <strong>生日密码解锁！</strong>这组号码暗藏你的生命数字 ${match.join('、')}，那是你与生俱来的幸运印记，天选之号非你莫属！`;
+      return `📅 生日数字现身！${match.join('、')}藏在这组号码里，带着你出生时的好运，稳中有喜，值得一试~`;
+    }
+    if(isHigh)return `✨ <strong>生日光环笼罩！</strong>虽然没有直接出现生日数字，但整组号码的能量场与你的生辰高度契合，幸运值拉满，惊喜正在路上！`;
+    return `🌙 以退为进的智慧！这组号码避开了你的生日数字，反而留出了更多惊喜空间，暗藏玄机，也许意外之喜就在其中~`;
+  }
+  if(type==='lucky'){
+    const match=selectedLucky.filter(n=>n<=maxNum&&nums.includes(n)).map(n=>String(n).padStart(2,'0'));
+    if(match.length>0){
+      if(isHigh)return `🍀 <strong>幸运数字降临！</strong>你选的 ${match.join('、')} 赫然在列，这是专属于你的幸运暗号，今天它要为你带来好运，天选之号！`;
+      return `⭐ 幸运数字闪现！${match.join('、')}出现在这组号码中，带着你的专属好运，稳中有喜，值得期待~`;
+    }
+    if(isHigh)return `🎭 <strong>幸运的另一种形态！</strong>你选的数字没有直接出现，但它们的能量已经融入整组号码，幸运以更神秘的方式降临，惊喜值得等待~`;
+    return `🔮 保持神秘才更有趣！这组号码巧妙避开了你的幸运数字，以退为进，反而可能带来意外惊喜，有时候不按套路出牌才是真幸运~`;
+  }
+  if(type==='zodiac'){
+    if(selectedZodiac&&ZODIAC_NUMS[selectedZodiac]){
+      const match=ZODIAC_NUMS[selectedZodiac].filter(n=>n<=maxNum&&nums.includes(n)).map(n=>String(n).padStart(2,'0'));
+      if(match.length>0){
+        if(isHigh)return `🐉 <strong>生肖守护显灵！</strong>属${selectedZodiac}的你，幸运号 ${match.join('、')} 出现在这组号码中，本命守护力拉满，天选之号就是它！`;
+        return `🐲 生肖幸运号现身！${match.join('、')}带着属${selectedZodiac}人的专属好运，稳扎稳打，值得期待~`;
+      }
+    }
+    if(isHigh)return `🌟 <strong>生肖气场笼罩！</strong>虽然幸运号没有直接出现，但整组号码都沐浴在你的生肖守护之下，好运环绕，幸运值爆棚~`;
+    return `☁️ 守护一直在！生肖${selectedZodiac}的守护力不需要直接出现，它以更隐蔽的方式护佑着这组号码，好运一直在身边~`;
+  }
+  if(type==='constellation'){
+    if(selectedConstellation&&CONSTELLATION_NUMS[selectedConstellation]){
+      const match=CONSTELLATION_NUMS[selectedConstellation].filter(n=>n<=maxNum&&nums.includes(n)).map(n=>String(n).padStart(2,'0'));
+      if(match.length>0){
+        if(isHigh)return `⭐ <strong>星座能量爆发！</strong>${selectedConstellation}的幸运号 ${match.join('、')} 出现在这组号码中，星象大吉，天选之号非你莫属！`;
+        return `🌟 星座幸运号闪现！${match.join('、')}带着${selectedConstellation}的专属能量，稳中有喜，值得一试~`;
+      }
+    }
+    if(isHigh)return `✨ <strong>星象指引！</strong>虽然幸运号没有直接出现，但整组号码的排列完全契合你的星座运势，幸运值爆棚，惊喜正在酝酿~`;
+    return `🌙 星座的守护很含蓄！这组号码没有直接出现幸运号，但${selectedConstellation}的星象指引一直都在，好运藏在细节里~`;
+  }
+  return '🎲 本期为随机组合，下次再试试~';
+}
+
+function generate(type){
+  if(isGenerated(type)){alert('今天已经生成过了，明天再来吧~');return;}
+  const typeNames={birthday:'生日',lucky:'幸运数字',zodiac:'生肖',constellation:'星座'};
+  const key=TAB_KEYS[type];
+
+  // 验证输入
+  if(type==='birthday'){
+    if(!document.getElementById('birthMonth').value||!document.getElementById('birthDay').value){alert('请填写生日');return;}
+  }else if(type==='lucky'){
+    if(selectedLucky.length===0){alert('请至少选择1个幸运数字');return;}
+  }else if(type==='zodiac'){
+    if(!selectedZodiac){alert('请选择生肖');return;}
+  }else if(type==='constellation'){
+    if(!selectedConstellation){alert('请选择星座');return;}
+  }
+
+  const game=GAMES.find(g=>g.key===selectedGames[type]);
+  const resultsDiv=document.getElementById('results-'+type);
+  resultsDiv.style.display='block';
+  resultsDiv.innerHTML=`<div class="card"><div class="card-title">🎉 你的${typeNames[type]}专属号码</div><div id="resultList-${type}"></div></div>`;
+  const list=document.getElementById('resultList-'+type);
+
+  const highIndex = Math.floor(Math.random()*genCounts[type]);
+  for(let g=0;g<genCounts[type];g++){
+    const card=document.createElement('div');
+    card.className='result-card';
+    let numsHtml='',score=50,desc='';
+
+    if(game.type==='lotto'){
+      let reds,blues;
+      if(type==='lucky'){
+        // 幸运数字特殊逻辑：选1-2个排除，选3个带1个
+        const exclude=[...selectedLucky];
+        let forced=[];
+        if(selectedLucky.length===3){
+          // 从3个里随机选1个加入
+          const pick=selectedLucky[Math.floor(Math.random()*3)];
+          forced=[pick];
+          // 排除另外2个
+          exclude.splice(exclude.indexOf(pick),1);
+        }
+        // 红球
+        const redPool=[];
+        for(let i=1;i<=game.redMax;i++){if(!exclude.includes(i))redPool.push(i);}
+        reds=weightedPick(redPool,game.red-forced.length);
+        reds=[...reds,...forced].sort((a,b)=>a-b);
+        // 蓝球
+        const bluePool=[];
+        for(let i=1;i<=game.blueMax;i++){if(!exclude.includes(i))bluePool.push(i);}
+        blues=weightedPick(bluePool,game.blue);
+      }else{
+        const redPool=getPool(game.redMax,type);
+        reds=weightedPick(redPool,game.red);
+        const bluePool=getPool(game.blueMax,type);
+        blues=weightedPick(bluePool,game.blue);
+      }
+      score = g===highIndex ? 95+Math.floor(Math.random()*6) : 60+Math.floor(Math.random()*26);
+      numsHtml=reds.map(n=>`<span class="ball ball-red">${String(n).padStart(2,'0')}</span>`).join('')
+        +'<span style="margin:0 4px;color:#ccc">+</span>'
+        +blues.map(n=>`<span class="ball ball-blue">${String(n).padStart(2,'0')}</span>`).join('');
+      desc=genDesc(reds,game.redMax,type,score);
+    }else{
+      const digits=[];for(let i=0;i<game.digits;i++)digits.push(Math.floor(Math.random()*10));
+      score = g===highIndex ? 95+Math.floor(Math.random()*6) : 60+Math.floor(Math.random()*26);
+      numsHtml=digits.map(n=>`<span class="ball ball-digit">${n}</span>`).join('');
+      desc='🎲 数字型彩种为随机生成，仅供娱乐';
+    }
+
+    card.innerHTML=`
+      <div class="result-header">
+        <span class="result-index">第 ${g+1} 组 · ${game.name}</span>
+        <div class="lucky-score">
+          <div class="score-bar"><div class="score-fill" style="width:${score}%"></div></div>
+          <span class="score-text">${score}分</span>
+        </div>
+      </div>
+      <div class="result-nums">${numsHtml}</div>
+      <div class="result-desc">${desc}</div>
+      <a href="all.html?cat=${game.key==='ssq'||game.key==='3d'?'fc':'tc'}" class="add-btn">去选号页 →</a>
+    `;
+    list.appendChild(card);
+  }
+
+  setGenerated(type);
+  checkLock();
+  resultsDiv.scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+initLuckyNums();
+initZodiac();
+initConstellation();
+initGames('bd','birthday');
+initGames('lk','lucky');
+initGames('zd','zodiac');
+initGames('cs','constellation');
+checkLock();
+</script>
+</body>
+</html>
