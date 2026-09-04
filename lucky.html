@@ -6,57 +6,58 @@
 <title>幸运数字生成 - 锦鲤选号</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;background:linear-gradient(135deg,#f6d365 0%,#fda085 100%);min-height:100vh;padding:20px}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;background:linear-gradient(135deg,#8b0000 0%,#c0392b 50%,#e74c3c 100%);min-height:100vh;padding:20px}
 .container{max-width:600px;margin:0 auto}
 .header{text-align:center;color:#fff;margin-bottom:20px;padding:20px 0}
-.header h1{font-size:28px;margin-bottom:8px;text-shadow:0 2px 10px rgba(0,0,0,.15)}
+.header h1{font-size:28px;margin-bottom:8px;text-shadow:0 2px 10px rgba(0,0,0,.3)}
 .header p{font-size:14px;opacity:.9}
-.back-btn{display:inline-block;background:rgba(255,255,255,.25);color:#fff;padding:8px 16px;border-radius:20px;text-decoration:none;font-size:13px;margin-bottom:12px;backdrop-filter:blur(10px)}
+.back-btn{display:inline-block;background:rgba(255,255,255,.2);color:#fff;padding:8px 16px;border-radius:20px;text-decoration:none;font-size:13px;margin-bottom:12px;backdrop-filter:blur(10px);border:1px solid rgba(255,215,0,.3)}
 .tabs{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap}
-.tab{flex:1;min-width:70px;padding:12px 4px;text-align:center;background:rgba(255,255,255,.3);color:#fff;border-radius:12px;cursor:pointer;font-size:12px;font-weight:500;transition:all .3s;backdrop-filter:blur(10px)}
-.tab.active{background:#fff;color:#e67e22;box-shadow:0 4px 15px rgba(0,0,0,.15)}
+.tab{flex:1;min-width:70px;padding:12px 4px;text-align:center;background:rgba(255,255,255,.15);color:#fff;border-radius:12px;cursor:pointer;font-size:12px;font-weight:500;transition:all .3s;backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.1)}
+.tab.active{background:linear-gradient(135deg,#ffd700,#ffaa00);color:#8b0000;box-shadow:0 4px 15px rgba(255,215,0,.4);border-color:transparent;font-weight:bold}
 .tab .tab-icon{font-size:18px;display:block;margin-bottom:2px}
-.card{background:#fff;border-radius:20px;padding:24px;margin-bottom:16px;box-shadow:0 10px 40px rgba(0,0,0,.1)}
-.card-title{font-size:16px;font-weight:bold;color:#333;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.card{background:#fff;border-radius:20px;padding:24px;margin-bottom:16px;box-shadow:0 10px 40px rgba(0,0,0,.2);border:1px solid rgba(255,215,0,.2)}
+.card-title{font-size:16px;font-weight:bold;color:#8b0000;margin-bottom:16px;display:flex;align-items:center;gap:8px}
 .form-group{margin-bottom:16px}
 .form-label{display:block;font-size:13px;color:#666;margin-bottom:6px;font-weight:500}
 .form-input{width:100%;padding:12px 14px;border:1.5px solid #e0e0e0;border-radius:10px;font-size:14px;transition:border-color .3s;outline:none}
-.form-input:focus{border-color:#f6d365}
+.form-input:focus{border-color:#ffd700;box-shadow:0 0 0 3px rgba(255,215,0,.15)}
 .form-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
 .lucky-nums{display:flex;gap:8px;flex-wrap:wrap}
 .lucky-num{width:40px;height:40px;border-radius:50%;border:2px solid #e0e0e0;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:bold;color:#999;cursor:pointer;transition:all .25s;background:#f8f9fa}
-.lucky-num.selected{background:linear-gradient(135deg,#f6d365,#fda085);color:#fff;border-color:transparent;transform:scale(1.05);box-shadow:0 4px 12px rgba(253,160,133,.4)}
+.lucky-num.selected{background:linear-gradient(135deg,#ffd700,#ffaa00);color:#8b0000;border-color:transparent;transform:scale(1.05);box-shadow:0 4px 12px rgba(255,170,0,.4)}
 .zodiac-grid,.constellation-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
 .zodiac-item,.constellation-item{padding:10px 4px;text-align:center;border:1.5px solid #e0e0e0;border-radius:10px;font-size:12px;cursor:pointer;transition:all .25s;background:#f8f9fa}
-.zodiac-item.selected,.constellation-item.selected{background:linear-gradient(135deg,#f6d365,#fda085);color:#fff;border-color:transparent}
+.zodiac-item.selected,.constellation-item.selected{background:linear-gradient(135deg,#ffd700,#ffaa00);color:#8b0000;border-color:transparent;font-weight:bold}
 .game-select{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .game-option{padding:12px;text-align:center;border:1.5px solid #e0e0e0;border-radius:10px;font-size:13px;cursor:pointer;transition:all .25s;background:#f8f9fa;font-weight:500}
-.game-option.selected{background:linear-gradient(135deg,#f6d365,#fda085);color:#fff;border-color:transparent}
+.game-option.selected{background:linear-gradient(135deg,#ffd700,#ffaa00);color:#8b0000;border-color:transparent;font-weight:bold}
 .count-selector{display:flex;gap:10px;align-items:center}
 .count-btn{width:36px;height:36px;border-radius:50%;border:1.5px solid #e0e0e0;background:#fff;font-size:18px;cursor:pointer;transition:all .2s}
-.count-btn:hover{background:#f6d365;color:#fff;border-color:transparent}
-.count-num{font-size:20px;font-weight:bold;min-width:30px;text-align:center}
-.generate-btn{width:100%;padding:16px;background:linear-gradient(135deg,#f6d365,#fda085);color:#fff;border:none;border-radius:12px;font-size:16px;font-weight:bold;cursor:pointer;transition:all .3s;box-shadow:0 4px 15px rgba(253,160,133,.4)}
-.generate-btn:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(253,160,133,.5)}
-.generate-btn:disabled{background:#ccc;cursor:not-allowed;transform:none;box-shadow:none}
-.result-card{background:linear-gradient(135deg,#fff9e6 0%,#fff 100%);border:2px solid #f6d365;border-radius:16px;padding:20px;margin-bottom:14px;position:relative;overflow:hidden}
+.count-btn:hover{background:linear-gradient(135deg,#ffd700,#ffaa00);color:#8b0000;border-color:transparent}
+.count-num{font-size:20px;font-weight:bold;min-width:30px;text-align:center;color:#8b0000}
+.generate-btn{width:100%;padding:16px;background:linear-gradient(135deg,#ffd700,#ffaa00);color:#8b0000;border:none;border-radius:12px;font-size:16px;font-weight:bold;cursor:pointer;transition:all .3s;box-shadow:0 4px 15px rgba(255,170,0,.4)}
+.generate-btn:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(255,170,0,.5)}
+.generate-btn:disabled{background:#ccc;cursor:not-allowed;transform:none;box-shadow:none;color:#999}
+.result-card{background:linear-gradient(135deg,#fff9e6 0%,#fff 100%);border:2px solid #ffd700;border-radius:16px;padding:20px;margin-bottom:14px;position:relative;overflow:hidden;box-shadow:0 4px 15px rgba(255,215,0,.15)}
 .result-card::before{content:'🍀';position:absolute;top:10px;right:14px;font-size:24px;opacity:.3}
+.result-card.high-score{border-color:#ffaa00;box-shadow:0 0 20px rgba(255,170,0,.4),0 4px 15px rgba(255,215,0,.2);background:linear-gradient(135deg,#fff3cd 0%,#fff 100%)}
 .result-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
-.result-index{font-size:14px;font-weight:bold;color:#e67e22}
+.result-index{font-size:14px;font-weight:bold;color:#8b0000}
 .lucky-score{display:flex;align-items:center;gap:6px}
 .score-bar{width:80px;height:8px;background:#eee;border-radius:4px;overflow:hidden}
-.score-fill{height:100%;background:linear-gradient(90deg,#f6d365,#fda085);border-radius:4px;transition:width .5s}
-.score-text{font-size:12px;font-weight:bold;color:#e67e22}
+.score-fill{height:100%;background:linear-gradient(90deg,#ffd700,#ffaa00);border-radius:4px;transition:width .5s}
+.score-text{font-size:12px;font-weight:bold;color:#ff8c00}
 .result-nums{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
-.ball{display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:50%;font-size:14px;font-weight:bold;color:#fff;box-shadow:0 2px 6px rgba(0,0,0,.2),inset 0 1px 2px rgba(255,255,255,.3)}
-.ball-red{background:linear-gradient(135deg,#ff6b6b,#e74c3c)}
-.ball-blue{background:linear-gradient(135deg,#74b9ff,#3498db)}
-.ball-digit{background:linear-gradient(135deg,#ff6b6b,#e74c3c)}
-.result-desc{font-size:12px;color:#666;line-height:1.7;background:#fff;border-radius:8px;padding:10px 12px}
-.result-desc strong{color:#e67e22}
-.add-btn{display:inline-block;margin-top:10px;padding:8px 16px;background:#e67e22;color:#fff;border:none;border-radius:8px;font-size:12px;cursor:pointer;text-decoration:none}
-.tips{background:#fff8e1;border-left:4px solid #f6d365;padding:12px 16px;border-radius:8px;font-size:12px;color:#856404;line-height:1.7}
-.footer{text-align:center;color:#fff;font-size:11px;padding:20px 0;line-height:1.7;opacity:.9}
+.ball{display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:50%;font-size:14px;font-weight:bold;color:#fff;box-shadow:0 2px 6px rgba(0,0,0,.2),inset 0 1px 2px rgba(255,255,255,.4)}
+.ball-red{background:linear-gradient(135deg,#ff6b6b,#c0392b)}
+.ball-blue{background:linear-gradient(135deg,#74b9ff,#2980b9)}
+.ball-digit{background:linear-gradient(135deg,#ff6b6b,#c0392b)}
+.result-desc{font-size:12px;color:#666;line-height:1.7;background:#fff;border-radius:8px;padding:10px 12px;border-left:3px solid #ffd700}
+.result-desc strong{color:#8b0000}
+.add-btn{display:inline-block;margin-top:10px;padding:8px 16px;background:linear-gradient(135deg,#c0392b,#8b0000);color:#ffd700;border:none;border-radius:8px;font-size:12px;cursor:pointer;text-decoration:none;font-weight:bold}
+.tips{background:#fff8e1;border-left:4px solid #ffd700;padding:12px 16px;border-radius:8px;font-size:12px;color:#856404;line-height:1.7}
+.footer{text-align:center;color:#fff;font-size:11px;padding:20px 0;line-height:1.7;opacity:.85}
 @media(max-width:480px){.zodiac-grid,.constellation-grid{grid-template-columns:repeat(3,1fr)}.form-row{grid-template-columns:1fr 1fr}}
 </style>
 </head>
@@ -471,6 +472,7 @@ function generate(type){
       desc='🎲 数字型彩种为随机生成，仅供娱乐';
     }
 
+    if(score>=95)card.classList.add('high-score');
     card.innerHTML=`
       <div class="result-header">
         <span class="result-index">第 ${g+1} 组 · ${game.name}</span>
