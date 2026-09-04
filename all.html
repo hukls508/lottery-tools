@@ -496,9 +496,9 @@ function renderKillNum(key){
   // 蓝球杀号
   if(g.blueMax>0){
     const blueList=calcScore(g.blueMax);
-    const killBlue=blueList.slice(0,2);
+    const killBlue=blueList.slice(0,1);
     html+=`<div style="background:#e3f2fd;border:1px solid #90caf9;border-radius:8px;padding:12px">
-      <div style="font-size:13px;color:#1565c0;margin-bottom:8px"><strong>推荐绝杀蓝球（2个）：</strong></div>
+      <div style="font-size:13px;color:#1565c0;margin-bottom:8px"><strong>推荐绝杀蓝球（1个）：</strong></div>
       <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">
         ${killBlue.map(k=>`<span class="ball ball-blue">${pad(k.num)}</span>`).join('')}
       </div>
