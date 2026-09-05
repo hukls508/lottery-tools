@@ -76,9 +76,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Micr
 .trend-table .th-divider{background:#ddd;min-width:4px;padding:0}
 .trend-table .td-divider{background:#ddd;padding:0}
 .analysis-box{margin-top:10px}
-.analysis-label{font-size:12px;color:#666;margin-bottom:6px;font-weight:600}
-.analysis-textarea{width:100%;min-height:60px;padding:8px;border:1px solid #ddd;border-radius:6px;font-size:12px;resize:vertical;box-sizing:border-box;font-family:inherit}
-.analysis-textarea:focus{outline:none;border-color:#667eea}
+.analysis-label{font-size:12px;color:#666;margin-bottom:6px;font-weight:600;display:flex;justify-content:space-between;align-items:center}
+.add-note-btn{background:#667eea;color:#fff;border:none;border-radius:12px;padding:3px 10px;font-size:11px;cursor:pointer}
+.note-item{margin-bottom:8px;background:#f8f9fa;border-radius:6px;padding:6px}
+.note-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+.note-num{font-size:11px;color:#888;font-weight:600}
+.del-note-btn{background:none;border:none;color:#e74c3c;font-size:11px;cursor:pointer;padding:2px 6px}
+.analysis-textarea{width:100%;min-height:50px;padding:8px;border:1px solid #ddd;border-radius:6px;font-size:12px;resize:vertical;box-sizing:border-box;font-family:inherit;background:#fff}
 @media(orientation:landscape) and (max-width:900px){
   .trend-wrap{max-height:80vh}
   .trend-table{font-size:10px}
@@ -531,7 +535,7 @@ function renderTrendSection(key){
     const tabs=g.labels.map((l,i)=>`<div class="trend-tab ${st.trendPos===i?'active':''}" onclick="setTrendPos('${key}',${i},this)">${l}</div>`).join('');
     html+=`<div class="trend-tabs">${tabs}</div><div class="trend-wrap" id="trendWrap"></div>`;
   }
-  html+=`<div class="analysis-box"><div class="analysis-label">📝 我的分析笔记</div><textarea id="analysisNote_${key}" class="analysis-textarea" placeholder="在这里写分析：看好的号码、杀号、和值判断、走势看法..." oninput="saveAnalysis('${key}')"></textarea></div>`;
+  html+=`<div class="analysis-box"><div class="analysis-label">📝 我的分析写号 <button class="add-note-btn" onclick="addNote('${key}')">+ 添加一组</button></div><div id="noteList_${key}"></div></div>`;
   html+=`</div>`;
   setTimeout(()=>{renderTrend(key);loadAnalysis(key);},50);
   return html;
@@ -578,12 +582,39 @@ function renderTrend(key){
   wrap.innerHTML=html;
 }
 function saveAnalysis(key){
-  const ta=document.getElementById('analysisNote_'+key);
-  if(ta)localStorage.setItem('analysis_'+key,ta.value);
+  const list=document.getElementById('noteList_'+key);
+  if(!list)return;
+  const notes=[];
+  list.querySelectorAll('.note-item textarea').forEach(ta=>notes.push(ta.value));
+  localStorage.setItem('analysis_'+key,JSON.stringify(notes));
 }
 function loadAnalysis(key){
-  const ta=document.getElementById('analysisNote_'+key);
-  if(ta){const saved=localStorage.getItem('analysis_'+key);if(saved)ta.value=saved;}
+  const list=document.getElementById('noteList_'+key);
+  if(!list)return;
+  let notes=[];
+  try{notes=JSON.parse(localStorage.getItem('analysis_'+key)||'[]');}catch(e){}
+  if(notes.length===0)notes=[''];
+  list.innerHTML='';
+  notes.forEach((txt,i)=>addNoteItem(key,txt,i===notes.length-1));
+}
+function addNote(key){
+  const list=document.getElementById('noteList_'+key);
+  if(!list)return;
+  addNoteItem(key,'',true);
+  saveAnalysis(key);
+}
+function addNoteItem(key,txt,isLast){
+  const list=document.getElementById('noteList_'+key);
+  if(!list)return;
+  const idx=list.children.length;
+  const div=document.createElement('div');
+  div.className='note-item';
+  div.innerHTML=`<div class="note-header"><span class="note-num">第${idx+1}组</span><button class="del-note-btn" onclick="delNote('${key}',this)">删除</button></div><textarea class="analysis-textarea" placeholder="写号码、杀号、分析..." oninput="saveAnalysis('${key}')">${txt||''}</textarea>`;
+  list.appendChild(div);
+}
+function delNote(key,btn){
+  const item=btn.closest('.note-item');
+  if(item){item.remove();saveAnalysis(key);}
 }
 
 // ===== 选号中心 =====
