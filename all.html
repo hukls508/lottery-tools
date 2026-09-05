@@ -70,6 +70,17 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Micr
 .trend-table .hit-blue{background:#3498db;color:#fff;border-radius:50%;font-weight:bold}
 .trend-table .hit-orange{background:linear-gradient(135deg,#ff6b6b,#e74c3c);color:#fff;border-radius:50%;font-weight:bold}
 .trend-table .hit-green{background:#27ae60;color:#fff;border-radius:50%;font-weight:bold}
+.trend-table .hit-purple{background:#9b59b6;color:#fff;border-radius:50%;font-weight:bold}
+.trend-table .hit-pink{background:#e91e63;color:#fff;border-radius:50%;font-weight:bold}
+.trend-table .hit-teal{background:#009688;color:#fff;border-radius:50%;font-weight:bold}
+.trend-table .hit-red{background:#e74c3c;color:#fff;border-radius:50%;font-weight:bold}
+.trend-table .th-orange{background:#fde8e8;color:#c0392b}
+.trend-table .th-green{background:#e8f5e9;color:#27ae60}
+.trend-table .th-blue{background:#e8f4fd;color:#2980b9}
+.trend-table .th-purple{background:#f3e5f5;color:#9b59b6}
+.trend-table .th-pink{background:#fce4ec;color:#e91e63}
+.trend-table .th-teal{background:#e0f2f1;color:#009688}
+.trend-table .th-red{background:#fde8e8;color:#c0392b}
 .trend-table .miss{color:#ccc}
 .trend-table .th-red{background:#fde8e8;color:#c0392b}
 .trend-table .th-blue{background:#e8f4fd;color:#2980b9}
@@ -537,8 +548,7 @@ function renderTrendSection(key){
   if(g.type==='lotto'){
     html+=`<div class="trend-wrap" id="trendWrap"></div>`;
   }else{
-    const tabs=g.labels.map((l,i)=>`<div class="trend-tab ${st.trendPos===i?'active':''}" onclick="setTrendPos('${key}',${i},this)">${l}</div>`).join('');
-    html+=`<div class="trend-tabs">${tabs}</div><div class="trend-wrap" id="trendWrap"></div>`;
+    html+=`<div class="trend-wrap" id="trendWrap"></div>`;
   }
   html+=`</div>`;
   setTimeout(()=>{renderTrend(key);},50);
@@ -587,29 +597,43 @@ function renderTrend(key){
     }
     html+=`<tr><td colspan="${g.redMax+(g.blueMax>0?g.blueMax+1:0)}" style="padding:6px"><button class="add-myrow-btn" onclick="addMyRow('${key}')">+ 添加一组我的选号</button></td></tr>`;
   }else{
-    const pos=st.trendPos, max=g.maxes[pos];
-    for(let n=0;n<=max;n++)html+=`<th>${n}</th>`;
+    // 数字型：所有位置合并显示
+    const posColors=['hit-orange','hit-green','hit-blue','hit-purple','hit-pink','hit-teal','hit-red'];
+    const thColors=['th-orange','th-green','th-blue','th-purple','th-pink','th-teal','th-red'];
+    // 表头
+    g.maxes.forEach((max,pi)=>{
+      if(pi>0)html+=`<th class="th-divider"></th>`;
+      for(let n=0;n<=max;n++)html+=`<th class="${thColors[pi%thColors.length]}">${n}</th>`;
+    });
     html+='</tr></thead><tbody>';
+    // 开奖数据
     data.forEach(d=>{
-      const num=d.digits[pos];
       html+=`<tr><td class="issue-col">${d.issue}</td>`;
-      for(let n=0;n<=max;n++)html+=n===num?`<td class="hit-orange">${n}</td>`:`<td class="miss">·</td>`;
+      g.maxes.forEach((max,pi)=>{
+        if(pi>0)html+=`<td class="td-divider"></td>`;
+        const num=d.digits[pi];
+        for(let n=0;n<=max;n++)html+=n===num?`<td class="${posColors[pi%posColors.length]}">${n}</td>`:`<td class="miss">·</td>`;
+      });
       html+='</tr>';
     });
-    // 我的选号行（数字型按位置保存）
-    const digitKey='myRows_digit_'+key+'_'+pos;
+    // 我的选号行
+    const digitKey='myRows_digit_'+key;
     let digitRows=[];
     try{digitRows=JSON.parse(localStorage.getItem(digitKey)||'[]');}catch(e){}
+    const totalCols=g.maxes.reduce((a,b)=>a+b+1,0);
     if(digitRows.length>0){
-      html+=`<tr><td colspan="${max+1}" style="background:#fff3cd;padding:4px;font-size:11px;color:#856404;font-weight:600">👇 我的选号（点击号码标记）</td></tr>`;
+      html+=`<tr><td colspan="${totalCols}" style="background:#fff3cd;padding:4px;font-size:11px;color:#856404;font-weight:600">👇 我的选号（点击号码标记）</td></tr>`;
       digitRows.forEach((row,ri)=>{
-        const nums=new Set(row.nums||[]);
-        html+=`<tr class="my-row"><td class="issue-col" style="background:#fff3cd">第${ri+1}组 <span class="del-myrow" onclick="delDigitRow('${key}',${pos},${ri})">✕</span></td>`;
-        for(let n=0;n<=max;n++)html+=`<td class="${nums.has(n)?'hit-orange':'miss'} my-cell" onclick="toggleDigitNum('${key}',${pos},${ri},${n})">${n}</td>`;
+        html+=`<tr class="my-row"><td class="issue-col" style="background:#fff3cd">第${ri+1}组 <span class="del-myrow" onclick="delDigitRow('${key}',${ri})">✕</span></td>`;
+        g.maxes.forEach((max,pi)=>{
+          if(pi>0)html+=`<td class="td-divider"></td>`;
+          const nums=new Set((row['pos'+pi])||[]);
+          for(let n=0;n<=max;n++)html+=`<td class="${nums.has(n)?posColors[pi%posColors.length]:'miss'} my-cell" onclick="toggleDigitNum('${key}',${ri},${pi},${n})">${n}</td>`;
+        });
         html+='</tr>';
       });
     }
-    html+=`<tr><td colspan="${max+1}" style="padding:6px"><button class="add-myrow-btn" onclick="addDigitRow('${key}',${pos})">+ 添加一组我的选号</button></td></tr>`;
+    html+=`<tr><td colspan="${totalCols}" style="padding:6px"><button class="add-myrow-btn" onclick="addDigitRow('${key}')">+ 添加一组我的选号</button></td></tr>`;
   }
   html+='</tbody></table>';
   wrap.innerHTML=html;
@@ -639,28 +663,28 @@ function delMyRow(key,idx){
   localStorage.setItem('myRows_'+key,JSON.stringify(myRows));
   renderTrend(key);
 }
-function toggleDigitNum(key,pos,rowIdx,num){
-  const digitKey='myRows_digit_'+key+'_'+pos;
+function toggleDigitNum(key,rowIdx,pos,num){
+  const digitKey='myRows_digit_'+key;
   let rows=[];
   try{rows=JSON.parse(localStorage.getItem(digitKey)||'[]');}catch(e){}
-  if(!rows[rowIdx])rows[rowIdx]={nums:[]};
-  const arr=rows[rowIdx].nums||[];
+  if(!rows[rowIdx])rows[rowIdx]={};
+  const arr=rows[rowIdx]['pos'+pos]||[];
   const i=arr.indexOf(num);
   if(i>=0)arr.splice(i,1);else arr.push(num);
-  rows[rowIdx].nums=arr;
+  rows[rowIdx]['pos'+pos]=arr;
   localStorage.setItem(digitKey,JSON.stringify(rows));
   renderTrend(key);
 }
-function addDigitRow(key,pos){
-  const digitKey='myRows_digit_'+key+'_'+pos;
+function addDigitRow(key){
+  const digitKey='myRows_digit_'+key;
   let rows=[];
   try{rows=JSON.parse(localStorage.getItem(digitKey)||'[]');}catch(e){}
-  rows.push({nums:[]});
+  rows.push({});
   localStorage.setItem(digitKey,JSON.stringify(rows));
   renderTrend(key);
 }
-function delDigitRow(key,pos,idx){
-  const digitKey='myRows_digit_'+key+'_'+pos;
+function delDigitRow(key,idx){
+  const digitKey='myRows_digit_'+key;
   let rows=[];
   try{rows=JSON.parse(localStorage.getItem(digitKey)||'[]');}catch(e){}
   rows.splice(idx,1);
