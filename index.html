@@ -122,9 +122,9 @@ function getDeviceId(){
   return id;
 }
 function generateCode(deviceId){
-  let hash=0;
-  for(let i=0;i<deviceId.length;i++){hash=((hash<<5)-hash)+deviceId.charCodeAt(i);hash|=0;}
-  return String(Math.abs(hash)%1000000).padStart(6,'0');
+  let h=0;
+  for(let i=0;i<deviceId.length;i++)h=(h*31+deviceId.charCodeAt(i))&0x7fffffff;
+  return String(h).slice(-6);
 }
 function copyDeviceId(){
   const id=document.getElementById('authDeviceId').textContent;
