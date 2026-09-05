@@ -116,7 +116,7 @@ const ADMIN_PASSWORD="1995327";
 function getDeviceId(){
   let id=localStorage.getItem('lottery_device_id');
   if(!id){
-    id=Math.random().toString(36).substring(2,10).toUpperCase();
+    id=Math.random().toString(36).substring(2,8).toUpperCase()+Math.floor(Math.random()*90+10);
     localStorage.setItem('lottery_device_id',id);
   }
   return id;
