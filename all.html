@@ -1117,10 +1117,10 @@ function genClientLink(){
   const id=document.getElementById('clientDeviceId').value.trim().toUpperCase();
   if(!id){document.getElementById('clientLink').style.display='block';document.getElementById('clientLink').textContent='请输入客户的设备ID';return;}
   const code=generateCode(id);
-  const url=location.origin+location.pathname+'?code='+code;
+  const url=location.origin+'/lottery-tools/?code='+code;
   const div=document.getElementById('clientLink');
   div.style.display='block';
-  div.innerHTML='<b>客户免激活链接（只能在该设备使用）：</b><br>'+url+'<br><br><span style="color:#27ae60">客户打开此链接自动激活，转发给别人无效</span>';
+  div.innerHTML='<b>客户免激活链接（只能在该设备使用）：</b><br>'+url+'<br><br><span style="color:#27ae60">客户打开此链接自动激活，进入主页，转发给别人无效</span>';
 }
 function showAdminPanel(){
   document.getElementById('authMask').style.display='flex';
