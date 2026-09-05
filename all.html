@@ -162,11 +162,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Micr
         <button onclick="genForDevice()" style="margin-top:4px">生成指定设备激活码</button>
         <div id="genResult" style="font-size:12px;color:#27ae60;margin-top:4px;text-align:center"></div>
         <hr style="border:none;border-top:1px solid #eee;margin:10px 0">
-        <p style="font-size:11px;color:#666;margin-bottom:6px">生成客户免激活链接（输入客户设备ID）：</p>
-        <input type="text" id="clientDeviceId" placeholder="输入客户的设备ID" style="margin-top:6px">
-        <button onclick="genClientLink()" style="margin-top:4px;background:#27ae60">生成客户链接</button>
-        <div id="clientLink" style="font-size:11px;color:#333;margin-top:6px;word-break:break-all;background:#f8f9fa;padding:8px;border-radius:6px;display:none"></div>
-        <hr style="border:none;border-top:1px solid #eee;margin:10px 0">
         <p style="font-size:11px;color:#666;margin-bottom:6px">生成桌面快捷链接（添加到桌面免激活）：</p>
         <button onclick="genDesktopLink()" style="margin-top:4px;background:#e74c3c">生成我的桌面链接</button>
         <div id="desktopLink" style="font-size:11px;color:#333;margin-top:6px;word-break:break-all;background:#f8f9fa;padding:8px;border-radius:6px;display:none"></div>
@@ -1112,15 +1107,6 @@ function genDesktopLink(){
   const div=document.getElementById('desktopLink');
   div.style.display='block';
   div.innerHTML='<b>用这个链接添加到桌面，打开自动激活：</b><br>'+url+'<br><br><span style="color:#e74c3c">操作：复制此链接 → Safari打开 → 分享 → 添加到主屏幕</span>';
-}
-function genClientLink(){
-  const id=document.getElementById('clientDeviceId').value.trim().toUpperCase();
-  if(!id){document.getElementById('clientLink').style.display='block';document.getElementById('clientLink').textContent='请输入客户的设备ID';return;}
-  const code=generateCode(id);
-  const url=location.origin+'/lottery-tools/?code='+code;
-  const div=document.getElementById('clientLink');
-  div.style.display='block';
-  div.innerHTML='<b>客户免激活链接（只能在该设备使用）：</b><br>'+url+'<br><br><span style="color:#27ae60">客户打开此链接自动激活，进入主页，转发给别人无效</span>';
 }
 function showAdminPanel(){
   document.getElementById('authMask').style.display='flex';
