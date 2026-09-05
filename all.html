@@ -377,7 +377,8 @@ function renderHistory(key){
     });
   }
   const cols='<th>期号</th><th>日期</th><th>开奖号码</th><th>和值</th><th>奇偶</th><th>大小</th>';
-  return `<div class="card"><div class="card-title"><span>历史开奖</span><div class="tabs"><label class="compare-toggle" style="margin-right:8px"><input type="checkbox" ${showCompare?'checked':''} onchange="toggleCompare('${key}')"> 去年同期</label>${[5,10,30].map(n=>`<div class="tab ${st.range===n?'active':''}" onclick="setRange('${key}',${n})">${n}天</div>`).join('')}</div></div><div class="table-wrap"><table class="history-table"><thead><tr>${cols}</tr></thead><tbody>${rows}</tbody></table></div></div>`;
+  const compareLabel = (key==='qxc'||key==='kl8')?'':`<label class="compare-toggle" style="margin-right:8px"><input type="checkbox" ${showCompare?'checked':''} onchange="toggleCompare('${key}')"> 去年同期</label>`;
+  return `<div class="card"><div class="card-title"><span>历史开奖</span><div class="tabs">${compareLabel}${[5,10,30].map(n=>`<div class="tab ${st.range===n?'active':''}" onclick="setRange('${key}',${n})">${n}天</div>`).join('')}</div></div><div class="table-wrap"><table class="history-table"><thead><tr>${cols}</tr></thead><tbody>${rows}</tbody></table></div></div>`;
 }
 function setRange(key,n){gameState[key].range=n;renderGame();}
 
@@ -566,7 +567,8 @@ function renderKillNum(key){
 // ===== 走势图 =====
 function renderTrendSection(key){
   const g=GAMES[key], st=gameState[key];
-  let html=`<div class="card trend-section"><div class="trend-title">📈 走势图 <span style="font-size:11px;color:#999;font-weight:normal">（手机可横屏）</span><label class="compare-toggle"><input type="checkbox" id="compareToggle_${key}" onchange="toggleCompare('${key}')"> 去年同期对比</label></div>`;
+  const compareLabel = (key==='qxc'||key==='kl8')?'':`<label class="compare-toggle"><input type="checkbox" id="compareToggle_${key}" onchange="toggleCompare('${key}')"> 去年同期对比</label>`;
+  let html=`<div class="card trend-section"><div class="trend-title">📈 走势图 <span style="font-size:11px;color:#999;font-weight:normal">（手机可横屏）</span>${compareLabel}</div>`;
   if(g.type==='lotto'){
     html+=`<div class="trend-wrap" id="trendWrap"></div>`;
   }else{
