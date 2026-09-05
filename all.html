@@ -75,6 +75,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Micr
 .trend-table .th-blue{background:#e8f4fd;color:#2980b9}
 .trend-table .th-divider{background:#ddd;min-width:4px;padding:0}
 .trend-table .td-divider{background:#ddd;padding:0}
+.my-row .my-cell{cursor:pointer;transition:all .15s}
+.my-row .my-cell:hover{background:#fff3cd}
+.del-myrow{color:#e74c3c;cursor:pointer;font-size:10px;margin-left:4px}
+.add-myrow-btn{width:100%;padding:6px;background:#f0f0f0;border:1px dashed #ccc;border-radius:6px;color:#666;font-size:12px;cursor:pointer}
+.add-myrow-btn:hover{background:#e8f4fd;border-color:#667eea;color:#667eea}
 .analysis-box{margin-top:10px}
 .analysis-label{font-size:12px;color:#666;margin-bottom:6px;font-weight:600;display:flex;justify-content:space-between;align-items:center}
 .add-note-btn{background:#667eea;color:#fff;border:none;border-radius:12px;padding:3px 10px;font-size:11px;cursor:pointer}
@@ -535,9 +540,8 @@ function renderTrendSection(key){
     const tabs=g.labels.map((l,i)=>`<div class="trend-tab ${st.trendPos===i?'active':''}" onclick="setTrendPos('${key}',${i},this)">${l}</div>`).join('');
     html+=`<div class="trend-tabs">${tabs}</div><div class="trend-wrap" id="trendWrap"></div>`;
   }
-  html+=`<div class="analysis-box"><div class="analysis-label">📝 我的分析写号 <button class="add-note-btn" onclick="addNote('${key}')">+ 添加一组</button></div><div id="noteList_${key}"></div></div>`;
   html+=`</div>`;
-  setTimeout(()=>{renderTrend(key);loadAnalysis(key);},50);
+  setTimeout(()=>{renderTrend(key);},50);
   return html;
 }
 function setTrendArea(key,area,el){gameState[key].trendArea=area;document.querySelectorAll(`#gameContainer .trend-tab`).forEach(t=>t.classList.remove('active'));el.classList.add('active');renderTrend(key);}
@@ -547,11 +551,11 @@ function renderTrend(key){
   const wrap=document.getElementById('trendWrap');
   if(!wrap)return;
   const data=st.data.slice(0,20).reverse();
+  let myRows=[];
+  try{myRows=JSON.parse(localStorage.getItem('myRows_'+key)||'[]');}catch(e){}
   let html='<table class="trend-table"><thead><tr><th class="issue-col">期号</th>';
   if(g.type==='lotto'){
-    // 红球列
     for(let n=1;n<=g.redMax;n++)html+=`<th class="th-red">${pad(n)}</th>`;
-    // 蓝球列
     if(g.blueMax>0){
       html+=`<th class="th-divider"></th>`;
       for(let n=1;n<=g.blueMax;n++)html+=`<th class="th-blue">${pad(n)}</th>`;
@@ -567,6 +571,21 @@ function renderTrend(key){
       }
       html+='</tr>';
     });
+    // 我的选号行
+    if(myRows.length>0){
+      html+=`<tr><td colspan="${g.redMax+(g.blueMax>0?g.blueMax+1:0)}" style="background:#fff3cd;padding:4px;font-size:11px;color:#856404;font-weight:600">👇 我的选号（点击号码标记）</td></tr>`;
+      myRows.forEach((row,ri)=>{
+        const reds=new Set(row.red||[]), blues=new Set(row.blue||[]);
+        html+=`<tr class="my-row"><td class="issue-col" style="background:#fff3cd">第${ri+1}组 <span class="del-myrow" onclick="delMyRow('${key}',${ri})">✕</span></td>`;
+        for(let n=1;n<=g.redMax;n++)html+=`<td class="${reds.has(n)?'hit-red':'miss'} my-cell" onclick="toggleMyNum('${key}',${ri},'red',${n})">${pad(n)}</td>`;
+        if(g.blueMax>0){
+          html+=`<td class="td-divider"></td>`;
+          for(let n=1;n<=g.blueMax;n++)html+=`<td class="${blues.has(n)?'hit-blue':'miss'} my-cell" onclick="toggleMyNum('${key}',${ri},'blue',${n})">${pad(n)}</td>`;
+        }
+        html+='</tr>';
+      });
+    }
+    html+=`<tr><td colspan="${g.redMax+(g.blueMax>0?g.blueMax+1:0)}" style="padding:6px"><button class="add-myrow-btn" onclick="addMyRow('${key}')">+ 添加一组我的选号</button></td></tr>`;
   }else{
     const pos=st.trendPos, max=g.maxes[pos];
     for(let n=0;n<=max;n++)html+=`<th>${n}</th>`;
@@ -580,6 +599,31 @@ function renderTrend(key){
   }
   html+='</tbody></table>';
   wrap.innerHTML=html;
+}
+function toggleMyNum(key,rowIdx,area,num){
+  let myRows=[];
+  try{myRows=JSON.parse(localStorage.getItem('myRows_'+key)||'[]');}catch(e){}
+  if(!myRows[rowIdx])myRows[rowIdx]={red:[],blue:[]};
+  const arr=myRows[rowIdx][area]||[];
+  const i=arr.indexOf(num);
+  if(i>=0)arr.splice(i,1);else arr.push(num);
+  myRows[rowIdx][area]=arr;
+  localStorage.setItem('myRows_'+key,JSON.stringify(myRows));
+  renderTrend(key);
+}
+function addMyRow(key){
+  let myRows=[];
+  try{myRows=JSON.parse(localStorage.getItem('myRows_'+key)||'[]');}catch(e){}
+  myRows.push({red:[],blue:[]});
+  localStorage.setItem('myRows_'+key,JSON.stringify(myRows));
+  renderTrend(key);
+}
+function delMyRow(key,idx){
+  let myRows=[];
+  try{myRows=JSON.parse(localStorage.getItem('myRows_'+key)||'[]');}catch(e){}
+  myRows.splice(idx,1);
+  localStorage.setItem('myRows_'+key,JSON.stringify(myRows));
+  renderTrend(key);
 }
 function saveAnalysis(key){
   const list=document.getElementById('noteList_'+key);
