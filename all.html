@@ -337,6 +337,7 @@ function renderGame(){
 function renderHistory(key){
   const g=GAMES[key], st=gameState[key];
   const data=st.data.slice(0,st.range);
+  const showCompare=localStorage.getItem('compare_'+key)==='1';
   let rows='';
   if(g.type==='lotto'){
     const mid=Math.ceil(g.redMax/2);
@@ -348,6 +349,15 @@ function renderHistory(key){
       const odd=redArr.filter(n=>n%2).length;
       const big=redArr.filter(n=>n>mid).length;
       rows+=`<tr><td>${d.issue}</td><td>${d.date.slice(5)}</td><td>${reds}${blues?' + '+blues:''}</td><td>${sum}</td><td>${odd}:${redArr.length-odd}</td><td>${big}:${redArr.length-big}</td></tr>`;
+      // 去年同期
+      if(showCompare){
+        const ly=findLastYearIssue(key,d.issue);
+        if(ly){
+          const lyReds=(ly.red||ly.numbers).map(n=>`<span class="ball ${g.redClass}" style="opacity:.6;transform:scale(.85)">${pad(n)}</span>`).join('');
+          const lyBlues=g.blueMax>0&&ly.blue?ly.blue.map(n=>`<span class="ball ${g.blueClass}" style="opacity:.6;transform:scale(.85)">${pad(n)}</span>`).join(''):'';
+          rows+=`<tr class="last-year-row"><td style="color:#aaa">↳${ly.issue}</td><td style="color:#aaa">去年</td><td>${lyReds}${lyBlues?' + '+lyBlues:''}</td><td colspan="3" style="color:#aaa;font-size:11px">去年同期对比</td></tr>`;
+        }
+      }
     });
   }else{
     data.forEach(d=>{
@@ -356,10 +366,18 @@ function renderHistory(key){
       const odd=d.digits.filter(n=>n%2).length;
       const big=d.digits.filter((n,i)=>n>Math.ceil(g.maxes[i]/2)).length;
       rows+=`<tr><td>${d.issue}</td><td>${d.date.slice(5)}</td><td>${balls}</td><td>${sum}</td><td>${odd}:${d.digits.length-odd}</td><td>${big}:${d.digits.length-big}</td></tr>`;
+      // 去年同期
+      if(showCompare){
+        const ly=findLastYearIssue(key,d.issue);
+        if(ly){
+          const lyBalls=ly.digits.map((n,i)=>`<span class="ball ${i===ly.digits.length-1&&g.maxes[i]>=14?'ball-special':'ball-digit'}" style="opacity:.6;transform:scale(.85)">${n}</span>`).join('');
+          rows+=`<tr class="last-year-row"><td style="color:#aaa">↳${ly.issue}</td><td style="color:#aaa">去年</td><td>${lyBalls}</td><td colspan="3" style="color:#aaa;font-size:11px">去年同期对比</td></tr>`;
+        }
+      }
     });
   }
   const cols='<th>期号</th><th>日期</th><th>开奖号码</th><th>和值</th><th>奇偶</th><th>大小</th>';
-  return `<div class="card"><div class="card-title"><span>历史开奖</span><div class="tabs">${[5,10,30].map(n=>`<div class="tab ${st.range===n?'active':''}" onclick="setRange('${key}',${n})">${n}天</div>`).join('')}</div></div><div class="table-wrap"><table class="history-table"><thead><tr>${cols}</tr></thead><tbody>${rows}</tbody></table></div></div>`;
+  return `<div class="card"><div class="card-title"><span>历史开奖</span><div class="tabs"><label class="compare-toggle" style="margin-right:8px"><input type="checkbox" ${showCompare?'checked':''} onchange="toggleCompare('${key}')"> 去年同期</label>${[5,10,30].map(n=>`<div class="tab ${st.range===n?'active':''}" onclick="setRange('${key}',${n})">${n}天</div>`).join('')}</div></div><div class="table-wrap"><table class="history-table"><thead><tr>${cols}</tr></thead><tbody>${rows}</tbody></table></div></div>`;
 }
 function setRange(key,n){gameState[key].range=n;renderGame();}
 
@@ -562,8 +580,9 @@ function setTrendArea(key,area,el){gameState[key].trendArea=area;document.queryS
 function setTrendPos(key,pos,el){gameState[key].trendPos=pos;document.querySelectorAll(`#gameContainer .trend-tab`).forEach(t=>t.classList.remove('active'));el.classList.add('active');renderTrend(key);}
 function toggleCompare(key){
   const cb=document.getElementById('compareToggle_'+key);
-  if(cb)localStorage.setItem('compare_'+key,cb.checked?'1':'0');
-  renderTrend(key);
+  const checked=cb?cb.checked:(localStorage.getItem('compare_'+key)==='1');
+  localStorage.setItem('compare_'+key,checked?'1':'0');
+  renderGame();
 }
 function findLastYearIssue(key,issue){
   const st=gameState[key];
