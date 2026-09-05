@@ -134,8 +134,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Micr
     <div class="card">
       <div class="card-title">🍀 输入你的幸运数字</div>
       <div class="form-group">
-        <label class="form-label">幸运数字（0-10000）</label>
-        <input type="number" id="luckyInput" class="form-input" placeholder="例如：520、1314、生日、纪念日" min="0" max="10000">
+        <label class="form-label">幸运数字</label>
+        <input type="number" id="luckyInput" class="form-input" placeholder="例如：520、1314、生日、纪念日">
         <div style="font-size:11px;color:#999;margin-top:6px">💡 输入任意数字，生成专属于你的号码</div>
       </div>
       <div class="form-group">
@@ -222,7 +222,7 @@ let selectedConstellation = '';
 let selectedGames = {birthday:'ssq',lucky:'ssq',zodiac:'ssq',constellation:'ssq'};
 
 function getToday(){return new Date().toISOString().slice(0,10);}
-function isGenerated(type){return false;}
+function isGenerated(type){return localStorage.getItem('lucky_gen_'+type)===getToday();}
 function setGenerated(type){localStorage.setItem('lucky_gen_'+type,getToday());}
 
 function switchTab(tab){
@@ -374,7 +374,7 @@ function generate(type){
     if(!document.getElementById('birthMonth').value||!document.getElementById('birthDay').value){alert('请填写生日');return;}
   }else if(type==='lucky'){
     const val=parseInt(document.getElementById('luckyInput').value);
-    if(isNaN(val)||val<0||val>10000){alert('请输入0-10000之间的幸运数字');return;}
+    if(isNaN(val)){alert('请输入幸运数字');return;}
     luckyNumber=val;
   }else if(type==='zodiac'){
     if(!selectedZodiac){alert('请选择生肖');return;}
@@ -397,22 +397,10 @@ function generate(type){
 
     if(game.type==='lotto'){
       let reds,blues;
-      if(type==='lucky'){
-        // 幸运数字逻辑：排除用户输入的数字（如果在范围内）
-        const exclude=[];
-        if(luckyNumber>=1&&luckyNumber<=game.redMax)exclude.push(luckyNumber);
-        const redPool=[];
-        for(let i=1;i<=game.redMax;i++){if(!exclude.includes(i))redPool.push(i);}
-        reds=weightedPick(redPool,game.red);
-        const bluePool=[];
-        for(let i=1;i<=game.blueMax;i++){if(!exclude.includes(i))bluePool.push(i);}
-        blues=weightedPick(bluePool,game.blue);
-      }else{
-        const redPool=getPool(game.redMax,type);
-        reds=weightedPick(redPool,game.red);
-        const bluePool=getPool(game.blueMax,type);
-        blues=weightedPick(bluePool,game.blue);
-      }
+      const redPool=getPool(game.redMax,type);
+      reds=weightedPick(redPool,game.red);
+      const bluePool=getPool(game.blueMax,type);
+      blues=weightedPick(bluePool,game.blue);
       numsHtml=reds.map(n=>`<span class="ball ball-red">${String(n).padStart(2,'0')}</span>`).join('')
         +'<span style="margin:0 4px;color:#ccc">+</span>'
         +blues.map(n=>`<span class="ball ball-blue">${String(n).padStart(2,'0')}</span>`).join('');
