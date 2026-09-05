@@ -147,6 +147,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Micr
     <h3>🔒 设备授权</h3>
     <p>本工具需激活后使用<br>请输入激活码或联系管理员</p>
     <div class="auth-device-id" id="authDeviceId">----</div>
+    <button class="auth-btn-secondary" onclick="copyDeviceId()" style="margin-bottom:10px">📋 复制设备ID</button>
     <div class="auth-error" id="authError"></div>
     <input type="text" id="authCode" placeholder="请输入激活码" maxlength="8">
     <button onclick="verifyAuth()">激活使用</button>
@@ -1071,6 +1072,15 @@ function generateCode(deviceId){
   let h=0;
   for(let i=0;i<deviceId.length;i++)h=(h*31+deviceId.charCodeAt(i))&0x7fffffff;
   return String(h).slice(-6);
+}
+function copyDeviceId(){
+  const id=document.getElementById('authDeviceId').textContent;
+  navigator.clipboard.writeText(id).then(()=>{
+    const btn=event.target;
+    const old=btn.textContent;
+    btn.textContent='✅ 已复制';
+    setTimeout(()=>btn.textContent=old,1500);
+  });
 }
 function verifyAuth(){
   const input=document.getElementById('authCode').value.trim();
