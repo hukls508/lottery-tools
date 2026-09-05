@@ -223,7 +223,21 @@ let selectedGames = {birthday:'ssq',lucky:'ssq',zodiac:'ssq',constellation:'ssq'
 
 function getToday(){return new Date().toISOString().slice(0,10);}
 function isGenerated(type){return localStorage.getItem('lucky_gen_'+type)===getToday();}
-function setGenerated(type){localStorage.setItem('lucky_gen_'+type,getToday());}
+function setGenerated(type,html){
+  localStorage.setItem('lucky_gen_'+type,getToday());
+  if(html)localStorage.setItem('lucky_result_'+type,html);
+}
+function loadSavedResults(){
+  TABS.forEach(type=>{
+    if(isGenerated(type)){
+      const saved=localStorage.getItem('lucky_result_'+type);
+      if(saved){
+        const resultsDiv=document.getElementById('results-'+type);
+        if(resultsDiv){resultsDiv.innerHTML=saved;resultsDiv.style.display='block';}
+      }
+    }
+  });
+}
 
 function switchTab(tab){
   currentTab = tab;
@@ -427,7 +441,7 @@ function generate(type){
     list.appendChild(card);
   }
 
-  setGenerated(type);
+  setGenerated(type,resultsDiv.innerHTML);
   checkLock();
   resultsDiv.scrollIntoView({behavior:'smooth',block:'start'});
 }
@@ -438,6 +452,8 @@ initGames('bd','birthday');
 initGames('lk','lucky');
 initGames('zd','zodiac');
 initGames('cs','constellation');
+loadSavedResults();
+checkLock();
 checkLock();
 </script>
 </body>
