@@ -579,8 +579,7 @@ function renderTrendSection(key){
 function setTrendArea(key,area,el){gameState[key].trendArea=area;document.querySelectorAll(`#gameContainer .trend-tab`).forEach(t=>t.classList.remove('active'));el.classList.add('active');renderTrend(key);}
 function setTrendPos(key,pos,el){gameState[key].trendPos=pos;document.querySelectorAll(`#gameContainer .trend-tab`).forEach(t=>t.classList.remove('active'));el.classList.add('active');renderTrend(key);}
 function toggleCompare(key){
-  const cb=document.getElementById('compareToggle_'+key);
-  const checked=cb?cb.checked:(localStorage.getItem('compare_'+key)==='1');
+  const checked=event.target.checked;
   localStorage.setItem('compare_'+key,checked?'1':'0');
   renderGame();
 }
@@ -606,9 +605,6 @@ function renderTrend(key){
   if(!wrap)return;
   const data=st.data.slice(0,20).reverse();
   const showCompare=localStorage.getItem('compare_'+key)==='1';
-  // 恢复开关状态
-  const cb=document.getElementById('compareToggle_'+key);
-  if(cb)cb.checked=showCompare;
   let myRows=[];
   try{myRows=JSON.parse(localStorage.getItem('myRows_'+key)||'[]');}catch(e){}
   let html='<table class="trend-table"><thead><tr><th class="issue-col">期号</th>';
