@@ -71,6 +71,19 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Micr
 .trend-table .hit-orange{background:linear-gradient(135deg,#ff6b6b,#e74c3c);color:#fff;border-radius:50%;font-weight:bold}
 .trend-table .hit-green{background:#27ae60;color:#fff;border-radius:50%;font-weight:bold}
 .trend-table .miss{color:#ccc}
+.trend-table .th-red{background:#fde8e8;color:#c0392b}
+.trend-table .th-blue{background:#e8f4fd;color:#2980b9}
+.trend-table .th-divider{background:#ddd;min-width:4px;padding:0}
+.trend-table .td-divider{background:#ddd;padding:0}
+.analysis-box{margin-top:10px}
+.analysis-label{font-size:12px;color:#666;margin-bottom:6px;font-weight:600}
+.analysis-textarea{width:100%;min-height:60px;padding:8px;border:1px solid #ddd;border-radius:6px;font-size:12px;resize:vertical;box-sizing:border-box;font-family:inherit}
+.analysis-textarea:focus{outline:none;border-color:#667eea}
+@media(orientation:landscape) and (max-width:900px){
+  .trend-wrap{max-height:80vh}
+  .trend-table{font-size:10px}
+  .trend-table th,.trend-table td{min-width:16px;padding:2px 1px}
+}
 .trend-tabs{display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap}
 .trend-tab{padding:4px 12px;background:#f0f0f0;border-radius:12px;cursor:pointer;font-size:12px;color:#666}
 .trend-tab.active{background:#667eea;color:#fff}
@@ -511,18 +524,16 @@ function renderKillNum(key){
 // ===== 走势图 =====
 function renderTrendSection(key){
   const g=GAMES[key], st=gameState[key];
-  let html=`<div class="card trend-section"><div class="trend-title">📈 走势图</div>`;
+  let html=`<div class="card trend-section"><div class="trend-title">📈 走势图 <span style="font-size:11px;color:#999;font-weight:normal">（手机可横屏查看）</span></div>`;
   if(g.type==='lotto'){
-    const tabs=[];
-    tabs.push(`<div class="trend-tab ${st.trendArea==='red'?'active':''}" onclick="setTrendArea('${key}','red',this)">红球走势</div>`);
-    if(g.blueMax>0)tabs.push(`<div class="trend-tab ${st.trendArea==='blue'?'active':''}" onclick="setTrendArea('${key}','blue',this)">蓝球走势</div>`);
-    html+=`<div class="trend-tabs">${tabs.join('')}</div><div class="trend-wrap" id="trendWrap"></div>`;
+    html+=`<div class="trend-wrap" id="trendWrap"></div>`;
   }else{
     const tabs=g.labels.map((l,i)=>`<div class="trend-tab ${st.trendPos===i?'active':''}" onclick="setTrendPos('${key}',${i},this)">${l}</div>`).join('');
     html+=`<div class="trend-tabs">${tabs}</div><div class="trend-wrap" id="trendWrap"></div>`;
   }
+  html+=`<div class="analysis-box"><div class="analysis-label">📝 我的分析笔记</div><textarea id="analysisNote_${key}" class="analysis-textarea" placeholder="在这里写分析：看好的号码、杀号、和值判断、走势看法..." oninput="saveAnalysis('${key}')"></textarea></div>`;
   html+=`</div>`;
-  setTimeout(()=>renderTrend(key),50);
+  setTimeout(()=>{renderTrend(key);loadAnalysis(key);},50);
   return html;
 }
 function setTrendArea(key,area,el){gameState[key].trendArea=area;document.querySelectorAll(`#gameContainer .trend-tab`).forEach(t=>t.classList.remove('active'));el.classList.add('active');renderTrend(key);}
@@ -534,15 +545,22 @@ function renderTrend(key){
   const data=st.data.slice(0,20).reverse();
   let html='<table class="trend-table"><thead><tr><th class="issue-col">期号</th>';
   if(g.type==='lotto'){
-    const isRed=st.trendArea==='red';
-    const max=isRed?g.redMax:g.blueMax;
-    const hitClass=isRed?'hit-red':'hit-blue';
-    for(let n=1;n<=max;n++)html+=`<th>${pad(n)}</th>`;
+    // 红球列
+    for(let n=1;n<=g.redMax;n++)html+=`<th class="th-red">${pad(n)}</th>`;
+    // 蓝球列
+    if(g.blueMax>0){
+      html+=`<th class="th-divider"></th>`;
+      for(let n=1;n<=g.blueMax;n++)html+=`<th class="th-blue">${pad(n)}</th>`;
+    }
     html+='</tr></thead><tbody>';
     data.forEach(d=>{
-      const nums=new Set(isRed?d.red:d.blue);
+      const reds=new Set(d.red), blues=new Set(d.blue||[]);
       html+=`<tr><td class="issue-col">${d.issue}</td>`;
-      for(let n=1;n<=max;n++)html+=nums.has(n)?`<td class="${hitClass}">${pad(n)}</td>`:`<td class="miss">·</td>`;
+      for(let n=1;n<=g.redMax;n++)html+=reds.has(n)?`<td class="hit-red">${pad(n)}</td>`:`<td class="miss">·</td>`;
+      if(g.blueMax>0){
+        html+=`<td class="td-divider"></td>`;
+        for(let n=1;n<=g.blueMax;n++)html+=blues.has(n)?`<td class="hit-blue">${pad(n)}</td>`:`<td class="miss">·</td>`;
+      }
       html+='</tr>';
     });
   }else{
@@ -558,6 +576,14 @@ function renderTrend(key){
   }
   html+='</tbody></table>';
   wrap.innerHTML=html;
+}
+function saveAnalysis(key){
+  const ta=document.getElementById('analysisNote_'+key);
+  if(ta)localStorage.setItem('analysis_'+key,ta.value);
+}
+function loadAnalysis(key){
+  const ta=document.getElementById('analysisNote_'+key);
+  if(ta){const saved=localStorage.getItem('analysis_'+key);if(saved)ta.value=saved;}
 }
 
 // ===== 选号中心 =====
