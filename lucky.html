@@ -408,11 +408,6 @@ function generate(type){
         for(let i=1;i<=game.blueMax;i++){if(!exclude.includes(i))bluePool.push(i);}
         blues=weightedPick(bluePool,game.blue);
       }else{
-        // 蓝球
-        const bluePool=[];
-        for(let i=1;i<=game.blueMax;i++){if(!exclude.includes(i))bluePool.push(i);}
-        blues=weightedPick(bluePool,game.blue);
-      }else{
         const redPool=getPool(game.redMax,type);
         reds=weightedPick(redPool,game.red);
         const bluePool=getPool(game.blueMax,type);
