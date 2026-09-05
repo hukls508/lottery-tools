@@ -1103,10 +1103,10 @@ function genForDevice(){
 }
 function genDesktopLink(){
   const code=generateCode(getDeviceId());
-  const url=location.origin+location.pathname+'?code='+code;
+  const url=location.origin+'/lottery-tools/?code='+code;
   const div=document.getElementById('desktopLink');
   div.style.display='block';
-  div.innerHTML='<b>用这个链接添加到桌面，打开自动激活：</b><br>'+url+'<br><br><span style="color:#e74c3c">操作：复制此链接 → Safari打开 → 分享 → 添加到主屏幕</span>';
+  div.innerHTML='<b>用这个链接添加到桌面：</b><br>'+url+'<br><br><span style="color:#e74c3c">操作：复制此链接 → Safari打开 → 分享 → 添加到主屏幕<br>⚠️ 苹果手机桌面版第一次打开可能需要再输一次激活码，之后就不用了</span>';
 }
 function showAdminPanel(){
   document.getElementById('authMask').style.display='flex';
