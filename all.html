@@ -60,7 +60,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Micr
 .analysis-box strong{color:#333}
 .analysis-box ul{padding-left:18px;margin-top:4px}
 .trend-section{margin-top:12px}
-.trend-title{font-size:14px;font-weight:bold;margin-bottom:8px;padding-left:8px;border-left:3px solid #667eea}
+.trend-title{font-size:14px;font-weight:bold;margin-bottom:8px;padding-left:8px;border-left:3px solid #667eea;display:flex;justify-content:space-between;align-items:center}
+.compare-toggle{font-size:11px;color:#666;font-weight:normal;cursor:pointer;display:flex;align-items:center;gap:4px}
+.compare-toggle input{cursor:pointer}
+.trend-table .last-year-row td{background:#f8f9fa;font-size:10px;color:#888}
+.trend-table .last-year-row .issue-col{color:#aaa;font-size:9px}
 .trend-wrap{overflow-x:auto;max-height:350px;overflow-y:auto;border:1px solid #eee;border-radius:8px}
 .trend-table{width:100%;border-collapse:collapse;font-size:11px}
 .trend-table th,.trend-table td{border:1px solid #e0e0e0;padding:3px 2px;text-align:center;min-width:20px}
@@ -544,7 +548,7 @@ function renderKillNum(key){
 // ===== 走势图 =====
 function renderTrendSection(key){
   const g=GAMES[key], st=gameState[key];
-  let html=`<div class="card trend-section"><div class="trend-title">📈 走势图 <span style="font-size:11px;color:#999;font-weight:normal">（手机可横屏查看）</span></div>`;
+  let html=`<div class="card trend-section"><div class="trend-title">📈 走势图 <span style="font-size:11px;color:#999;font-weight:normal">（手机可横屏）</span><label class="compare-toggle"><input type="checkbox" id="compareToggle_${key}" onchange="toggleCompare('${key}')"> 去年同期对比</label></div>`;
   if(g.type==='lotto'){
     html+=`<div class="trend-wrap" id="trendWrap"></div>`;
   }else{
@@ -556,11 +560,36 @@ function renderTrendSection(key){
 }
 function setTrendArea(key,area,el){gameState[key].trendArea=area;document.querySelectorAll(`#gameContainer .trend-tab`).forEach(t=>t.classList.remove('active'));el.classList.add('active');renderTrend(key);}
 function setTrendPos(key,pos,el){gameState[key].trendPos=pos;document.querySelectorAll(`#gameContainer .trend-tab`).forEach(t=>t.classList.remove('active'));el.classList.add('active');renderTrend(key);}
+function toggleCompare(key){
+  const cb=document.getElementById('compareToggle_'+key);
+  if(cb)localStorage.setItem('compare_'+key,cb.checked?'1':'0');
+  renderTrend(key);
+}
+function findLastYearIssue(key,issue){
+  const st=gameState[key];
+  if(!st.data.length)return null;
+  // 按期号规则找去年同期
+  let target='';
+  if(issue.startsWith('2026')&&issue.length===7)target='2025'+issue.slice(4);
+  else if(issue.startsWith('26')&&issue.length===5)target='25'+issue.slice(2);
+  else if(issue.startsWith('2025')&&issue.length===7)target='2024'+issue.slice(4);
+  else if(issue.startsWith('25')&&issue.length===5)target='24'+issue.slice(2);
+  if(target){
+    const found=st.data.find(d=>d.issue===target);
+    if(found)return found;
+  }
+  // 按日期找相近的
+  return null;
+}
 function renderTrend(key){
   const g=GAMES[key], st=gameState[key];
   const wrap=document.getElementById('trendWrap');
   if(!wrap)return;
   const data=st.data.slice(0,20).reverse();
+  const showCompare=localStorage.getItem('compare_'+key)==='1';
+  // 恢复开关状态
+  const cb=document.getElementById('compareToggle_'+key);
+  if(cb)cb.checked=showCompare;
   let myRows=[];
   try{myRows=JSON.parse(localStorage.getItem('myRows_'+key)||'[]');}catch(e){}
   let html='<table class="trend-table"><thead><tr><th class="issue-col">期号</th>';
@@ -580,6 +609,20 @@ function renderTrend(key){
         for(let n=1;n<=g.blueMax;n++)html+=blues.has(n)?`<td class="hit-blue">${pad(n)}</td>`:`<td class="miss">·</td>`;
       }
       html+='</tr>';
+      // 去年同期对比
+      if(showCompare){
+        const ly=findLastYearIssue(key,d.issue);
+        if(ly){
+          const lyReds=new Set(ly.red), lyBlues=new Set(ly.blue||[]);
+          html+=`<tr class="last-year-row"><td class="issue-col">↳${ly.issue}</td>`;
+          for(let n=1;n<=g.redMax;n++)html+=lyReds.has(n)?`<td class="hit-red" style="opacity:.6">${pad(n)}</td>`:`<td class="miss">·</td>`;
+          if(g.blueMax>0){
+            html+=`<td class="td-divider"></td>`;
+            for(let n=1;n<=g.blueMax;n++)html+=lyBlues.has(n)?`<td class="hit-blue" style="opacity:.6">${pad(n)}</td>`:`<td class="miss">·</td>`;
+          }
+          html+='</tr>';
+        }
+      }
     });
     // 我的选号行
     if(myRows.length>0){
@@ -615,6 +658,19 @@ function renderTrend(key){
         for(let n=0;n<=max;n++)html+=n===num?`<td class="${posColors[pi%posColors.length]}">${n}</td>`:`<td class="miss">·</td>`;
       });
       html+='</tr>';
+      // 去年同期对比
+      if(showCompare){
+        const ly=findLastYearIssue(key,d.issue);
+        if(ly){
+          html+=`<tr class="last-year-row"><td class="issue-col">↳${ly.issue}</td>`;
+          g.maxes.forEach((max,pi)=>{
+            if(pi>0)html+=`<td class="td-divider"></td>`;
+            const num=ly.digits[pi];
+            for(let n=0;n<=max;n++)html+=n===num?`<td class="${posColors[pi%posColors.length]}" style="opacity:.6">${n}</td>`:`<td class="miss">·</td>`;
+          });
+          html+='</tr>';
+        }
+      }
     });
     // 我的选号行
     const digitKey='myRows_digit_'+key;
