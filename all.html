@@ -596,6 +596,20 @@ function renderTrend(key){
       for(let n=0;n<=max;n++)html+=n===num?`<td class="hit-orange">${n}</td>`:`<td class="miss">·</td>`;
       html+='</tr>';
     });
+    // 我的选号行（数字型按位置保存）
+    const digitKey='myRows_digit_'+key+'_'+pos;
+    let digitRows=[];
+    try{digitRows=JSON.parse(localStorage.getItem(digitKey)||'[]');}catch(e){}
+    if(digitRows.length>0){
+      html+=`<tr><td colspan="${max+1}" style="background:#fff3cd;padding:4px;font-size:11px;color:#856404;font-weight:600">👇 我的选号（点击号码标记）</td></tr>`;
+      digitRows.forEach((row,ri)=>{
+        const nums=new Set(row.nums||[]);
+        html+=`<tr class="my-row"><td class="issue-col" style="background:#fff3cd">第${ri+1}组 <span class="del-myrow" onclick="delDigitRow('${key}',${pos},${ri})">✕</span></td>`;
+        for(let n=0;n<=max;n++)html+=`<td class="${nums.has(n)?'hit-orange':'miss'} my-cell" onclick="toggleDigitNum('${key}',${pos},${ri},${n})">${n}</td>`;
+        html+='</tr>';
+      });
+    }
+    html+=`<tr><td colspan="${max+1}" style="padding:6px"><button class="add-myrow-btn" onclick="addDigitRow('${key}',${pos})">+ 添加一组我的选号</button></td></tr>`;
   }
   html+='</tbody></table>';
   wrap.innerHTML=html;
@@ -623,6 +637,34 @@ function delMyRow(key,idx){
   try{myRows=JSON.parse(localStorage.getItem('myRows_'+key)||'[]');}catch(e){}
   myRows.splice(idx,1);
   localStorage.setItem('myRows_'+key,JSON.stringify(myRows));
+  renderTrend(key);
+}
+function toggleDigitNum(key,pos,rowIdx,num){
+  const digitKey='myRows_digit_'+key+'_'+pos;
+  let rows=[];
+  try{rows=JSON.parse(localStorage.getItem(digitKey)||'[]');}catch(e){}
+  if(!rows[rowIdx])rows[rowIdx]={nums:[]};
+  const arr=rows[rowIdx].nums||[];
+  const i=arr.indexOf(num);
+  if(i>=0)arr.splice(i,1);else arr.push(num);
+  rows[rowIdx].nums=arr;
+  localStorage.setItem(digitKey,JSON.stringify(rows));
+  renderTrend(key);
+}
+function addDigitRow(key,pos){
+  const digitKey='myRows_digit_'+key+'_'+pos;
+  let rows=[];
+  try{rows=JSON.parse(localStorage.getItem(digitKey)||'[]');}catch(e){}
+  rows.push({nums:[]});
+  localStorage.setItem(digitKey,JSON.stringify(rows));
+  renderTrend(key);
+}
+function delDigitRow(key,pos,idx){
+  const digitKey='myRows_digit_'+key+'_'+pos;
+  let rows=[];
+  try{rows=JSON.parse(localStorage.getItem(digitKey)||'[]');}catch(e){}
+  rows.splice(idx,1);
+  localStorage.setItem(digitKey,JSON.stringify(rows));
   renderTrend(key);
 }
 function saveAnalysis(key){
