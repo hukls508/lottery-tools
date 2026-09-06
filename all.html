@@ -350,18 +350,18 @@ function renderExpertLotto(key,g,data){
   const frontFreq={},backFreq={};
   for(let i=1;i<=frontMax;i++)frontFreq[i]=0;
   for(let i=1;i<=backMax;i++)backFreq[i]=0;
-  data.forEach(d=>{d.front.forEach(n=>frontFreq[n]++);d.back.forEach(n=>backFreq[n]++);});
+  data.forEach(d=>{d.red.forEach(n=>frontFreq[n]++);d.blue.forEach(n=>backFreq[n]++);});
   // 遗漏值
   const frontMiss={},backMiss={};
   for(let i=1;i<=frontMax;i++)frontMiss[i]=data.length;
   for(let i=1;i<=backMax;i++)backMiss[i]=data.length;
-  data.forEach((d,idx)=>{d.front.forEach(n=>{if(frontMiss[n]===data.length)frontMiss[n]=idx;});d.back.forEach(n=>{if(backMiss[n]===data.length)backMiss[n]=idx;});});
+  data.forEach((d,idx)=>{d.red.forEach(n=>{if(frontMiss[n]===data.length)frontMiss[n]=idx;});d.blue.forEach(n=>{if(backMiss[n]===data.length)backMiss[n]=idx;});});
   // 综合评分 = 频次分(40%) + 遗漏分(30%) + 近期热度(30%)
   const recent=data.slice(0,10);
   const recentFrontFreq={},recentBackFreq={};
   for(let i=1;i<=frontMax;i++)recentFrontFreq[i]=0;
   for(let i=1;i<=backMax;i++)recentBackFreq[i]=0;
-  recent.forEach(d=>{d.front.forEach(n=>recentFrontFreq[n]++);d.back.forEach(n=>recentBackFreq[n]++);});
+  recent.forEach(d=>{d.red.forEach(n=>recentFrontFreq[n]++);d.blue.forEach(n=>recentBackFreq[n]++);});
   function calcScore(freq,miss,recent,max){
     const scores={};
     const maxFreq=Math.max(...Object.values(freq));
@@ -397,31 +397,31 @@ function renderExpertLotto(key,g,data){
     return diffs.size-(nums.length-1);
   }
   // 历史AC值统计
-  const acValues=data.map(d=>calcAC(d.front));
+  const acValues=data.map(d=>calcAC(d.red));
   const avgAC=acValues.reduce((a,b)=>a+b,0)/acValues.length;
   // 跨度统计
-  const spans=data.map(d=>Math.max(...d.front)-Math.min(...d.front));
+  const spans=data.map(d=>Math.max(...d.red)-Math.min(...d.red));
   const avgSpan=spans.reduce((a,b)=>a+b,0)/spans.length;
   // 和值统计
-  const sums=data.map(d=>d.front.reduce((a,b)=>a+b,0));
+  const sums=data.map(d=>d.red.reduce((a,b)=>a+b,0));
   const avgSum=sums.reduce((a,b)=>a+b,0)/sums.length;
   const sumStd=Math.sqrt(sums.reduce((a,b)=>a+(b-avgSum)**2,0)/sums.length);
   // 尾数分析
   const tailFreq={};
   for(let i=0;i<=9;i++)tailFreq[i]=0;
-  data.forEach(d=>d.front.forEach(n=>tailFreq[n%10]++));
+  data.forEach(d=>d.red.forEach(n=>tailFreq[n%10]++));
   const hotTails=Object.entries(tailFreq).sort((a,b)=>b[1]-a[1]).slice(0,3).map(x=>+x[0]);
   // 质合分析
   const primes=new Set([2,3,5,7,11,13,17,19,23,29,31]);
   let primeCount=0,totalCount=0;
-  data.forEach(d=>d.front.forEach(n=>{totalCount++;if(primes.has(n))primeCount++;}));
+  data.forEach(d=>d.red.forEach(n=>{totalCount++;if(primes.has(n))primeCount++;}));
   const primeRatio=(primeCount/totalCount*100).toFixed(1);
   // 重号邻号分析
   const lastDraw=data[0];
-  const lastFront=lastDraw.front;
+  const lastFront=lastDraw.red;
   let repeatCount=0,adjCount=0;
   for(let i=1;i<Math.min(data.length,10);i++){
-    data[i].front.forEach(n=>{
+    data[i].red.forEach(n=>{
       if(lastFront.includes(n))repeatCount++;
       if(lastFront.some(m=>Math.abs(m-n)===1))adjCount++;
     });
@@ -431,7 +431,7 @@ function renderExpertLotto(key,g,data){
   // 连号分析
   let lianhaoCount=0;
   data.slice(0,30).forEach(d=>{
-    const s=[...d.front].sort((a,b)=>a-b);
+    const s=[...d.red].sort((a,b)=>a-b);
     for(let i=0;i<s.length-1;i++)if(s[i+1]-s[i]===1){lianhaoCount++;break;}
   });
   const lianhaoProb=(lianhaoCount/30*100).toFixed(1);
@@ -439,9 +439,9 @@ function renderExpertLotto(key,g,data){
   const zoneSize=Math.ceil(frontMax/3);
   let duanquCount=0;
   data.slice(0,30).forEach(d=>{
-    const z1=d.front.filter(n=>n<=zoneSize).length;
-    const z2=d.front.filter(n=>n>zoneSize&&n<=zoneSize*2).length;
-    const z3=d.front.filter(n=>n>zoneSize*2).length;
+    const z1=d.red.filter(n=>n<=zoneSize).length;
+    const z2=d.red.filter(n=>n>zoneSize&&n<=zoneSize*2).length;
+    const z3=d.red.filter(n=>n>zoneSize*2).length;
     if(z1===0||z2===0||z3===0)duanquCount++;
   });
   const duanquProb=(duanquCount/30*100).toFixed(1);
