@@ -110,6 +110,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Micr
 .pro-trend .my-row .circle{cursor:pointer}
 .pro-trend .my-cell{cursor:pointer}
 .pro-trend .my-cell:hover{background:#fff3cd!important}
+.pro-trend .miss-row{background:#f0f7ff}
+.pro-trend .miss-label{background:#d0e8f9;color:#2980b9;font-weight:700;font-size:10px;text-align:right;padding-right:6px}
+.pro-trend .miss-cell{font-size:10px;padding:2px 1px}
 .analysis-box{margin-top:10px}
 .analysis-label{font-size:12px;color:#666;margin-bottom:6px;font-weight:600;display:flex;justify-content:space-between;align-items:center}
 .add-note-btn{background:#667eea;color:#fff;border:none;border-radius:12px;padding:3px 10px;font-size:11px;cursor:pointer}
@@ -1035,6 +1038,29 @@ function renderTrend(key){
       for(let n=1;n<=blueMax;n++)html+=`<th class="th-blue">${pad(n)}</th>`;
     }
     html+='</tr></thead><tbody>';
+    // 当前遗漏行
+    const curRedMiss={}, curBlueMiss={};
+    for(let i=1;i<=redMax;i++)curRedMiss[i]=st.data.length;
+    for(let i=1;i<=blueMax;i++)curBlueMiss[i]=st.data.length;
+    st.data.forEach((d,idx)=>{
+      d.red.forEach(n=>{if(curRedMiss[n]===st.data.length)curRedMiss[n]=idx;});
+      if(d.blue)d.blue.forEach(n=>{if(curBlueMiss[n]===st.data.length)curBlueMiss[n]=idx;});
+    });
+    html+=`<tr class="miss-row"><td colspan="2" class="miss-label">当前遗漏</td>`;
+    for(let n=1;n<=redMax;n++){
+      const m=curRedMiss[n];
+      const color=m>=15?'#e74c3c':m>=8?'#f39c12':'#27ae60';
+      html+=`<td class="miss-cell" style="color:${color};font-weight:600">${m}</td>`;
+    }
+    if(blueMax>0){
+      html+=`<td class="td-divider"></td>`;
+      for(let n=1;n<=blueMax;n++){
+        const m=curBlueMiss[n];
+        const color=m>=10?'#e74c3c':m>=5?'#f39c12':'#27ae60';
+        html+=`<td class="miss-cell" style="color:${color};font-weight:600">${m}</td>`;
+      }
+    }
+    html+='</tr>';
     // 开奖数据
     data.forEach(d=>{
       const reds=new Set(d.red), blues=new Set(d.blue||[]);
@@ -1120,6 +1146,20 @@ function renderTrend(key){
       for(let n=0;n<=max;n++)html+=`<th class="${thColors[pi%thColors.length]}">${n}</th>`;
     });
     html+='</tr></thead><tbody>';
+    // 当前遗漏行
+    html+=`<tr class="miss-row"><td colspan="2" class="miss-label">当前遗漏</td>`;
+    g.maxes.forEach((max,pi)=>{
+      if(pi>0)html+=`<td class="td-divider"></td>`;
+      for(let n=0;n<=max;n++){
+        let miss=st.data.length;
+        for(let i=0;i<st.data.length;i++){
+          if(st.data[i].digits[pi]===n){miss=i;break;}
+        }
+        const color=miss>=15?'#e74c3c':miss>=8?'#f39c12':'#27ae60';
+        html+=`<td class="miss-cell" style="color:${color};font-weight:600">${miss}</td>`;
+      }
+    });
+    html+='</tr>';
     // 开奖数据
     data.forEach(d=>{
       html+=`<tr><td class="issue-col">${d.issue}</td><td class="week-col">${getWeek(d.date)}</td>`;
