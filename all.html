@@ -1222,7 +1222,130 @@ function renderTrend(key){
     });
   }
   html+='</tbody></table>';
-  wrap.innerHTML=html;
+  wrap.innerHTML=`<div class="trend-container" style="position:relative;overflow-x:auto">${html}<svg class="trend-lines" style="position:absolute;top:0;left:0;pointer-events:none;z-index:1"></svg></div>`;
+  setTimeout(()=>drawTrendLines(key),50);
+}
+
+function drawTrendLines(key){
+  const g=GAMES[key];
+  const wrap=document.getElementById('trendWrap');
+  if(!wrap)return;
+  const svg=wrap.querySelector('.trend-lines');
+  const table=wrap.querySelector('.pro-trend');
+  if(!svg||!table)return;
+  const container=wrap.querySelector('.trend-container');
+  svg.setAttribute('width',table.offsetWidth);
+  svg.setAttribute('height',table.offsetHeight);
+  svg.innerHTML='';
+  const data=gameState[key].data.slice(0,30).reverse();
+  // 获取所有开出号码的td位置
+  function getCellPositions(selector){
+    const cells=table.querySelectorAll(selector);
+    const positions=[];
+    cells.forEach(td=>{
+      const rect=td.getBoundingClientRect();
+      const tableRect=table.getBoundingClientRect();
+      positions.push({
+        x:rect.left-tableRect.left+rect.width/2,
+        y:rect.top-tableRect.top+rect.height/2
+      });
+    });
+    return positions;
+  }
+  // 乐透型：红球和蓝球分别连线
+  if(g.type==='lotto'){
+    // 红球连线：按行分组，每行的红球连起来
+    const rows=table.querySelectorAll('tbody tr');
+    let prevBluePoint=null;
+    rows.forEach((row,ri)=>{
+      if(row.classList.contains('miss-row')||row.classList.contains('stats-row')||row.classList.contains('my-row')||row.classList.contains('last-year-row'))return;
+      const redCells=row.querySelectorAll('.hit-red.circle');
+      const redPoints=[];
+      redCells.forEach(td=>{
+        const rect=td.getBoundingClientRect();
+        const tableRect=table.getBoundingClientRect();
+        redPoints.push({
+          x:rect.left-tableRect.left+rect.width/2,
+          y:rect.top-tableRect.top+rect.height/2
+        });
+      });
+      // 同行红球连线
+      for(let i=0;i<redPoints.length-1;i++){
+        const line=document.createElementNS('http://www.w3.org/2000/svg','line');
+        line.setAttribute('x1',redPoints[i].x);
+        line.setAttribute('y1',redPoints[i].y);
+        line.setAttribute('x2',redPoints[i+1].x);
+        line.setAttribute('y2',redPoints[i+1].y);
+        line.setAttribute('stroke','#e74c3c');
+        line.setAttribute('stroke-width','1.5');
+        line.setAttribute('opacity','0.4');
+        svg.appendChild(line);
+      }
+      // 蓝球连线（跨行）
+      const blueCells=row.querySelectorAll('.hit-blue.circle');
+      blueCells.forEach(td=>{
+        const rect=td.getBoundingClientRect();
+        const tableRect=table.getBoundingClientRect();
+        const pt={x:rect.left-tableRect.left+rect.width/2,y:rect.top-tableRect.top+rect.height/2};
+        if(prevBluePoint){
+          const line=document.createElementNS('http://www.w3.org/2000/svg','line');
+          line.setAttribute('x1',prevBluePoint.x);
+          line.setAttribute('y1',prevBluePoint.y);
+          line.setAttribute('x2',pt.x);
+          line.setAttribute('y2',pt.y);
+          line.setAttribute('stroke','#3498db');
+          line.setAttribute('stroke-width','2');
+          line.setAttribute('opacity','0.6');
+          svg.appendChild(line);
+        }
+        prevBluePoint=pt;
+      });
+    });
+  }else{
+    // 数字型：每位分别连线
+    const posColors=['#ff6b6b','#27ae60','#3498db','#9b59b6','#e91e63','#009688','#e74c3c'];
+    const rows=table.querySelectorAll('tbody tr');
+    const prevPoints={};
+    rows.forEach(row=>{
+      if(row.classList.contains('miss-row')||row.classList.contains('stats-row')||row.classList.contains('my-row')||row.classList.contains('last-year-row'))return;
+      g.maxes.forEach((max,pi)=>{
+        const cells=row.querySelectorAll(`.${['hit-orange','hit-green','hit-blue','hit-purple','hit-pink','hit-teal','hit-red'][pi%7]}.circle`);
+        cells.forEach(td=>{
+          // 判断这个td属于哪一位
+          const allCells=row.querySelectorAll('td');
+          let cellIdx=0,posIdx=0;
+          allCells.forEach((c,ci)=>{
+            if(c===td)cellIdx=ci;
+          });
+          // 简单处理：每位的第一个hit cell
+        });
+      });
+    });
+    // 简化：按颜色分组连线
+    const colorClasses=['hit-orange','hit-green','hit-blue','hit-purple','hit-pink','hit-teal','hit-red'];
+    colorClasses.forEach((cls,ci)=>{
+      const cells=table.querySelectorAll(`.${cls}.circle`);
+      let prev=null;
+      cells.forEach(td=>{
+        if(td.closest('.last-year-row')||td.closest('.my-row'))return;
+        const rect=td.getBoundingClientRect();
+        const tableRect=table.getBoundingClientRect();
+        const pt={x:rect.left-tableRect.left+rect.width/2,y:rect.top-tableRect.top+rect.height/2};
+        if(prev){
+          const line=document.createElementNS('http://www.w3.org/2000/svg','line');
+          line.setAttribute('x1',prev.x);
+          line.setAttribute('y1',prev.y);
+          line.setAttribute('x2',pt.x);
+          line.setAttribute('y2',pt.y);
+          line.setAttribute('stroke',posColors[ci]);
+          line.setAttribute('stroke-width','1.5');
+          line.setAttribute('opacity','0.5');
+          svg.appendChild(line);
+        }
+        prev=pt;
+      });
+    });
+  }
 }
 function toggleMyNum(key,rowIdx,area,num){
   let myRows=[];
