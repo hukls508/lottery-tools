@@ -428,25 +428,120 @@ function renderExpertLotto(key,g,data){
     // 低于理论值越多，回补概率越大
     regressScore[i]=deviation<0?Math.min(Math.abs(deviation)*30,20):0;
   }
-  // ===== 5. 六维度综合评分 =====
-  function calcScore(freq,miss,recent,follow,convert,regress,max){
+  // ===== 5. 重号邻号关联度 =====
+  const repeatAdjScore={};
+  for(let i=1;i<=frontMax;i++){
+    let repeatCnt=0,adjCnt=0,total=0;
+    for(let j=1;j<Math.min(data.length,30);j++){
+      total++;
+      if(data[j].red.includes(i)){
+        // 检查是否是上一期的重号或邻号
+        if(data[j-1].red.includes(i))repeatCnt++;
+        if(data[j-1].red.some(n=>Math.abs(n-i)===1))adjCnt++;
+      }
+    }
+    // 重号+邻号概率
+    repeatAdjScore[i]=total>0?(repeatCnt+adjCnt*0.5)/total*100:0;
+  }
+  // ===== 6. 尾数热度 =====
+  const tailFreq={};
+  for(let i=0;i<=9;i++)tailFreq[i]=0;
+  data.forEach(d=>d.red.forEach(n=>tailFreq[n%10]++));
+  const maxTailFreq=Math.max(...Object.values(tailFreq));
+  const tailScore={};
+  for(let i=1;i<=frontMax;i++){
+    tailScore[i]=(tailFreq[i%10]/maxTailFreq)*100;
+  }
+  // ===== 7. 区间热度 =====
+  const zoneSize=Math.ceil(frontMax/3);
+  const zoneFreq={1:0,2:0,3:0};
+  data.forEach(d=>d.red.forEach(n=>{
+    const z=n<=zoneSize?1:n<=zoneSize*2?2:3;
+    zoneFreq[z]++;
+  }));
+  const maxZoneFreq=Math.max(...Object.values(zoneFreq));
+  const zoneScore={};
+  for(let i=1;i<=frontMax;i++){
+    const z=i<=zoneSize?1:i<=zoneSize*2?2:3;
+    zoneScore[i]=(zoneFreq[z]/maxZoneFreq)*100;
+  }
+  // ===== 8. 贝叶斯后验概率 =====
+  // P(下期出|当前状态) = P(当前状态|下期出) * P(下期出) / P(当前状态)
+  const bayesScore={};
+  const priorProb=frontPick/frontMax; // 先验概率
+  for(let i=1;i<=frontMax;i++){
+    // 计算当前遗漏值条件下，下期出现的后验概率
+    const curMiss=frontMiss[i];
+    let hitAfterMiss=0,totalAfterMiss=0;
+    for(let j=0;j<data.length-1;j++){
+      // 计算第j期时，号码i的遗漏值
+      let missAtJ=data.length;
+      for(let k=j;k<data.length;k++){
+        if(data[k].red.includes(i)){missAtJ=k-j;break;}
+      }
+      if(missAtJ===curMiss){
+        totalAfterMiss++;
+        if(data[j-1]&&data[j-1].red.includes(i))hitAfterMiss++;
+      }
+    }
+    // 贝叶斯后验概率（带拉普拉斯平滑）
+    const likelihood=totalAfterMiss>0?(hitAfterMiss+1)/(totalAfterMiss+2):priorProb;
+    bayesScore[i]=Math.min(likelihood/priorProb,3)*100;
+  }
+  // ===== 9. 马尔可夫链状态转移 =====
+  // 状态：0=上期未出, 1=上期出了
+  // 转移概率：P(下期出|上期状态)
+  const markovScore={};
+  for(let i=1;i<=frontMax;i++){
+    let prevHit_nextHit=0, prevHit_total=0;
+    let prevMiss_nextHit=0, prevMiss_total=0;
+    for(let j=1;j<data.length;j++){
+      const prevHit=data[j].red.includes(i);
+      const nextHit=data[j-1].red.includes(i);
+      if(prevHit){prevHit_total++;if(nextHit)prevHit_nextHit++;}
+      else{prevMiss_total++;if(nextHit)prevMiss_nextHit++;}
+    }
+    const p_hit_to_hit=prevHit_total>0?prevHit_nextHit/prevHit_total:0;
+    const p_miss_to_hit=prevMiss_total>0?prevMiss_nextHit/prevMiss_total:0;
+    // 当前状态：上期是否出了
+    const curState=lastFront.includes(i)?1:0;
+    const transProb=curState===1?p_hit_to_hit:p_miss_to_hit;
+    markovScore[i]=Math.min(transProb/priorProb,3)*100;
+  }
+  // ===== 10. 十一维度综合评分 =====
+  function calcScore(freq,miss,recent,follow,convert,regress,repeatAdj,tail,zone,bayes,markov,max){
     const scores={};
     const maxFreq=Math.max(...Object.values(freq));
     const maxMiss=Math.max(...Object.values(miss));
     const maxFollow=Math.max(...Object.values(follow))||1;
+    const maxRepeatAdj=Math.max(...Object.values(repeatAdj))||1;
+    const maxTail=Math.max(...Object.values(tail))||1;
+    const maxZone=Math.max(...Object.values(zone))||1;
+    const maxBayes=Math.max(...Object.values(bayes))||1;
+    const maxMarkov=Math.max(...Object.values(markov))||1;
     for(let i=1;i<=max;i++){
-      const freqScore=(freq[i]/maxFreq)*20;           // 历史频次 20%
-      const missScore=(miss[i]/maxMiss)*20;           // 遗漏值 20%
-      const recentScore=Math.min(recent[i]/3,1)*20;   // 近期热度 20%
-      const followScoreVal=(follow[i]/maxFollow)*15;  // 跟随性 15%
-      const convertScoreVal=Math.max(convert[i],0)/40*15; // 转换信号 15%
-      const regressScoreVal=(regress[i]/20)*10;       // 均值回归 10%
-      scores[i]=Math.round(freqScore+missScore+recentScore+followScoreVal+convertScoreVal+regressScoreVal);
+      const freqScore=(freq[i]/maxFreq)*12;              // 历史频次 12%
+      const missScore=(miss[i]/maxMiss)*12;              // 遗漏值 12%
+      const recentScore=Math.min(recent[i]/3,1)*12;      // 近期热度 12%
+      const followScoreVal=(follow[i]/maxFollow)*8;      // 跟随性 8%
+      const convertScoreVal=Math.max(convert[i],0)/40*8; // 转换信号 8%
+      const regressScoreVal=(regress[i]/20)*8;           // 均值回归 8%
+      const repeatAdjScoreVal=(repeatAdj[i]/maxRepeatAdj)*8; // 重号邻号 8%
+      const tailScoreVal=(tail[i]/maxTail)*5;            // 尾数热度 5%
+      const zoneScoreVal=(zone[i]/maxZone)*5;            // 区间热度 5%
+      const bayesScoreVal=(bayes[i]/maxBayes)*12;        // 贝叶斯后验 12%
+      const markovScoreVal=(markov[i]/maxMarkov)*10;     // 马尔可夫转移 10%
+      scores[i]=Math.round(freqScore+missScore+recentScore+followScoreVal+convertScoreVal+regressScoreVal+repeatAdjScoreVal+tailScoreVal+zoneScoreVal+bayesScoreVal+markovScoreVal);
     }
     return scores;
   }
-  const frontScores=calcScore(frontFreq,frontMiss,recentFrontFreq,followScore,convertSignal,regressScore,frontMax);
+  const frontScores=calcScore(frontFreq,frontMiss,recentFrontFreq,followScore,convertSignal,regressScore,repeatAdjScore,tailScore,zoneScore,bayesScore,markovScore,frontMax);
   const backScores=calcScore(backFreq,backMiss,recentBackFreq,
+    Object.fromEntries(Array.from({length:backMax},(_,i)=>[i+1,0])),
+    Object.fromEntries(Array.from({length:backMax},(_,i)=>[i+1,0])),
+    Object.fromEntries(Array.from({length:backMax},(_,i)=>[i+1,0])),
+    Object.fromEntries(Array.from({length:backMax},(_,i)=>[i+1,0])),
+    Object.fromEntries(Array.from({length:backMax},(_,i)=>[i+1,0])),
     Object.fromEntries(Array.from({length:backMax},(_,i)=>[i+1,0])),
     Object.fromEntries(Array.from({length:backMax},(_,i)=>[i+1,0])),
     Object.fromEntries(Array.from({length:backMax},(_,i)=>[i+1,0])),
@@ -486,10 +581,10 @@ function renderExpertLotto(key,g,data){
   sums.forEach(s=>{const k=Math.floor(s/10)*10;sumHist[k]=(sumHist[k]||0)+1;});
   const sumDense=Object.entries(sumHist).sort((a,b)=>b[1]-a[1]).slice(0,2).map(x=>+x[0]);
   // 尾数分析
-  const tailFreq={};
-  for(let i=0;i<=9;i++)tailFreq[i]=0;
-  data.forEach(d=>d.red.forEach(n=>tailFreq[n%10]++));
-  const hotTails=Object.entries(tailFreq).sort((a,b)=>b[1]-a[1]).slice(0,3).map(x=>+x[0]);
+  const tailFreqAnalysis={};
+  for(let i=0;i<=9;i++)tailFreqAnalysis[i]=0;
+  data.forEach(d=>d.red.forEach(n=>tailFreqAnalysis[n%10]++));
+  const hotTails=Object.entries(tailFreqAnalysis).sort((a,b)=>b[1]-a[1]).slice(0,3).map(x=>+x[0]);
   // 质合分析
   const primes=new Set([2,3,5,7,11,13,17,19,23,29,31]);
   let primeCount=0,totalCount=0;
@@ -513,12 +608,12 @@ function renderExpertLotto(key,g,data){
   });
   const lianhaoProb=(lianhaoCount/30*100).toFixed(1);
   // 断区分析
-  const zoneSize=Math.ceil(frontMax/3);
+  const zoneSizeAnalysis=Math.ceil(frontMax/3);
   let duanquCount=0;
   data.slice(0,30).forEach(d=>{
-    const z1=d.red.filter(n=>n<=zoneSize).length;
-    const z2=d.red.filter(n=>n>zoneSize&&n<=zoneSize*2).length;
-    const z3=d.red.filter(n=>n>zoneSize*2).length;
+    const z1=d.red.filter(n=>n<=zoneSizeAnalysis).length;
+    const z2=d.red.filter(n=>n>zoneSizeAnalysis&&n<=zoneSizeAnalysis*2).length;
+    const z3=d.red.filter(n=>n>zoneSizeAnalysis*2).length;
     if(z1===0||z2===0||z3===0)duanquCount++;
   });
   const duanquProb=(duanquCount/30*100).toFixed(1);
@@ -573,10 +668,10 @@ function renderExpertLotto(key,g,data){
       const combo=allCandidates.filter((_,i)=>i%2===attempt%2).slice(0,frontPick);
       if(isValidCombo(combo.sort((a,b)=>a-b))){
         const blue=backRanked.slice(2,backPick+2).map(x=>+x[0]);
-        picks.push({red:combo.sort((a,b)=>a-b),blue:blue.length===backPick?blue:backRanked.slice(0,backPick).map(x=>+x[0]),type:'六维综合评分最优',reason:'综合频次、遗漏、热度、跟随性、转换信号、均值回归六个维度评分，过滤不合理组合'});
+        picks.push({red:combo.sort((a,b)=>a-b),blue:blue.length===backPick?blue:backRanked.slice(0,backPick).map(x=>+x[0]),type:'十一维综合评分最优',reason:'综合频次、遗漏、热度、跟随性、转换信号、均值回归、重号邻号、尾数、区间、贝叶斯、马尔可夫十一个维度评分，过滤不合理组合'});
       }
     }
-    if(picks.length<3)picks.push({red:allCandidates.slice(0,frontPick).sort((a,b)=>a-b),blue:backRanked.slice(0,backPick).map(x=>+x[0]),type:'综合评分',reason:'六维度综合评分最高的号码'});
+    if(picks.length<3)picks.push({red:allCandidates.slice(0,frontPick).sort((a,b)=>a-b),blue:backRanked.slice(0,backPick).map(x=>+x[0]),type:'综合评分',reason:'十一维度综合评分最高的号码'});
     return picks;
   }
   const recommends=genRecommend();
@@ -614,7 +709,7 @@ function renderExpertLotto(key,g,data){
   html+=`<div style="background:#f8f9fa;padding:10px;border-radius:8px"><div style="font-size:11px;color:#999">断区概率</div><div style="font-size:16px;font-weight:600;color:${duanquProb>40?'#e74c3c':'#333'}">${duanquProb}%</div></div>`;
   html+=`</div>`;
   // 评分维度说明
-  html+=`<div style="background:#fff8e1;padding:10px;border-radius:8px;margin-bottom:12px;font-size:12px;color:#856404"><strong>📐 六维评分模型：</strong>历史频次20% + 遗漏值20% + 近期热度20% + 号码跟随性15% + 冷热转换15% + 均值回归10%；推荐号码已通过AC值、和值、跨度、冷热搭配四重过滤</div>`;
+  html+=`<div style="background:#fff8e1;padding:10px;border-radius:8px;margin-bottom:12px;font-size:12px;color:#856404"><strong>📐 十一维评分模型：</strong>历史频次12% + 遗漏值12% + 近期热度12% + 号码跟随性8% + 冷热转换8% + 均值回归8% + 重号邻号8% + 尾数热度5% + 区间热度5% + 贝叶斯后验12% + 马尔可夫转移10%；推荐号码已通过AC值、和值、跨度、冷热搭配四重过滤</div>`;
   // 胆码推荐
   html+=`<div style="margin-bottom:12px"><span style="font-weight:600;color:#333">🎯 胆码推荐：</span><span style="color:#e74c3c;font-weight:600">前区 ${danFront.join(' ')}</span> <span style="color:#3498db;font-weight:600">后区 ${danBack.join(' ')}</span></div>`;
   // 杀号推荐
