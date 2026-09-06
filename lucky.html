@@ -221,7 +221,7 @@ let selectedZodiac = '';
 let selectedConstellation = '';
 let selectedGames = {birthday:'ssq',lucky:'ssq',zodiac:'ssq',constellation:'ssq'};
 
-function getToday(){return new Date().toISOString().slice(0,10);}
+function getToday(){const d=new Date();const y=d.getFullYear();const m=String(d.getMonth()+1).padStart(2,'0');const day=String(d.getDate()).padStart(2,'0');return `${y}-${m}-${day}`;}
 function isGenerated(type){return localStorage.getItem('lucky_gen_'+type)===getToday();}
 function setGenerated(type,html){
   localStorage.setItem('lucky_gen_'+type,getToday());
