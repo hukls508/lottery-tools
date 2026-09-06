@@ -551,29 +551,32 @@ function renderExpertLotto(key,g,data){
       if(isValidCombo([...new Set(combo)].sort((a,b)=>a-b))){
         const final=[...new Set(combo)].sort((a,b)=>a-b).slice(0,frontPick);
         if(final.length===frontPick&&isValidCombo(final)){
-          picks.push({red:final,blue:[hotBack[0]||backRanked[0][0]],type:'热号主导+冷号回补',reason:'以近期热号为主，搭配1个遗漏较久的冷号回补，AC值、和值、跨度均在历史合理区间'});
+          const blue=backRanked.slice(0,backPick).map(x=>+x[0]);
+          picks.push({red:final,blue:blue,type:'热号主导+冷号回补',reason:'以近期热号为主，搭配1个遗漏较久的冷号回补，AC值、和值、跨度均在历史合理区间'});
         }
       }
     }
-    if(picks.length<1)picks.push({red:hotFront.slice(0,frontPick).sort((a,b)=>a-b),blue:[hotBack[0]||backRanked[0][0]],type:'热号主导',reason:'以近期高频热号为主'});
+    if(picks.length<1)picks.push({red:hotFront.slice(0,frontPick).sort((a,b)=>a-b),blue:backRanked.slice(0,backPick).map(x=>+x[0]),type:'热号主导',reason:'以近期高频热号为主'});
     // 策略2：胆码+冷热均衡
     for(let attempt=0;attempt<50&&picks.length<2;attempt++){
       const base=[...danFront];
       const remaining=allCandidates.filter(n=>!base.includes(n));
       const combo=base.concat(remaining.slice(0,frontPick-base.length));
       if(isValidCombo(combo.sort((a,b)=>a-b))){
-        picks.push({red:combo.sort((a,b)=>a-b),blue:[backRanked[1]?backRanked[1][0]:backRanked[0][0]],type:'胆码驱动+冷热均衡',reason:'以高评分胆码为核心，搭配温号和冷号，冷热均衡分布'});
+        const blue=backRanked.slice(1,backPick+1).map(x=>+x[0]);
+        picks.push({red:combo.sort((a,b)=>a-b),blue:blue.length===backPick?blue:backRanked.slice(0,backPick).map(x=>+x[0]),type:'胆码驱动+冷热均衡',reason:'以高评分胆码为核心，搭配温号和冷号，冷热均衡分布'});
       }
     }
-    if(picks.length<2)picks.push({red:[...danFront,...warmFront.slice(0,frontPick-danFront.length)].sort((a,b)=>a-b),blue:[backRanked[0][0]],type:'胆码驱动',reason:'以高评分胆码为核心'});
+    if(picks.length<2)picks.push({red:[...danFront,...warmFront.slice(0,frontPick-danFront.length)].sort((a,b)=>a-b),blue:backRanked.slice(0,backPick).map(x=>+x[0]),type:'胆码驱动',reason:'以高评分胆码为核心'});
     // 策略3：综合评分最优
     for(let attempt=0;attempt<50&&picks.length<3;attempt++){
       const combo=allCandidates.filter((_,i)=>i%2===attempt%2).slice(0,frontPick);
       if(isValidCombo(combo.sort((a,b)=>a-b))){
-        picks.push({red:combo.sort((a,b)=>a-b),blue:[backRanked[2]?backRanked[2][0]:backRanked[0][0]],type:'六维综合评分最优',reason:'综合频次、遗漏、热度、跟随性、转换信号、均值回归六个维度评分，过滤不合理组合'});
+        const blue=backRanked.slice(2,backPick+2).map(x=>+x[0]);
+        picks.push({red:combo.sort((a,b)=>a-b),blue:blue.length===backPick?blue:backRanked.slice(0,backPick).map(x=>+x[0]),type:'六维综合评分最优',reason:'综合频次、遗漏、热度、跟随性、转换信号、均值回归六个维度评分，过滤不合理组合'});
       }
     }
-    if(picks.length<3)picks.push({red:allCandidates.slice(0,frontPick).sort((a,b)=>a-b),blue:[backRanked[0][0]],type:'综合评分',reason:'六维度综合评分最高的号码'});
+    if(picks.length<3)picks.push({red:allCandidates.slice(0,frontPick).sort((a,b)=>a-b),blue:backRanked.slice(0,backPick).map(x=>+x[0]),type:'综合评分',reason:'六维度综合评分最高的号码'});
     return picks;
   }
   const recommends=genRecommend();
