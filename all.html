@@ -344,8 +344,8 @@ function renderExpert(key){
 }
 
 function renderExpertLotto(key,g,data){
-  const frontMax=g.frontMax, backMax=g.backMax;
-  const frontPick=g.frontPick, backPick=g.backPick;
+  const frontMax=g.redMax, backMax=g.blueMax;
+  const frontPick=g.redPick, backPick=g.bluePick;
   // 统计频次
   const frontFreq={},backFreq={};
   for(let i=1;i<=frontMax;i++)frontFreq[i]=0;
@@ -505,11 +505,12 @@ function renderExpertLotto(key,g,data){
 }
 
 function renderExpertDigit(key,g,data){
-  const positions=g.positions;
-  const numRange=g.numRange||9;
+  const positions=g.digits;
+  const maxes=g.maxes||Array(positions).fill(9);
   // 每位统计
   const posAnalysis=[];
   for(let p=0;p<positions;p++){
+    const numRange=maxes[p];
     const freq={};
     for(let i=0;i<=numRange;i++)freq[i]=0;
     data.forEach(d=>{if(d.digits[p]!==undefined)freq[d.digits[p]]++;});
@@ -517,7 +518,7 @@ function renderExpertDigit(key,g,data){
     for(let i=0;i<=numRange;i++)miss[i]=data.length;
     data.forEach((d,idx)=>{if(d.digits[p]!==undefined&&miss[d.digits[p]]===data.length)miss[d.digits[p]]=idx;});
     const ranked=Object.entries(freq).sort((a,b)=>b[1]-a[1]);
-    posAnalysis.push({freq,miss,hot:ranked.slice(0,3).map(x=>+x[0]),cold:ranked.slice(-3).map(x=>+x[0])});
+    posAnalysis.push({freq,miss,hot:ranked.slice(0,3).map(x=>+x[0]),cold:ranked.slice(-3).map(x=>+x[0]),numRange});
   }
   // 和值分析
   const sums=data.map(d=>d.digits.reduce((a,b)=>a+b,0));
@@ -553,7 +554,7 @@ function renderExpertDigit(key,g,data){
   const posNames=['个位','十位','百位','千位','万位','十万位','百万位'];
   posAnalysis.forEach((p,i)=>{
     html+=`<div style="margin-bottom:12px"><div style="font-weight:600;margin-bottom:6px;color:#333">${posNames[i]||('第'+(i+1)+'位')} <span style="font-size:11px;color:#999;font-weight:normal">热:${p.hot.join(' ')} 冷:${p.cold.join(' ')}</span></div><div style="display:flex;flex-wrap:wrap;gap:4px">`;
-    for(let n=0;n<=numRange;n++){
+    for(let n=0;n<=p.numRange;n++){
       const isHot=p.hot.includes(n),isCold=p.cold.includes(n);
       const bg=isHot?'#e74c3c':isCold?'#3498db':'#eee';
       const color=isHot||isCold?'#fff':'#666';
