@@ -114,6 +114,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Micr
 .pro-trend .miss-label{background:#d0e8f9;color:#2980b9;font-weight:700;font-size:10px;text-align:right;padding-right:6px}
 .pro-trend .miss-cell{font-size:10px;padding:2px 1px}
 .pro-trend .miss-num{color:#bbb;font-size:10px}
+.pro-trend .trend-num{cursor:pointer;transition:all .15s}
+.pro-trend .trend-num:hover{background:#fff3cd!important}
+.pro-trend .trend-num.highlighted{background:#ffd700!important;color:#333!important;font-weight:700!important;outline:2px solid #ff8c00;outline-offset:-2px}
+.pro-trend .hit-row{background:#fffbe6!important}
+.pro-trend .hit-row .miss-num{color:#666!important}
 .analysis-box{margin-top:10px}
 .analysis-label{font-size:12px;color:#666;margin-bottom:6px;font-weight:600;display:flex;justify-content:space-between;align-items:center}
 .add-note-btn{background:#667eea;color:#fff;border:none;border-radius:12px;padding:3px 10px;font-size:11px;cursor:pointer}
@@ -1062,14 +1067,29 @@ function renderTrend(key){
       }
     }
     html+='</tr>';
+    // 计算号码详细统计
+    const redDetail=calcStats(d=>d.red,redMax);
+    const blueDetail=blueMax>0?calcStats(d=>d.blue,blueMax):null;
     // 开奖数据
     data.forEach(d=>{
       const reds=new Set(d.red), blues=new Set(d.blue||[]);
       html+=`<tr><td class="issue-col">${d.issue}</td><td class="week-col">${getWeek(d.date)}</td>`;
-      for(let n=1;n<=redMax;n++)html+=reds.has(n)?`<td class="hit-red circle">${pad(n)}</td>`:`<td class="miss-num">${pad(n)}</td>`;
+      for(let n=1;n<=redMax;n++){
+        const isHit=reds.has(n);
+        const miss=curRedMiss[n];
+        const heatBg=!isHit?`background:rgba(231,76,60,${Math.min(miss/30,0.15)})`:'';
+        const title=`号码${pad(n)}\n出现次数:${redDetail.counts[n]}\n平均遗漏:${redDetail.counts[n]>0?Math.round(redDetail.missSum[n]/redDetail.counts[n]):'-'}\n最大遗漏:${redDetail.maxMiss[n]}\n当前遗漏:${miss}`;
+        html+=isHit?`<td class="hit-red circle trend-num" data-num="${n}" data-area="red" title="${title}" onclick="highlightTrendNum('${key}','red',${n})">${pad(n)}</td>`:`<td class="miss-num trend-num" data-num="${n}" data-area="red" title="${title}" style="${heatBg}" onclick="highlightTrendNum('${key}','red',${n})">${pad(n)}</td>`;
+      }
       if(blueMax>0){
         html+=`<td class="td-divider"></td>`;
-        for(let n=1;n<=blueMax;n++)html+=blues.has(n)?`<td class="hit-blue circle">${pad(n)}</td>`:`<td class="miss-num">${pad(n)}</td>`;
+        for(let n=1;n<=blueMax;n++){
+          const isHit=blues.has(n);
+          const miss=curBlueMiss[n];
+          const heatBg=!isHit?`background:rgba(52,152,219,${Math.min(miss/20,0.15)})`:'';
+          const title=`蓝球${pad(n)}\n出现次数:${blueDetail.counts[n]}\n平均遗漏:${blueDetail.counts[n]>0?Math.round(blueDetail.missSum[n]/blueDetail.counts[n]):'-'}\n最大遗漏:${blueDetail.maxMiss[n]}\n当前遗漏:${miss}`;
+          html+=isHit?`<td class="hit-blue circle trend-num" data-num="${n}" data-area="blue" title="${title}" onclick="highlightTrendNum('${key}','blue',${n})">${pad(n)}</td>`:`<td class="miss-num trend-num" data-num="${n}" data-area="blue" title="${title}" style="${heatBg}" onclick="highlightTrendNum('${key}','blue',${n})">${pad(n)}</td>`;
+        }
       }
       html+='</tr>';
       // 去年同期对比
@@ -1161,13 +1181,27 @@ function renderTrend(key){
       }
     });
     html+='</tr>';
+    // 计算每位当前遗漏
+    const digitCurMiss=[];
+    g.maxes.forEach((max,pi)=>{
+      const miss={};
+      for(let n=0;n<=max;n++)miss[n]=st.data.length;
+      st.data.forEach((d,idx)=>{if(d.digits[pi]===n&&miss[n]===st.data.length)miss[n]=idx;});
+      digitCurMiss.push(miss);
+    });
     // 开奖数据
     data.forEach(d=>{
       html+=`<tr><td class="issue-col">${d.issue}</td><td class="week-col">${getWeek(d.date)}</td>`;
       g.maxes.forEach((max,pi)=>{
         if(pi>0)html+=`<td class="td-divider"></td>`;
         const num=d.digits[pi];
-        for(let n=0;n<=max;n++)html+=n===num?`<td class="${posColors[pi%posColors.length]} circle">${n}</td>`:`<td class="miss-num">${n}</td>`;
+        for(let n=0;n<=max;n++){
+          const isHit=n===num;
+          const miss=digitCurMiss[pi][n];
+          const heatBg=!isHit?`background:rgba(231,76,60,${Math.min(miss/30,0.15)})`:'';
+          const title=`第${pi+1}位 ${n}\n当前遗漏:${miss}`;
+          html+=isHit?`<td class="${posColors[pi%posColors.length]} circle trend-num" data-num="${n}" data-pos="${pi}" title="${title}" onclick="highlightTrendDigit('${key}',${pi},${n})">${n}</td>`:`<td class="miss-num trend-num" data-num="${n}" data-pos="${pi}" title="${title}" style="${heatBg}" onclick="highlightTrendDigit('${key}',${pi},${n})">${n}</td>`;
+        }
       });
       html+='</tr>';
       // 去年同期对比
@@ -1322,6 +1356,47 @@ function drawTrendLines(key){
         }
         prev=pt;
       });
+    });
+  }
+}
+function highlightTrendNum(key,area,num){
+  const wrap=document.getElementById('trendWrap');
+  if(!wrap)return;
+  const table=wrap.querySelector('.pro-trend');
+  if(!table)return;
+  // 切换高亮
+  const allNums=table.querySelectorAll(`.trend-num[data-area="${area}"][data-num="${num}"]`);
+  const isHighlighted=allNums.length>0&&allNums[0].classList.contains('highlighted');
+  // 清除所有高亮
+  table.querySelectorAll('.trend-num.highlighted').forEach(el=>el.classList.remove('highlighted'));
+  table.querySelectorAll('.trend-num.hit-row').forEach(el=>el.classList.remove('hit-row'));
+  if(!isHighlighted){
+    allNums.forEach(el=>{
+      el.classList.add('highlighted');
+      // 高亮整行
+      const row=el.closest('tr');
+      if(row&&!row.classList.contains('miss-row')&&!row.classList.contains('stats-row')){
+        row.classList.add('hit-row');
+      }
+    });
+  }
+}
+function highlightTrendDigit(key,pos,num){
+  const wrap=document.getElementById('trendWrap');
+  if(!wrap)return;
+  const table=wrap.querySelector('.pro-trend');
+  if(!table)return;
+  const allNums=table.querySelectorAll(`.trend-num[data-pos="${pos}"][data-num="${num}"]`);
+  const isHighlighted=allNums.length>0&&allNums[0].classList.contains('highlighted');
+  table.querySelectorAll('.trend-num.highlighted').forEach(el=>el.classList.remove('highlighted'));
+  table.querySelectorAll('.trend-num.hit-row').forEach(el=>el.classList.remove('hit-row'));
+  if(!isHighlighted){
+    allNums.forEach(el=>{
+      el.classList.add('highlighted');
+      const row=el.closest('tr');
+      if(row&&!row.classList.contains('miss-row')&&!row.classList.contains('stats-row')){
+        row.classList.add('hit-row');
+      }
     });
   }
 }
