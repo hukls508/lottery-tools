@@ -392,6 +392,8 @@ function renderGame(){
   if(g.type==='lotto')html+=renderMissing(key);
   // 杀号推荐
   if(g.type==='lotto')html+=renderKillNum(key);
+  // 深度分析（会员级功能）
+  if(g.type==='lotto')html+=renderDeepAnalysis(key);
   // 走势图
   html+=renderTrendSection(key);
   // 选号中心
@@ -765,6 +767,50 @@ function renderExpertLotto(key,g,data){
   html+=`<div style="margin-bottom:12px"><span style="font-weight:600;color:#333">🎯 胆码推荐：</span><span style="color:#e74c3c;font-weight:600">前区 ${danFront.join(' ')}</span> <span style="color:#3498db;font-weight:600">后区 ${danBack.join(' ')}</span></div>`;
   // 杀号推荐
   html+=`<div style="margin-bottom:12px"><span style="font-weight:600;color:#333">❌ 杀号推荐：</span><span style="color:#999;text-decoration:line-through">前区 ${killFront.join(' ')}</span> <span style="color:#999;text-decoration:line-through">后区 ${killBack.join(' ')}</span></div>`;
+  // 多模型共识推荐
+  const modelFreq=frontRanked.slice(0,10).map(x=>+x[0]);
+  const modelMarkov=[...frontRanked].sort((a,b)=>{const sa=a[0]%10, sb=b[0]%10;return (hotTails.includes(String(sa))?1:0)-(hotTails.includes(String(sb))?1:0)||b[1]-a[1];}).slice(0,10).map(x=>+x[0]);
+  const modelBayes=[...frontRanked].sort((a,b)=>{const missA=frontMiss[a[0]]||0, missB=frontMiss[b[0]]||0;return missB-missA||b[1]-a[1];}).slice(0,10).map(x=>+x[0]);
+  const consensus=modelFreq.filter(n=>modelMarkov.includes(n)&&modelBayes.includes(n));
+  const consensusFinal=consensus.length>=frontPick?consensus.slice(0,frontPick):[...new Set([...consensus,...modelFreq.slice(0,frontPick)])].slice(0,frontPick).sort((a,b)=>a-b);
+  html+=`<div style="background:linear-gradient(135deg,#f3e5f5,#fff);border:1px solid #ce93d8;border-radius:10px;padding:12px;margin-bottom:12px">
+    <div style="font-weight:600;color:#6a1b9a;margin-bottom:8px;font-size:14px">🎯 三模型共识推荐</div>
+    <div style="font-size:11px;color:#999;margin-bottom:8px">频率模型 + 马尔可夫转移 + 贝叶斯后验，三模型共同命中</div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">
+      ${consensusFinal.map(n=>`<span class="ball ball-red">${pad(n)}</span>`).join('')}
+      <span style="margin:0 4px;color:#ccc">+</span>
+      ${danBack.slice(0,backPick).map(n=>`<span class="ball ball-blue">${pad(n)}</span>`).join('')}
+    </div>
+    <div style="display:flex;gap:8px;font-size:10px;color:#666">
+      <span>频率: ${modelFreq.slice(0,frontPick).join(' ')}</span>
+      <span>马尔可夫: ${modelMarkov.slice(0,frontPick).join(' ')}</span>
+      <span>贝叶斯: ${modelBayes.slice(0,frontPick).join(' ')}</span>
+    </div>
+  </div>`;
+  // 冷号回补指数
+  const coldRecovery=coldFront.map(n=>{
+    const miss=frontMiss[n]||0;
+    const avgMiss=Object.values(frontMiss).reduce((a,b)=>a+b,0)/frontMax;
+    const freq=frontFreq[n]||0;
+    const avgFreq=(data.length*frontPick)/frontMax;
+    let score=50;
+    if(miss>avgMiss*1.5)score+=25;else if(miss>avgMiss)score+=15;
+    if(freq<avgFreq*0.5)score+=15;else if(freq<avgFreq*0.8)score+=8;
+    if(miss>avgMiss*2)score+=10;
+    return {num:n,score:Math.min(99,score),miss,freq};
+  }).sort((a,b)=>b.score-a.score).slice(0,5);
+  html+=`<div style="background:linear-gradient(135deg,#e3f2fd,#fff);border:1px solid #90caf9;border-radius:10px;padding:12px;margin-bottom:12px">
+    <div style="font-weight:600;color:#1565c0;margin-bottom:8px;font-size:14px">❄️ 冷号回补指数 TOP5</div>
+    <div style="display:flex;flex-direction:column;gap:6px">
+      ${coldRecovery.map(c=>`<div style="display:flex;align-items:center;gap:8px">
+        <span class="ball ball-blue" style="width:24px;height:24px;line-height:24px;font-size:12px">${pad(c.num)}</span>
+        <div class="progress-bar" style="flex:1"><div class="progress-fill cold" style="width:${c.score}%"></div></div>
+        <span style="font-size:12px;font-weight:600;color:#1565c0;min-width:30px;text-align:right">${c.score}分</span>
+        <span style="font-size:10px;color:#999;min-width:50px">遗漏${c.miss}期</span>
+      </div>`).join('')}
+    </div>
+    <div style="font-size:10px;color:#999;margin-top:6px">回补指数越高，近期开出概率越大（基于遗漏时长与历史频率）</div>
+  </div>`;
   // 专家推荐号码
   html+=`<div style="font-weight:600;margin-bottom:8px;color:#333">💡 专家推荐号码（已通过智能过滤）</div>`;
   recommends.forEach((r,i)=>{
@@ -1009,6 +1055,37 @@ function renderMissing(key){
     html+=`<div class="freq-cell ${level}"><div class="num">${pad(item.num)}</div><div class="cnt">${item.cur}期</div></div>`;
   });
   html+=`</div>`;
+  // 六维评分（TOP10遗漏号码）
+  html+=`<div class="freq-label" style="margin-top:12px">🎯 六维评分（遗漏TOP10）</div>`;
+  const freqAll={};for(let i=1;i<=g.redMax;i++)freqAll[i]=0;
+  data.forEach(d=>d.red.forEach(n=>freqAll[n]++));
+  const recent5Freq={};for(let i=1;i<=g.redMax;i++)recent5Freq[i]=0;
+  data.slice(0,5).forEach(d=>d.red.forEach(n=>recent5Freq[n]++));
+  redList.slice(0,10).forEach(item=>{
+    const n=item.num;
+    const s1=Math.min(100,item.cur/(item.avg||1)*50);
+    const s2=Math.min(100,(1-item.avg/(item.max||1))*100);
+    const s3=Math.min(100,item.cur/(item.max||1)*100);
+    const avgFreq=(data.length*g.redPick)/g.redMax;
+    const s4=Math.min(100,Math.abs(freqAll[n]-avgFreq)/avgFreq*100);
+    const s5=recent5Freq[n]>0?100-recent5Freq[n]*25:100;
+    const s6=Math.round((s1+s2+s3+s4+s5)/5);
+    html+=`<div style="background:#f8f9fa;border-radius:8px;padding:8px 10px;margin-bottom:6px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+        <span class="ball ${g.redClass}" style="width:22px;height:22px;line-height:22px;font-size:11px">${pad(n)}</span>
+        <span style="font-size:11px;color:#999">综合评分</span>
+        <span style="font-size:14px;font-weight:700;color:${s6>=70?'#e74c3c':s6>=50?'#f39c12':'#3498db'}">${s6}分</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 10px">
+        <div style="font-size:10px;color:#999">遗漏值 <span style="float:right;color:#333">${Math.round(s1)}</span></div>
+        <div style="font-size:10px;color:#999">均遗比 <span style="float:right;color:#333">${Math.round(s2)}</span></div>
+        <div style="font-size:10px;color:#999">极值比 <span style="float:right;color:#333">${Math.round(s3)}</span></div>
+        <div style="font-size:10px;color:#999">频率差 <span style="float:right;color:#333">${Math.round(s4)}</span></div>
+        <div style="font-size:10px;color:#999">近期冷度 <span style="float:right;color:#333">${Math.round(s5)}</span></div>
+        <div style="font-size:10px;color:#999">回补概率 <span style="float:right;color:${s6>=70?'#e74c3c':'#666'};font-weight:600">${s6>=70?'高':s6>=50?'中':'低'}</span></div>
+      </div>
+    </div>`;
+  });
   // 遗漏详情表
   html+=`<div class="freq-label" style="margin-top:12px">红球遗漏详情</div><div class="table-wrap"><table class="history-table"><thead><tr><th>号码</th><th>当前遗漏</th><th>最大遗漏</th><th>平均遗漏</th><th>状态</th></tr></thead><tbody>`;
   redList.forEach(item=>{
@@ -1101,6 +1178,139 @@ function renderKillNum(key){
     </div>`;
   }
   html+=`<div style="font-size:11px;color:#999;margin-top:10px;text-align:center">※ 杀号基于历史数据统计，彩票为独立随机事件，仅供娱乐参考</div>`;
+  html+=`</div>`;
+  return html;
+}
+
+// ===== 深度分析（会员级功能）=====
+function renderDeepAnalysis(key){
+  const g=GAMES[key], st=gameState[key];
+  const data=st.data;
+  const frontMax=g.redMax, frontPick=g.redPick;
+  let html=`<div class="card"><div class="card-title"><span>🧠 深度分析</span><span style="font-size:11px;color:#9c27b0">会员级</span></div>`;
+  
+  // === 1. 和值走势曲线 ===
+  html+=`<div style="margin-bottom:18px"><div style="font-weight:600;margin-bottom:8px;font-size:14px">📈 和值走势（近30期）</div>`;
+  const sums=data.slice(0,30).map(d=>d.red.reduce((a,b)=>a+b,0));
+  const avgSum=sums.reduce((a,b)=>a+b,0)/sums.length;
+  const maxSum=Math.max(...sums), minSum=Math.min(...sums);
+  const chartH=80, chartW=100;
+  const points=sums.map((s,i)=>{
+    const x=(i/(sums.length-1))*chartW;
+    const y=chartH-((s-minSum)/(maxSum-minSum||1))*chartH;
+    return `${x.toFixed(1)},${y.toFixed(1)}`;
+  }).join(' ');
+  html+=`<div style="position:relative;background:#f8f9fa;border-radius:8px;padding:8px">
+    <svg viewBox="0 0 ${chartW} ${chartH}" style="width:100%;height:100px;display:block">
+      <line x1="0" y1="${(chartH-((avgSum-minSum)/(maxSum-minSum||1))*chartH).toFixed(1)}" x2="${chartW}" y2="${(chartH-((avgSum-minSum)/(maxSum-minSum||1))*chartH).toFixed(1)}" stroke="#ffc107" stroke-width="0.5" stroke-dasharray="2,2"/>
+      <polyline points="${points}" fill="none" stroke="#667eea" stroke-width="1.2" stroke-linejoin="round"/>
+      ${sums.map((s,i)=>{const x=(i/(sums.length-1))*chartW;const y=chartH-((s-minSum)/(maxSum-minSum||1))*chartH;return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="1" fill="#667eea"/>`}).join('')}
+    </svg>
+    <div style="display:flex;justify-content:space-between;font-size:10px;color:#999;margin-top:4px">
+      <span>最低 ${minSum}</span><span style="color:#f39c12">均值 ${avgSum.toFixed(0)}</span><span>最高 ${maxSum}</span>
+    </div>
+  </div></div>`;
+  
+  // === 2. 尾数分布分析 ===
+  html+=`<div style="margin-bottom:18px"><div style="font-weight:600;margin-bottom:8px;font-size:14px">🔢 尾数分布（近30期）</div>`;
+  const tailCount={};for(let i=0;i<=9;i++)tailCount[i]=0;
+  data.slice(0,30).forEach(d=>d.red.forEach(n=>tailCount[n%10]++));
+  const maxTail=Math.max(...Object.values(tailCount));
+  const hotTails=Object.entries(tailCount).sort((a,b)=>b[1]-a[1]).slice(0,3).map(x=>x[0]);
+  const coldTails=Object.entries(tailCount).sort((a,b)=>a[1]-b[1]).slice(0,3).map(x=>x[0]);
+  html+=`<div style="display:flex;gap:4px;align-items:flex-end;height:60px;margin-bottom:8px">`;
+  for(let i=0;i<=9;i++){
+    const h=(tailCount[i]/maxTail)*50+8;
+    const color=hotTails.includes(String(i))?'#e74c3c':coldTails.includes(String(i))?'#3498db':'#ccc';
+    html+=`<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px">
+      <div style="width:100%;height:${h}px;background:${color};border-radius:3px 3px 0 0;transition:height .3s"></div>
+      <span style="font-size:10px;color:#666">${i}</span>
+    </div>`;
+  }
+  html+=`</div><div style="font-size:12px;color:#666">热尾数：<span style="color:#e74c3c;font-weight:600">${hotTails.join(' ')}</span> ｜ 冷尾数：<span style="color:#3498db;font-weight:600">${coldTails.join(' ')}</span></div></div>`;
+  
+  // === 3. 号码跟随性 ===
+  html+=`<div style="margin-bottom:18px"><div style="font-weight:600;margin-bottom:8px;font-size:14px">🔗 号码跟随性（热号下期易出）</div>`;
+  const followMap={};
+  for(let i=1;i<=frontMax;i++)followMap[i]={};
+  for(let i=0;i<data.length-1;i++){
+    data[i].red.forEach(n=>{
+      data[i+1].red.forEach(m=>{
+        if(!followMap[n][m])followMap[n][m]=0;
+        followMap[n][m]++;
+      });
+    });
+  }
+  const hotNums=Object.entries(data.slice(0,10).reduce((acc,d)=>{d.red.forEach(n=>acc[n]=(acc[n]||0)+1);return acc;},{})).sort((a,b)=>b[1]-a[1]).slice(0,4).map(x=>+x[0]);
+  html+=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">`;
+  hotNums.forEach(n=>{
+    const follows=Object.entries(followMap[n]||{}).sort((a,b)=>b[1]-a[1]).slice(0,4);
+    const total=follows.reduce((a,b)=>a+b[1],0);
+    html+=`<div style="background:#f8f9fa;border-radius:8px;padding:8px">
+      <div style="font-size:12px;color:#333;margin-bottom:4px"><span class="ball ball-red" style="width:22px;height:22px;line-height:22px;font-size:11px;display:inline-flex;align-items:center;justify-content:center">${pad(n)}</span> 下期易出</div>
+      <div style="display:flex;gap:4px;flex-wrap:wrap">
+        ${follows.map(([m,c])=>`<span style="background:#fff;border:1px solid #e0e0e0;border-radius:4px;padding:2px 6px;font-size:11px;color:#666">${pad(m)} <span style="color:#999">${(c/total*100).toFixed(0)}%</span></span>`).join('')}
+      </div>
+    </div>`;
+  });
+  html+=`</div></div>`;
+  
+  // === 4. 相似期号检索 ===
+  html+=`<div style="margin-bottom:18px"><div style="font-weight:600;margin-bottom:8px;font-size:14px">🔍 相似期号检索</div>`;
+  const recent5=data.slice(0,5);
+  const recentSum=recent5.reduce((a,d)=>a+d.red.reduce((b,n)=>b+n,0),0);
+  const recentHot=new Set();recent5.forEach(d=>d.red.forEach(n=>recentHot.add(n)));
+  const similar=[];
+  for(let i=5;i<data.length-5;i++){
+    const window5=data.slice(i,i+5);
+    const winSum=window5.reduce((a,d)=>a+d.red.reduce((b,n)=>b+n,0),0);
+    const winHot=new Set();window5.forEach(d=>d.red.forEach(n=>winHot.add(n)));
+    let overlap=0;recentHot.forEach(n=>{if(winHot.has(n))overlap++;});
+    const sumDiff=Math.abs(winSum-recentSum);
+    const score=overlap*10-sumDiff*0.1;
+    similar.push({issue:data[i].issue,score,overlap,sumDiff,next:data[i-1]||null});
+  }
+  similar.sort((a,b)=>b.score-a.score);
+  const topSim=similar.slice(0,3);
+  html+=`<div style="font-size:11px;color:#999;margin-bottom:6px">基于近5期和值与热号重合度，匹配历史相似走势</div>`;
+  topSim.forEach((s,idx)=>{
+    html+=`<div style="background:#f3e5f5;border-radius:8px;padding:8px;margin-bottom:6px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+        <span style="font-size:12px;font-weight:600;color:#6a1b9a">相似${idx+1}：${s.issue}期</span>
+        <span style="font-size:10px;color:#999">相似度 ${(60+s.score).toFixed(0)}%</span>
+      </div>
+      ${s.next?`<div style="font-size:11px;color:#666">后续开出：${s.next.red.map(n=>`<span class="ball ball-red" style="width:18px;height:18px;line-height:18px;font-size:10px;display:inline-flex;align-items:center;justify-content:center">${pad(n)}</span>`).join('')}${s.next.blue?` + ${s.next.blue.map(n=>`<span class="ball ball-blue" style="width:18px;height:18px;line-height:18px;font-size:10px;display:inline-flex;align-items:center;justify-content:center">${pad(n)}</span>`).join('')}`:''}</div>`:''}
+    </div>`;
+  });
+  html+=`</div>`;
+  
+  // === 5. 熵值与波动率 ===
+  html+=`<div style="margin-bottom:8px"><div style="font-weight:600;margin-bottom:8px;font-size:14px">⚡ 熵值与波动率</div>`;
+  const freq30={};for(let i=1;i<=frontMax;i++)freq30[i]=0;
+  data.slice(0,30).forEach(d=>d.red.forEach(n=>freq30[n]++));
+  const total30=30*frontPick;
+  let entropy=0;
+  Object.values(freq30).forEach(c=>{if(c>0){const p=c/total30;entropy-=p*Math.log2(p);}});
+  const maxEntropy=Math.log2(frontMax);
+  const entropyPct=(entropy/maxEntropy*100).toFixed(1);
+  const sumStd=Math.sqrt(sums.reduce((a,s)=>a+(s-avgSum)**2,0)/sums.length);
+  const cv=(sumStd/avgSum*100).toFixed(1);
+  html+=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+    <div style="background:linear-gradient(135deg,#fff3e0,#fff);border:1px solid #ffe0b2;border-radius:10px;padding:12px;text-align:center">
+      <div style="font-size:24px;font-weight:800;color:#f39c12">${entropy.toFixed(2)}</div>
+      <div style="font-size:11px;color:#999">分布熵值（满分${maxEntropy.toFixed(1)}）</div>
+      <div class="progress-bar" style="margin-top:6px"><div class="progress-fill warm" style="width:${entropyPct}%"></div></div>
+      <div style="font-size:10px;color:#666;margin-top:4px">${entropyPct>70?'分布分散，关注集中号':'分布集中，关注分散号'}</div>
+    </div>
+    <div style="background:linear-gradient(135deg,#e8f5e9,#fff);border:1px solid #c8e6c9;border-radius:10px;padding:12px;text-align:center">
+      <div style="font-size:24px;font-weight:800;color:#27ae60">${cv}%</div>
+      <div style="font-size:11px;color:#999">和值变异系数</div>
+      <div class="progress-bar" style="margin-top:6px"><div class="progress-fill cold" style="width:${Math.min(cv*3,100)}%"></div></div>
+      <div style="font-size:10px;color:#666;margin-top:4px">${cv>15?'波动大，和值难预测':'波动小，和值较稳定'}</div>
+    </div>
+  </div></div>`;
+  
+  html+=`<div style="font-size:11px;color:#999;margin-top:10px;text-align:center">※ 以上分析基于历史数据统计，彩票为独立随机事件，仅供娱乐参考</div>`;
   html+=`</div>`;
   return html;
 }
@@ -1658,7 +1868,7 @@ function renderPicker(key){
       <div class="picker-stat"><div class="ps-label">三区比</div><div class="ps-value" id="psZone">-</div></div>
     </div>`;
     if(g.blueMax>0)html+=`<div class="picker-label" style="margin-top:10px">蓝球（已选 <span class="count" id="blueCount">0</span>/${g.bluePick}）</div><div class="number-grid blue-grid" id="blueGrid"></div>`;
-    html+=`<div class="action-row"><button class="btn btn-primary" onclick="addSingle('${key}')">添加本组</button><button class="btn btn-secondary" onclick="clearSingle('${key}')">清空</button></div></div>`;
+    html+=`<div class="action-row"><button class="btn btn-primary" onclick="addSingle('${key}')">添加本组</button><button class="btn btn-secondary" onclick="checkCombo('${key}')">历史查重</button><button class="btn btn-secondary" onclick="clearSingle('${key}')">清空</button></div></div>`;
     // 复式
     if(g.supportFS){
       html+=`<div class="play-panel ${st.playMode==='fushi'?'active':''}" id="panel-fushi"><div class="picker-label">红球复式 <span class="hint">选${g.redPick+1}-${g.redMax}个</span>（已选 <span id="fsRedCount">0</span>）</div><div class="number-grid" id="fsRedGrid"></div>`;
@@ -1915,6 +2125,45 @@ function lottoDesc(red,blue,g,key){
     x+=`后区${blue.map(pad).join('、')}（奇偶${bOdd}:${blue.length-bOdd}，大小${bBig}:${blue.length-bBig}）。`;
   }
   return x;
+}
+function checkCombo(key){
+  const g=GAMES[key], st=gameState[key];
+  if(st.selRed.size!==g.redPick){alert('请选满'+g.redPick+'个红球再查重');return;}
+  const red=[...st.selRed].sort((a,b)=>a-b);
+  const blue=g.blueMax>0?[...st.selBlue].sort((a,b)=>a-b):[];
+  const data=st.data;
+  let exactMatch=null;
+  let similar=[];
+  data.forEach(d=>{
+    const dRed=[...d.red].sort((a,b)=>a-b);
+    const overlap=red.filter(n=>dRed.includes(n)).length;
+    if(overlap===g.redPick){
+      if(g.blueMax>0&&blue.length>0){
+        const dBlue=[...(d.blue||[])].sort((a,b)=>a-b);
+        if(JSON.stringify(dBlue)===JSON.stringify(blue))exactMatch=d;
+      }else exactMatch=d;
+    }
+    if(overlap>=g.redPick-1)similar.push({issue:d.issue,date:d.date,overlap,red:dRed,blue:d.blue||[]});
+  });
+  similar.sort((a,b)=>b.overlap-a.overlap);
+  const topSim=similar.slice(0,3);
+  let msg='🔍 历史组合查重结果\n\n';
+  msg+='您选的号码：'+red.map(pad).join(' ')+(blue.length?' + '+blue.map(pad).join(' '):'')+'\n\n';
+  if(exactMatch){
+    msg+='⚠️ 警告：这组号码历史上曾开出过！\n';
+    msg+='期号：'+exactMatch.issue+'（'+exactMatch.date+'）\n\n';
+  }else{
+    msg+='✅ 历史上未开出过完全相同的组合\n\n';
+  }
+  if(topSim.length>0){
+    msg+='📊 最相似的历史期号：\n';
+    topSim.forEach((s,i)=>{
+      msg+=(i+1)+'. '+s.issue+'（'+s.date+'）重合'+s.overlap+'个红球\n';
+      msg+='   开出：'+s.red.map(pad).join(' ')+(s.blue.length?' + '+s.blue.map(pad).join(' '):'')+'\n';
+    });
+  }
+  msg+='\n※ 历史数据仅供参考，彩票为独立随机事件';
+  alert(msg);
 }
 function addSingle(key){
   const g=GAMES[key], st=gameState[key];
