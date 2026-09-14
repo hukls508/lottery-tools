@@ -2,8 +2,10 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>彩票选号娱乐工具（综合版）</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>🎰 锦鲤选号（综合版）</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;background:linear-gradient(135deg,#f5f7fa 0%,#e4e8ec 100%);background-attachment:fixed;color:#333;padding-bottom:60px}
@@ -199,7 +201,50 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Micr
 .admin-panel{display:none;text-align:left;margin-top:10px;border-top:1px solid #eee;padding-top:10px}
 .admin-panel input{letter-spacing:0;text-align:left;margin-bottom:6px}
 .admin-panel button{margin-bottom:4px}
-@media(max-width:600px){.number-grid{grid-template-columns:repeat(7,1fr)}.freq-grid{grid-template-columns:repeat(7,1fr)}.container{padding:8px}}
+@media(max-width:600px){
+  .number-grid{grid-template-columns:repeat(7,1fr);gap:6px}
+  .freq-grid{grid-template-columns:repeat(7,1fr)}
+  .container{padding:10px}
+  .num-btn{padding:10px 0;font-size:15px;border-radius:10px}
+  .ball{width:30px;height:30px;line-height:30px;font-size:13px}
+  .card{padding:14px;margin-bottom:12px;border-radius:16px}
+  .card-title{font-size:16px}
+  .main-tab{padding:16px 10px;font-size:16px}
+  .sub-tab{padding:9px 14px;font-size:14px}
+  .btn{padding:12px 18px;font-size:14px;border-radius:10px}
+  .stat-item{padding:10px 6px}
+  .stat-item .value{font-size:18px}
+  .play-tab{padding:12px 14px;font-size:14px}
+  .header h1{font-size:20px}
+  .trend-table{font-size:10px}
+  .trend-table th,.trend-table td{padding:4px 2px;min-width:22px}
+}
+/* 高级指标看板 */
+.metric-board{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:12px 0}
+.metric-card{background:linear-gradient(135deg,#f8f9ff,#fff);border:1px solid #e8eaf6;border-radius:12px;padding:12px;text-align:center;position:relative;overflow:hidden}
+.metric-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#667eea,#764ba2)}
+.metric-card .metric-icon{font-size:20px;margin-bottom:4px}
+.metric-card .metric-value{font-size:18px;font-weight:800;color:#333;margin-bottom:2px}
+.metric-card .metric-label{font-size:11px;color:#999}
+.metric-card .metric-range{font-size:10px;color:#666;margin-top:4px}
+/* 进度条 */
+.progress-bar{height:6px;background:#eee;border-radius:3px;overflow:hidden;margin-top:6px}
+.progress-fill{height:100%;border-radius:3px;transition:width .5s ease}
+.progress-fill.hot{background:linear-gradient(90deg,#ff6b6b,#e74c3c)}
+.progress-fill.warm{background:linear-gradient(90deg,#fdcb6e,#f39c12)}
+.progress-fill.cold{background:linear-gradient(90deg,#74b9ff,#3498db)}
+/* 选号实时统计 */
+.picker-stats{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0;padding:10px;background:#f8f9fa;border-radius:10px}
+.picker-stat{flex:1;min-width:60px;text-align:center}
+.picker-stat .ps-label{font-size:10px;color:#999;margin-bottom:2px}
+.picker-stat .ps-value{font-size:14px;font-weight:700;color:#333}
+.picker-stat .ps-value.good{color:#27ae60}
+.picker-stat .ps-value.warn{color:#f39c12}
+.picker-stat .ps-value.bad{color:#e74c3c}
+/* 底部固定操作栏 */
+.bottom-action-bar{position:fixed;bottom:0;left:0;right:0;background:rgba(255,255,255,.98);backdrop-filter:blur(20px);border-top:1px solid #eee;padding:10px 12px;display:flex;gap:8px;z-index:200;box-shadow:0 -4px 20px rgba(0,0,0,.08)}
+.bottom-action-bar .btn{flex:1;padding:14px;font-size:15px;margin:0}
+body{padding-bottom:80px}
 </style>
 </head>
 <body>
@@ -697,17 +742,23 @@ function renderExpertLotto(key,g,data){
     <div><span style="color:#f39c12;font-weight:600">温号(6-15期)：</span><span style="color:#333">${warmFront.sort((a,b)=>a-b).slice(0,15).join(' ')}${warmFront.length>15?'...':''}</span></div>
     <div><span style="color:#3498db;font-weight:600">冷号(>15期)：</span><span style="color:#333">${coldFront.sort((a,b)=>a-b).join(' ')}</span></div>
   </div></div>`;
-  // 指标分析
-  html+=`<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:16px">`;
-  html+=`<div style="background:#f8f9fa;padding:10px;border-radius:8px"><div style="font-size:11px;color:#999">和值范围</div><div style="font-size:16px;font-weight:600;color:#333">${Math.round(avgSum-sumStd)}~${Math.round(avgSum+sumStd)}</div><div style="font-size:10px;color:#999">密集区间:${sumDense.join('-')}</div></div>`;
-  html+=`<div style="background:#f8f9fa;padding:10px;border-radius:8px"><div style="font-size:11px;color:#999">AC值</div><div style="font-size:16px;font-weight:600;color:#333">${avgAC.toFixed(1)}±${acStd.toFixed(1)}</div><div style="font-size:10px;color:#999">建议${Math.round(avgAC-acStd)}~${Math.round(avgAC+acStd)}</div></div>`;
-  html+=`<div style="background:#f8f9fa;padding:10px;border-radius:8px"><div style="font-size:11px;color:#999">跨度</div><div style="font-size:16px;font-weight:600;color:#333">${avgSpan.toFixed(1)}±${spanStd.toFixed(1)}</div><div style="font-size:10px;color:#999">建议${Math.round(avgSpan-spanStd)}~${Math.round(avgSpan+spanStd)}</div></div>`;
-  html+=`<div style="background:#f8f9fa;padding:10px;border-radius:8px"><div style="font-size:11px;color:#999">热尾数</div><div style="font-size:16px;font-weight:600;color:#e74c3c">${hotTails.join(' ')}</div></div>`;
-  html+=`<div style="background:#f8f9fa;padding:10px;border-radius:8px"><div style="font-size:11px;color:#999">质数占比</div><div style="font-size:16px;font-weight:600;color:#333">${primeRatio}%</div></div>`;
-  html+=`<div style="background:#f8f9fa;padding:10px;border-radius:8px"><div style="font-size:11px;color:#999">连号概率</div><div style="font-size:16px;font-weight:600;color:#333">${lianhaoProb}%</div></div>`;
-  html+=`<div style="background:#f8f9fa;padding:10px;border-radius:8px"><div style="font-size:11px;color:#999">重号概率</div><div style="font-size:16px;font-weight:600;color:#333">${repeatProb}%</div></div>`;
-  html+=`<div style="background:#f8f9fa;padding:10px;border-radius:8px"><div style="font-size:11px;color:#999">断区概率</div><div style="font-size:16px;font-weight:600;color:${duanquProb>40?'#e74c3c':'#333'}">${duanquProb}%</div></div>`;
-  html+=`</div>`;
+  // 高级指标看板
+  html+=`<div style="margin-bottom:16px"><div style="font-weight:600;margin-bottom:10px;color:#333;font-size:14px">📊 高级指标看板</div>`;
+  html+=`<div class="metric-board">
+    <div class="metric-card"><div class="metric-icon">➕</div><div class="metric-value">${Math.round(avgSum-sumStd)}~${Math.round(avgSum+sumStd)}</div><div class="metric-label">和值范围</div><div class="metric-range">密集:${sumDense.join('-')}</div></div>
+    <div class="metric-card"><div class="metric-icon">📐</div><div class="metric-value">${avgAC.toFixed(1)}</div><div class="metric-label">AC值</div><div class="metric-range">建议${Math.round(avgAC-acStd)}~${Math.round(avgAC+acStd)}</div></div>
+    <div class="metric-card"><div class="metric-icon">↔️</div><div class="metric-value">${avgSpan.toFixed(1)}</div><div class="metric-label">跨度</div><div class="metric-range">建议${Math.round(avgSpan-spanStd)}~${Math.round(avgSpan+spanStd)}</div></div>
+  </div>`;
+  html+=`<div class="metric-board" style="grid-template-columns:repeat(4,1fr)">
+    <div class="metric-card" style="padding:10px"><div class="metric-value" style="font-size:16px">${lianhaoProb}%</div><div class="metric-label">连号概率</div><div class="progress-bar"><div class="progress-fill hot" style="width:${lianhaoProb}%"></div></div></div>
+    <div class="metric-card" style="padding:10px"><div class="metric-value" style="font-size:16px">${repeatProb}%</div><div class="metric-label">重号概率</div><div class="progress-bar"><div class="progress-fill warm" style="width:${repeatProb}%"></div></div></div>
+    <div class="metric-card" style="padding:10px"><div class="metric-value" style="font-size:16px;color:${duanquProb>40?'#e74c3c':'#333'}">${duanquProb}%</div><div class="metric-label">断区概率</div><div class="progress-bar"><div class="progress-fill ${duanquProb>40?'hot':'cold'}" style="width:${duanquProb}%"></div></div></div>
+    <div class="metric-card" style="padding:10px"><div class="metric-value" style="font-size:16px">${primeRatio}%</div><div class="metric-label">质数占比</div><div class="progress-bar"><div class="progress-fill cold" style="width:${primeRatio}%"></div></div></div>
+  </div>`;
+  html+=`<div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:8px;padding:10px;background:#f8f9fa;border-radius:8px">
+    <div><span style="color:#999;font-size:12px">热尾数：</span><span style="color:#e74c3c;font-weight:700;font-size:14px">${hotTails.join(' ')}</span></div>
+    <div><span style="color:#999;font-size:12px">邻号概率：</span><span style="color:#333;font-weight:600;font-size:14px">${adjProb}%</span></div>
+  </div></div>`;
   // 评分维度说明
   html+=`<div style="background:#fff8e1;padding:10px;border-radius:8px;margin-bottom:12px;font-size:12px;color:#856404"><strong>📐 十一维评分模型：</strong>历史频次12% + 遗漏值12% + 近期热度12% + 号码跟随性8% + 冷热转换8% + 均值回归8% + 重号邻号8% + 尾数热度5% + 区间热度5% + 贝叶斯后验12% + 马尔可夫转移10%；推荐号码已通过AC值、和值、跨度、冷热搭配四重过滤</div>`;
   // 胆码推荐
@@ -1600,6 +1651,12 @@ function renderPicker(key){
     modes.push(['smart','智能推荐']);
     html+=`<div class="play-tabs">${modes.map(([m,n])=>`<div class="play-tab ${st.playMode===m?'active':''}" onclick="setPlayMode('${key}','${m}',this)">${n}</div>`).join('')}</div>`;
     html+=`<div class="play-panel ${st.playMode==='single'?'active':''}" id="panel-single"><div class="picker-label">红球（已选 <span class="count" id="redCount">0</span>/${g.redPick}）</div><div class="number-grid" id="redGrid"></div>`;
+    html+=`<div class="picker-stats" id="pickerStats" style="display:none">
+      <div class="picker-stat"><div class="ps-label">和值</div><div class="ps-value" id="psSum">-</div></div>
+      <div class="picker-stat"><div class="ps-label">奇偶比</div><div class="ps-value" id="psOdd">-</div></div>
+      <div class="picker-stat"><div class="ps-label">大小比</div><div class="ps-value" id="psBig">-</div></div>
+      <div class="picker-stat"><div class="ps-label">三区比</div><div class="ps-value" id="psZone">-</div></div>
+    </div>`;
     if(g.blueMax>0)html+=`<div class="picker-label" style="margin-top:10px">蓝球（已选 <span class="count" id="blueCount">0</span>/${g.bluePick}）</div><div class="number-grid blue-grid" id="blueGrid"></div>`;
     html+=`<div class="action-row"><button class="btn btn-primary" onclick="addSingle('${key}')">添加本组</button><button class="btn btn-secondary" onclick="clearSingle('${key}')">清空</button></div></div>`;
     // 复式
@@ -1677,6 +1734,32 @@ function initLottoPicker(key){
     rg.innerHTML='';
     for(let i=1;i<=g.redMax;i++){const b=document.createElement('div');b.className='num-btn'+(st.selRed.has(i)?' selected-red':'');b.textContent=pad(i);b.onclick=()=>{if(st.selRed.has(i))st.selRed.delete(i);else{if(st.selRed.size>=g.redPick){alert('红球最多'+g.redPick+'个');return;}st.selRed.add(i);}initLottoPicker(key);};rg.appendChild(b);}
     document.getElementById('redCount').textContent=st.selRed.size;
+    // 实时统计
+    const statsEl=document.getElementById('pickerStats');
+    if(statsEl){
+      if(st.selRed.size>0){
+        statsEl.style.display='flex';
+        const reds=[...st.selRed].sort((a,b)=>a-b);
+        const sum=reds.reduce((a,b)=>a+b,0);
+        const odd=reds.filter(n=>n%2===1).length;
+        const big=reds.filter(n=>n>g.redMax/2).length;
+        const zoneSize=Math.ceil(g.redMax/3);
+        const z1=reds.filter(n=>n<=zoneSize).length;
+        const z2=reds.filter(n=>n>zoneSize&&n<=zoneSize*2).length;
+        const z3=reds.filter(n=>n>zoneSize*2).length;
+        document.getElementById('psSum').textContent=sum;
+        document.getElementById('psOdd').textContent=odd+':'+(reds.length-odd);
+        document.getElementById('psBig').textContent=big+':'+(reds.length-big);
+        document.getElementById('psZone').textContent=z1+':'+z2+':'+z3;
+        // 智能提示颜色
+        const sumEl=document.getElementById('psSum');
+        if(sum>=70&&sum<=130)sumEl.className='ps-value good';
+        else if(sum>=60&&sum<=140)sumEl.className='ps-value warn';
+        else sumEl.className='ps-value bad';
+      }else{
+        statsEl.style.display='none';
+      }
+    }
   }
   if(g.blueMax>0){
     const bg=document.getElementById('blueGrid');
