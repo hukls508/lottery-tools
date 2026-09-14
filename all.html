@@ -98,13 +98,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Micr
 .add-myrow-btn{width:100%;padding:6px;background:#f0f0f0;border:1px dashed #ccc;border-radius:6px;color:#666;font-size:12px;cursor:pointer}
 .add-myrow-btn:hover{background:#e8f4fd;border-color:#667eea;color:#667eea}
 /* 专业走势图样式 */
-.pro-trend{font-size:10px;border:1px solid #ddd}
+.pro-trend{font-size:10px;border:1px solid #ddd;table-layout:fixed;width:100%}
 .pro-trend .zone-header{background:linear-gradient(135deg,#f5f5f5,#e8e8e8);color:#333;font-weight:700;font-size:11px;padding:5px 2px;border:1px solid #ccc}
 .pro-trend .blue-zone{background:linear-gradient(135deg,#e8f4fd,#d0e8f9);color:#2980b9}
-.pro-trend .week-col{background:#fafafa;color:#888;font-size:10px;min-width:28px;padding:2px}
+.pro-trend .week-col{background:#fafafa;color:#888;font-size:10px;width:26px;padding:2px}
+.pro-trend .issue-col{width:52px;background:#fafafa;color:#888;font-size:10px;padding:2px}
+.pro-trend .th-divider,.pro-trend .td-divider{width:4px;padding:0}
 .pro-trend .circle{border-radius:50%!important;display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;line-height:1;margin:0 auto;box-shadow:0 1px 3px rgba(0,0,0,.2)}
-.pro-trend td{padding:2px 1px;height:22px;vertical-align:middle}
-.pro-trend th{padding:3px 1px;font-size:10px}
+.pro-trend td{padding:2px 0;height:22px;vertical-align:middle;overflow:hidden}
+.pro-trend th{padding:3px 0;font-size:10px;overflow:hidden}
 .pro-trend .stats-row{background:#f8f9fa}
 .pro-trend .stats-label{background:#e8e8e8;color:#555;font-weight:700;font-size:10px;text-align:right;padding-right:6px}
 .pro-trend .stats-cell{color:#666;font-size:10px;font-weight:600}
@@ -245,6 +247,16 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Micr
 .bottom-action-bar{position:fixed;bottom:0;left:0;right:0;background:rgba(255,255,255,.98);backdrop-filter:blur(20px);border-top:1px solid #eee;padding:10px 12px;display:flex;gap:8px;z-index:200;box-shadow:0 -4px 20px rgba(0,0,0,.08)}
 .bottom-action-bar .btn{flex:1;padding:14px;font-size:15px;margin:0}
 body{padding-bottom:80px}
+/* 浮动快速导航 */
+.fab-nav{position:fixed;right:14px;bottom:80px;z-index:300}
+.fab-btn{width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border:none;font-size:20px;cursor:pointer;box-shadow:0 4px 16px rgba(102,126,234,.4);display:flex;align-items:center;justify-content:center;transition:transform .2s}
+.fab-btn:active{transform:scale(.92)}
+.fab-menu{position:absolute;bottom:56px;right:0;background:#fff;border-radius:14px;box-shadow:0 8px 30px rgba(0,0,0,.15);padding:8px;min-width:140px;display:none;flex-direction:column;gap:2px}
+.fab-menu.show{display:flex}
+.fab-item{padding:10px 14px;font-size:13px;color:#333;border-radius:8px;cursor:pointer;display:flex;align-items:center;gap:8px;transition:background .15s}
+.fab-item:hover{background:#f5f5f5}
+.fab-item:active{background:#eee}
+.fab-item .fi-icon{font-size:16px}
 </style>
 </head>
 <body>
@@ -383,23 +395,23 @@ function renderGame(){
   if(!st.loaded){container.innerHTML=`<div class="card"><div class="loading">正在加载${g.name}数据...</div></div>`;return;}
   let html='';
   // 历史开奖
-  html+=renderHistory(key);
+  html+=renderHistory(key).replace('<div class="card">','<div class="card" id="sec-history">');
   // 频次冷热
-  html+=renderFreq(key);
+  html+=renderFreq(key).replace('<div class="card">','<div class="card" id="sec-freq">');
   // 专家分析
-  html+=renderExpert(key);
+  html+=renderExpert(key).replace('<div class="card">','<div class="card" id="sec-expert">');
   // 遗漏值分析
-  if(g.type==='lotto')html+=renderMissing(key);
+  if(g.type==='lotto')html+=renderMissing(key).replace('<div class="card">','<div class="card" id="sec-missing">');
   // 杀号推荐
-  if(g.type==='lotto')html+=renderKillNum(key);
-  // 深度分析（会员级功能）
-  if(g.type==='lotto')html+=renderDeepAnalysis(key);
+  if(g.type==='lotto')html+=renderKillNum(key).replace('<div class="card">','<div class="card" id="sec-kill">');
+  // 深度分析
+  if(g.type==='lotto')html+=renderDeepAnalysis(key).replace('<div class="card">','<div class="card" id="sec-deep">');
   // 走势图
-  html+=renderTrendSection(key);
+  html+=renderTrendSection(key).replace('<div class="card trend-section">','<div class="card trend-section" id="sec-trend">');
   // 选号中心
-  html+=renderPicker(key);
+  html+=renderPicker(key).replace('<div class="card">','<div class="card" id="sec-picker">');
   // 我的选号
-  html+=renderTickets(key);
+  html+=renderTickets(key).replace('<div class="card">','<div class="card" id="sec-tickets">');
   container.innerHTML=html;
   // 初始化
   if(g.type==='digit')initDigitPicker(key);
@@ -1086,9 +1098,9 @@ function renderMissing(key){
       </div>
     </div>`;
   });
-  // 遗漏详情表
-  html+=`<div class="freq-label" style="margin-top:12px">红球遗漏详情</div><div class="table-wrap"><table class="history-table"><thead><tr><th>号码</th><th>当前遗漏</th><th>最大遗漏</th><th>平均遗漏</th><th>状态</th></tr></thead><tbody>`;
-  redList.forEach(item=>{
+  // 遗漏详情表（默认只显示TOP10，可展开）
+  html+=`<div class="freq-label" style="margin-top:12px">红球遗漏详情 <span style="font-size:11px;color:#999;font-weight:normal">（默认TOP10）</span></div><div class="table-wrap"><table class="history-table"><thead><tr><th>号码</th><th>当前遗漏</th><th>最大遗漏</th><th>平均遗漏</th><th>状态</th></tr></thead><tbody id="redMissBody">`;
+  redList.slice(0,10).forEach(item=>{
     let status='正常',color='#666';
     if(item.cur>=item.max*0.8){status='该出了';color='#e74c3c';}
     else if(item.cur>=item.avg*1.5){status='偏冷';color='#f39c12';}
@@ -1096,11 +1108,15 @@ function renderMissing(key){
     html+=`<tr><td><span class="ball ${g.redClass}">${pad(item.num)}</span></td><td><strong>${item.cur}</strong></td><td>${item.max}</td><td>${item.avg}</td><td style="color:${color}">${status}</td></tr>`;
   });
   html+=`</tbody></table></div>`;
-  // 蓝球遗漏
+  if(redList.length>10){
+    html+=`<div style="text-align:center;margin-top:6px"><button onclick="toggleMissTable('${key}','red')" id="redMissBtn" style="background:none;border:1px solid #ddd;color:#666;padding:6px 16px;border-radius:12px;font-size:12px;cursor:pointer">展开全部 ${redList.length} 个号码 ▼</button></div>`;
+    window['_missData_'+key]=redList;
+  }
+  // 蓝球遗漏（默认只显示TOP5，可展开）
   if(g.blueMax>0){
     const blueList=calcMissing(g.blueMax,g.bluePick);
-    html+=`<div class="freq-label" style="margin-top:12px">蓝球遗漏详情</div><div class="table-wrap"><table class="history-table"><thead><tr><th>号码</th><th>当前遗漏</th><th>最大遗漏</th><th>平均遗漏</th><th>状态</th></tr></thead><tbody>`;
-    blueList.forEach(item=>{
+    html+=`<div class="freq-label" style="margin-top:12px">蓝球遗漏详情</div><div class="table-wrap"><table class="history-table"><thead><tr><th>号码</th><th>当前遗漏</th><th>最大遗漏</th><th>平均遗漏</th><th>状态</th></tr></thead><tbody id="blueMissBody">`;
+    blueList.slice(0,5).forEach(item=>{
       let status='正常',color='#666';
       if(item.cur>=item.max*0.8){status='该出了';color='#e74c3c';}
       else if(item.cur>=item.avg*1.5){status='偏冷';color='#f39c12';}
@@ -1108,9 +1124,42 @@ function renderMissing(key){
       html+=`<tr><td><span class="ball ${g.blueClass}">${pad(item.num)}</span></td><td><strong>${item.cur}</strong></td><td>${item.max}</td><td>${item.avg}</td><td style="color:${color}">${status}</td></tr>`;
     });
     html+=`</tbody></table></div>`;
+    if(blueList.length>5){
+      html+=`<div style="text-align:center;margin-top:6px"><button onclick="toggleMissTable('${key}','blue')" id="blueMissBtn" style="background:none;border:1px solid #ddd;color:#666;padding:6px 16px;border-radius:12px;font-size:12px;cursor:pointer">展开全部 ${blueList.length} 个蓝球 ▼</button></div>`;
+      window['_missBlueData_'+key]=blueList;
+    }
   }
   html+=`</div>`;
   return html;
+}
+function toggleMissTable(key,type){
+  const g=GAMES[key];
+  const data=type==='red'?window['_missData_'+key]:window['_missBlueData_'+key];
+  const body=document.getElementById(type==='red'?'redMissBody':'blueMissBody');
+  const btn=document.getElementById(type==='red'?'redMissBtn':'blueMissBtn');
+  const ballClass=type==='red'?g.redClass:g.blueClass;
+  if(body.dataset.expanded==='1'){
+    const limit=type==='red'?10:5;
+    body.innerHTML=data.slice(0,limit).map(item=>{
+      let status='正常',color='#666';
+      if(item.cur>=item.max*0.8){status='该出了';color='#e74c3c';}
+      else if(item.cur>=item.avg*1.5){status='偏冷';color='#f39c12';}
+      else if(item.cur<=1){status='热出';color='#27ae60';}
+      return `<tr><td><span class="ball ${ballClass}">${pad(item.num)}</span></td><td><strong>${item.cur}</strong></td><td>${item.max}</td><td>${item.avg}</td><td style="color:${color}">${status}</td></tr>`;
+    }).join('');
+    body.dataset.expanded='0';
+    btn.textContent='展开全部 '+data.length+' 个号码 ▼';
+  }else{
+    body.innerHTML=data.map(item=>{
+      let status='正常',color='#666';
+      if(item.cur>=item.max*0.8){status='该出了';color='#e74c3c';}
+      else if(item.cur>=item.avg*1.5){status='偏冷';color='#f39c12';}
+      else if(item.cur<=1){status='热出';color='#27ae60';}
+      return `<tr><td><span class="ball ${ballClass}">${pad(item.num)}</span></td><td><strong>${item.cur}</strong></td><td>${item.max}</td><td>${item.avg}</td><td style="color:${color}">${status}</td></tr>`;
+    }).join('');
+    body.dataset.expanded='1';
+    btn.textContent='收起 ▲';
+  }
 }
 
 // ===== 杀号推荐 =====
@@ -2501,6 +2550,30 @@ function showAdminPanel(){
   loadGameData(currentGame);
   renderGame();
 })();
+// 浮动导航
+function toggleFab(){document.getElementById('fabMenu').classList.toggle('show');}
+function scrollToSec(id){
+  const el=document.getElementById('sec-'+id);
+  if(el){el.scrollIntoView({behavior:'smooth',block:'start'});}
+  document.getElementById('fabMenu').classList.remove('show');
+}
+document.addEventListener('click',function(e){
+  if(!e.target.closest('.fab-nav'))document.getElementById('fabMenu').classList.remove('show');
+});
 </script>
+<div class="fab-nav">
+  <button class="fab-btn" onclick="toggleFab()">☰</button>
+  <div class="fab-menu" id="fabMenu">
+    <div class="fab-item" onclick="scrollToSec('history')"><span class="fi-icon">📋</span>历史开奖</div>
+    <div class="fab-item" onclick="scrollToSec('freq')"><span class="fi-icon">🌡️</span>冷热分析</div>
+    <div class="fab-item" onclick="scrollToSec('expert')"><span class="fi-icon">🔮</span>专家分析</div>
+    <div class="fab-item" onclick="scrollToSec('missing')"><span class="fi-icon">📊</span>遗漏分析</div>
+    <div class="fab-item" onclick="scrollToSec('kill')"><span class="fi-icon">🔪</span>杀号推荐</div>
+    <div class="fab-item" onclick="scrollToSec('deep')"><span class="fi-icon">🧠</span>深度分析</div>
+    <div class="fab-item" onclick="scrollToSec('trend')"><span class="fi-icon">📈</span>走势图</div>
+    <div class="fab-item" onclick="scrollToSec('picker')"><span class="fi-icon">🎯</span>选号中心</div>
+    <div class="fab-item" onclick="scrollToSec('tickets')"><span class="fi-icon">📝</span>我的选号</div>
+  </div>
+</div>
 </body>
 </html>
