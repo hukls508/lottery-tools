@@ -262,6 +262,27 @@ body{padding-bottom:80px}
 .fab-item:hover{background:#f5f5f5}
 .fab-item:active{background:#eee}
 .fab-item .fi-icon{font-size:16px}
+/* 会员功能样式 */
+.vip-lock{position:relative;pointer-events:none}
+.vip-lock::after{content:'';position:absolute;top:0;left:0;right:0;bottom:0;background:rgba(255,255,255,.85);backdrop-filter:blur(2px);border-radius:12px;z-index:5}
+.vip-lock .vip-tip{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:10;text-align:center;pointer-events:auto}
+.vip-lock .vip-tip .lock-icon{font-size:32px;margin-bottom:6px}
+.vip-lock .vip-tip .lock-text{font-size:13px;color:#333;font-weight:600;margin-bottom:4px}
+.vip-lock .vip-tip .lock-btn{background:linear-gradient(135deg,#f6d365,#fda085);color:#fff;border:none;padding:8px 20px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;box-shadow:0 2px 8px rgba(253,160,133,.4)}
+.vip-badge{display:inline-flex;align-items:center;gap:4px;background:linear-gradient(135deg,#f6d365,#fda085);color:#fff;padding:3px 10px;border-radius:10px;font-size:11px;font-weight:600;cursor:pointer}
+.vip-badge.vip-active{background:linear-gradient(135deg,#11998e,#38ef7d)}
+/* 会员弹窗 */
+.vip-modal{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:500;display:none;align-items:center;justify-content:center}
+.vip-modal.show{display:flex}
+.vip-modal-box{background:#fff;border-radius:16px;padding:24px;width:90%;max-width:340px;text-align:center}
+.vip-modal-box .vip-title{font-size:18px;font-weight:700;color:#333;margin-bottom:8px}
+.vip-modal-box .vip-desc{font-size:13px;color:#666;margin-bottom:16px;line-height:1.6}
+.vip-modal-box .vip-features{text-align:left;background:#f8f9fa;border-radius:10px;padding:12px;margin-bottom:16px}
+.vip-modal-box .vip-features div{font-size:12px;color:#555;padding:4px 0}
+.vip-modal-box .vip-features div::before{content:'✓ ';color:#27ae60;font-weight:700}
+.vip-modal-box input{width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:14px;margin-bottom:12px;box-sizing:border-box}
+.vip-modal-box .vip-activate-btn{width:100%;background:linear-gradient(135deg,#f6d365,#fda085);color:#fff;border:none;padding:12px;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer}
+.vip-modal-box .vip-close{margin-top:10px;font-size:12px;color:#999;cursor:pointer;background:none;border:none}
 </style>
 </head>
 <body>
@@ -300,6 +321,7 @@ body{padding-bottom:80px}
 <div class="main-tabs">
   <div class="main-tab active" onclick="switchMain('fc',this)">🎁 福利彩票</div>
   <div class="main-tab" onclick="switchMain('tc',this)">🏆 体育彩票</div>
+  <div class="vip-badge" onclick="showVipModal()" style="position:absolute;right:10px;top:50%;transform:translateY(-50%)">👑 开通会员</div>
 </div>
 
 <!-- 福利彩票子tab -->
@@ -403,14 +425,14 @@ function renderGame(){
   html+=renderHistory(key).replace('<div class="card">','<div class="card" id="sec-history">');
   // 频次冷热
   html+=renderFreq(key).replace('<div class="card">','<div class="card" id="sec-freq">');
-  // 专家分析
-  html+=renderExpert(key).replace('<div class="card">','<div class="card" id="sec-expert">');
+  // 专家分析（会员功能）
+  html+=lockVipSection(renderExpert(key).replace('<div class="card">','<div class="card" id="sec-expert">'),'专家分析');
   // 遗漏值分析
   if(g.type==='lotto')html+=renderMissing(key).replace('<div class="card">','<div class="card" id="sec-missing">');
   // 杀号推荐
   if(g.type==='lotto')html+=renderKillNum(key).replace('<div class="card">','<div class="card" id="sec-kill">');
-  // 深度分析
-  if(g.type==='lotto')html+=renderDeepAnalysis(key).replace('<div class="card">','<div class="card" id="sec-deep">');
+  // 深度分析（会员功能）
+  if(g.type==='lotto')html+=lockVipSection(renderDeepAnalysis(key).replace('<div class="card">','<div class="card" id="sec-deep">'),'深度分析');
   // 走势图
   html+=renderTrendSection(key).replace('<div class="card trend-section">','<div class="card trend-section" id="sec-trend">');
   // 选号中心
@@ -1072,8 +1094,8 @@ function renderMissing(key){
     html+=`<div class="freq-cell ${level}"><div class="num">${pad(item.num)}</div><div class="cnt">${item.cur}期</div></div>`;
   });
   html+=`</div>`;
-  // 六维评分（TOP10遗漏号码）
-  html+=`<div class="freq-label" style="margin-top:12px">🎯 六维评分（遗漏TOP10）</div>`;
+  // 六维评分（TOP10遗漏号码）- 会员功能
+  let sixDimHtml=`<div class="freq-label" style="margin-top:12px">🎯 六维评分（遗漏TOP10）👑</div>`;
   const freqAll={};for(let i=1;i<=g.redMax;i++)freqAll[i]=0;
   data.forEach(d=>d.red.forEach(n=>freqAll[n]++));
   const recent5Freq={};for(let i=1;i<=g.redMax;i++)recent5Freq[i]=0;
@@ -1087,7 +1109,7 @@ function renderMissing(key){
     const s4=Math.min(100,Math.abs(freqAll[n]-avgFreq)/avgFreq*100);
     const s5=recent5Freq[n]>0?100-recent5Freq[n]*25:100;
     const s6=Math.round((s1+s2+s3+s4+s5)/5);
-    html+=`<div style="background:#f8f9fa;border-radius:8px;padding:8px 10px;margin-bottom:6px">
+    sixDimHtml+=`<div style="background:#f8f9fa;border-radius:8px;padding:8px 10px;margin-bottom:6px">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
         <span class="ball ${g.redClass}" style="width:22px;height:22px;line-height:22px;font-size:11px">${pad(n)}</span>
         <span style="font-size:11px;color:#999">综合评分</span>
@@ -1103,6 +1125,7 @@ function renderMissing(key){
       </div>
     </div>`;
   });
+  html+=lockVipSection(sixDimHtml,'六维评分');
   // 遗漏详情表（默认只显示TOP10，可展开）
   html+=`<div class="freq-label" style="margin-top:12px">红球遗漏详情 <span style="font-size:11px;color:#999;font-weight:normal">（默认TOP10）</span></div><div class="table-wrap"><table class="history-table"><thead><tr><th>号码</th><th>当前遗漏</th><th>最大遗漏</th><th>平均遗漏</th><th>状态</th></tr></thead><tbody id="redMissBody">`;
   redList.slice(0,10).forEach(item=>{
@@ -1927,8 +1950,8 @@ function renderPicker(key){
     const modes=[['single','单式']];
     if(g.supportFS)modes.push(['fushi','复式']);
     if(g.supportDT)modes.push(['dantuo','胆拖']);
-    modes.push(['filter','条件缩水']);
-    modes.push(['smart','智能推荐']);
+    modes.push(['filter','条件缩水 👑']);
+    modes.push(['smart','智能推荐 👑']);
     html+=`<div class="play-tabs">${modes.map(([m,n])=>`<div class="play-tab ${st.playMode===m?'active':''}" onclick="setPlayMode('${key}','${m}',this)">${n}</div>`).join('')}</div>`;
     html+=`<div class="play-panel ${st.playMode==='single'?'active':''}" id="panel-single"><div class="picker-label">红球（已选 <span class="count" id="redCount">0</span>/${g.redPick}）</div><div class="number-grid" id="redGrid"></div>`;
     html+=`<div class="picker-stats" id="pickerStats" style="display:none">
@@ -1938,7 +1961,7 @@ function renderPicker(key){
       <div class="picker-stat"><div class="ps-label">三区比</div><div class="ps-value" id="psZone">-</div></div>
     </div>`;
     if(g.blueMax>0)html+=`<div class="picker-label" style="margin-top:10px">蓝球（已选 <span class="count" id="blueCount">0</span>/${g.bluePick}）</div><div class="number-grid blue-grid" id="blueGrid"></div>`;
-    html+=`<div class="action-row"><button class="btn btn-primary" onclick="addSingle('${key}')">添加本组</button><button class="btn btn-secondary" onclick="checkCombo('${key}')">历史查重</button><button class="btn btn-secondary" onclick="clearSingle('${key}')">清空</button></div></div>`;
+    html+=`<div class="action-row"><button class="btn btn-primary" onclick="addSingle('${key}')">添加本组</button><button class="btn btn-secondary" onclick="checkCombo('${key}')">历史查重 👑</button><button class="btn btn-secondary" onclick="clearSingle('${key}')">清空</button></div></div>`;
     // 复式
     if(g.supportFS){
       html+=`<div class="play-panel ${st.playMode==='fushi'?'active':''}" id="panel-fushi"><div class="picker-label">红球复式 <span class="hint">选${g.redPick+1}-${g.redMax}个</span>（已选 <span id="fsRedCount">0</span>）</div><div class="number-grid" id="fsRedGrid"></div>`;
@@ -2003,7 +2026,14 @@ function renderPicker(key){
   html+='</div>';
   return html;
 }
-function setPlayMode(key,mode,el){gameState[key].playMode=mode;document.querySelectorAll(`#gameContainer .play-tab`).forEach(t=>t.classList.remove('active'));el.classList.add('active');document.querySelectorAll(`#gameContainer .play-panel`).forEach(p=>p.classList.remove('active'));document.getElementById('panel-'+mode).classList.add('active');initLottoPicker(key);}
+function setPlayMode(key,mode,el){
+  // 会员功能检查
+  if((mode==='filter'||mode==='smart')&&!isVip()){
+    showVipModal();
+    return;
+  }
+  gameState[key].playMode=mode;document.querySelectorAll(`#gameContainer .play-tab`).forEach(t=>t.classList.remove('active'));el.classList.add('active');document.querySelectorAll(`#gameContainer .play-panel`).forEach(p=>p.classList.remove('active'));document.getElementById('panel-'+mode).classList.add('active');initLottoPicker(key);
+}
 
 // ===== 乐透型选号初始化 =====
 function initLottoPicker(key){
@@ -2197,6 +2227,7 @@ function lottoDesc(red,blue,g,key){
   return x;
 }
 function checkCombo(key){
+  if(!isVip()){showVipModal();return;}
   const g=GAMES[key], st=gameState[key];
   if(st.selRed.size!==g.redPick){alert('请选满'+g.redPick+'个红球再查重');return;}
   const red=[...st.selRed].sort((a,b)=>a-b);
@@ -2550,15 +2581,18 @@ function showAdminPanel(){
   if(urlCode && (urlCode===generateCode(getDeviceId())||urlCode===ADMIN_PASSWORD)){
     localStorage.setItem('lottery_activated','1');
   }
-  // 检查是否已激活
-  const isActivated=localStorage.getItem('lottery_activated')==='1';
+  // 检查是否已激活会员
+  const isVip=localStorage.getItem('lottery_activated')==='1';
   // 管理员链接优先：如果有admin=1，强制显示管理员面板
   if(params.get('admin')==='1'){
     document.getElementById('authMask').style.display='flex';
     document.getElementById('adminPanel').style.display='block';
-  }else if(isActivated){
+  }else{
+    // 免费使用，不显示激活遮罩
     document.getElementById('authMask').style.display='none';
   }
+  // 更新会员状态显示
+  updateVipBadge();
   const cat=params.get('cat');
   if(cat==='tc'){
     currentMain='tc';
@@ -2581,6 +2615,52 @@ function scrollToSec(id){
 document.addEventListener('click',function(e){
   if(!e.target.closest('.fab-nav'))document.getElementById('fabMenu').classList.remove('show');
 });
+// ===== 会员系统 =====
+function isVip(){return localStorage.getItem('lottery_activated')==='1';}
+function updateVipBadge(){
+  const badges=document.querySelectorAll('.vip-badge');
+  badges.forEach(b=>{
+    if(isVip()){
+      b.classList.add('vip-active');
+      b.innerHTML='👑 会员已激活';
+    }else{
+      b.classList.remove('vip-active');
+      b.innerHTML='👑 开通会员';
+    }
+  });
+}
+function showVipModal(){
+  document.getElementById('vipModal').classList.add('show');
+  document.getElementById('vipDeviceId').textContent=getDeviceId();
+}
+function closeVipModal(){document.getElementById('vipModal').classList.remove('show');}
+function activateVip(){
+  const input=document.getElementById('vipCodeInput');
+  const err=document.getElementById('vipErr');
+  const code=input.value.trim();
+  if(!code){err.textContent='请输入激活码';return;}
+  if(code===generateCode(getDeviceId())||code===ADMIN_PASSWORD){
+    localStorage.setItem('lottery_activated','1');
+    err.textContent='';
+    closeVipModal();
+    updateVipBadge();
+    renderGame();
+    alert('🎉 会员激活成功！所有高级功能已解锁');
+  }else{
+    err.textContent='激活码错误，请联系管理员';
+  }
+}
+// 给会员功能加锁
+function lockVipSection(html,sectionName){
+  if(isVip())return html;
+  return `<div class="vip-lock">${html}
+    <div class="vip-tip">
+      <div class="lock-icon">🔒</div>
+      <div class="lock-text">${sectionName} · 会员专享</div>
+      <button class="lock-btn" onclick="showVipModal()">开通会员解锁</button>
+    </div>
+  </div>`;
+}
 </script>
 <div class="fab-nav">
   <button class="fab-btn" onclick="toggleFab()">☰</button>
@@ -2594,6 +2674,26 @@ document.addEventListener('click',function(e){
     <div class="fab-item" onclick="scrollToSec('trend')"><span class="fi-icon">📈</span>走势图</div>
     <div class="fab-item" onclick="scrollToSec('picker')"><span class="fi-icon">🎯</span>选号中心</div>
     <div class="fab-item" onclick="scrollToSec('tickets')"><span class="fi-icon">📝</span>我的选号</div>
+  </div>
+</div>
+<!-- 会员激活弹窗 -->
+<div class="vip-modal" id="vipModal">
+  <div class="vip-modal-box">
+    <div class="vip-title">👑 开通会员</div>
+    <div class="vip-desc">解锁全部高级分析功能，让选号更专业</div>
+    <div class="vip-features">
+      <div>专家分析（六维/十一维算法推荐）</div>
+      <div>深度分析（和值走势/尾数分布/跟随矩阵）</div>
+      <div>遗漏六维评分 + 冷号回补指数</div>
+      <div>条件缩水 + 智能推荐</div>
+      <div>锦鲤选号（生日/幸运数字/生肖/星座）</div>
+      <div>历史组合查重 + 相似期号检索</div>
+    </div>
+    <div style="font-size:11px;color:#999;margin-bottom:6px">您的设备码：<span id="vipDeviceId"></span></div>
+    <input type="text" id="vipCodeInput" placeholder="请输入激活码" maxlength="8">
+    <div id="vipErr" style="color:#e74c3c;font-size:12px;margin-bottom:8px;min-height:16px"></div>
+    <button class="vip-activate-btn" onclick="activateVip()">立即激活</button>
+    <button class="vip-close" onclick="closeVipModal()">稍后再说</button>
   </div>
 </div>
 </body>
