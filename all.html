@@ -536,9 +536,11 @@ async function loadGameData(key){
       }
     });
     gameState[key].loaded=true;
-    if(currentGame===key)renderGame();
+    if(currentGame===key){renderGame();renderHome();}
   }catch(e){
-    document.getElementById('gameContainer').innerHTML=`<div class="card"><div class="loading">数据加载失败：${e.message}<br>请确认 ${g.data} 文件存在</div></div>`;
+    const errHtml=`<div class="card"><div class="loading">数据加载失败：${e.message}<br>请确认 ${g.data} 文件存在</div></div>`;
+    document.getElementById('pickerContainer').innerHTML=errHtml;
+    document.getElementById('analysisContainer').innerHTML=errHtml;
   }
 }
 
@@ -1532,8 +1534,8 @@ function renderTrendSection(key){
   setTimeout(()=>{renderTrend(key);},50);
   return html;
 }
-function setTrendArea(key,area,el){gameState[key].trendArea=area;document.querySelectorAll(`#gameContainer .trend-tab`).forEach(t=>t.classList.remove('active'));el.classList.add('active');renderTrend(key);}
-function setTrendPos(key,pos,el){gameState[key].trendPos=pos;document.querySelectorAll(`#gameContainer .trend-tab`).forEach(t=>t.classList.remove('active'));el.classList.add('active');renderTrend(key);}
+function setTrendArea(key,area,el){gameState[key].trendArea=area;document.querySelectorAll(`#analysisContainer .trend-tab`).forEach(t=>t.classList.remove('active'));el.classList.add('active');renderTrend(key);}
+function setTrendPos(key,pos,el){gameState[key].trendPos=pos;document.querySelectorAll(`#analysisContainer .trend-tab`).forEach(t=>t.classList.remove('active'));el.classList.add('active');renderTrend(key);}
 function toggleCompare(key){
   const checked=event.target.checked;
   localStorage.setItem('compare_'+key,checked?'1':'0');
@@ -2158,7 +2160,7 @@ function setPlayMode(key,mode,el){
     showVipModal();
     return;
   }
-  gameState[key].playMode=mode;document.querySelectorAll(`#gameContainer .play-tab`).forEach(t=>t.classList.remove('active'));el.classList.add('active');document.querySelectorAll(`#gameContainer .play-panel`).forEach(p=>p.classList.remove('active'));document.getElementById('panel-'+mode).classList.add('active');initLottoPicker(key);
+  gameState[key].playMode=mode;document.querySelectorAll(`#pickerContainer .play-tab`).forEach(t=>t.classList.remove('active'));el.classList.add('active');document.querySelectorAll(`#pickerContainer .play-panel`).forEach(p=>p.classList.remove('active'));document.getElementById('panel-'+mode).classList.add('active');initLottoPicker(key);
 }
 
 // ===== 乐透型选号初始化 =====
@@ -2856,9 +2858,15 @@ function renderMine(){
 // 浮动导航
 function toggleFab(){document.getElementById('fabMenu').classList.toggle('show');}
 function scrollToSec(id){
-  const el=document.getElementById('sec-'+id);
-  if(el){el.scrollIntoView({behavior:'smooth',block:'start'});}
+  // 先切换到对应页面
+  const page=(id==='picker'||id==='tickets')?'picker':'analysis';
+  switchPage(page, document.querySelector(`[data-page=${page}]`));
   document.getElementById('fabMenu').classList.remove('show');
+  // 延迟滚动，等页面切换完成
+  setTimeout(()=>{
+    const el=document.getElementById('sec-'+id);
+    if(el){el.scrollIntoView({behavior:'smooth',block:'start'});}
+  },100);
 }
 document.addEventListener('click',function(e){
   if(!e.target.closest('.fab-nav'))document.getElementById('fabMenu').classList.remove('show');
@@ -2893,6 +2901,8 @@ function activateVip(){
     closeVipModal();
     updateVipBadge();
     renderGame();
+    renderHome();
+    renderMine();
     alert('🎉 会员激活成功！所有高级功能已解锁');
   }else{
     err.textContent='激活码错误，请联系管理员';
