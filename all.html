@@ -1435,7 +1435,23 @@ function renderTrend(key){
   function getWeek(dateStr){
     try{return weekDays[new Date(dateStr).getDay()];}catch(e){return '';}
   }
-  let html='<table class="trend-table pro-trend"><thead>';
+  let html='<table class="trend-table pro-trend">';
+  // colgroup精确控制列宽，确保所有号码格子等宽
+  if(g.type==='lotto'){
+    const redMax=g.redMax, blueMax=g.blueMax;
+    html+='<colgroup><col style="width:52px"><col style="width:26px">';
+    for(let i=0;i<redMax;i++)html+='<col>';
+    if(blueMax>0){html+='<col style="width:4px">';for(let i=0;i<blueMax;i++)html+='<col>';}
+    html+='</colgroup>';
+  }else{
+    html+='<colgroup><col style="width:52px"><col style="width:26px">';
+    g.maxes.forEach((max,pi)=>{
+      if(pi>0)html+='<col style="width:4px">';
+      for(let i=0;i<=max;i++)html+='<col>';
+    });
+    html+='</colgroup>';
+  }
+  html+='<thead>';
   if(g.type==='lotto'){
     const redMax=g.redMax, blueMax=g.blueMax;
     const zone1=Math.ceil(redMax/3), zone2=zone1*2;
