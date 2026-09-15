@@ -283,6 +283,78 @@ body{padding-bottom:80px}
 .vip-modal-box input{width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;font-size:14px;margin-bottom:12px;box-sizing:border-box}
 .vip-modal-box .vip-activate-btn{width:100%;background:linear-gradient(135deg,#f6d365,#fda085);color:#fff;border:none;padding:12px;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer}
 .vip-modal-box .vip-close{margin-top:10px;font-size:12px;color:#999;cursor:pointer;background:none;border:none}
+/* ===== APP模式样式 ===== */
+.app-header{
+  background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);
+  color:#fff;padding:16px 20px;padding-top:calc(16px + env(safe-area-inset-top));
+  display:flex;justify-content:space-between;align-items:center;
+  position:sticky;top:0;z-index:200;box-shadow:0 2px 12px rgba(102,126,234,.3);
+}
+.app-title{font-size:18px;font-weight:700;letter-spacing:.5px}
+.app-header .vip-badge{background:rgba(255,255,255,.2);backdrop-filter:blur(10px);font-size:12px;padding:5px 12px}
+.app-content{padding-bottom:80px;min-height:calc(100vh - 140px)}
+.app-page{display:none;animation:fadeIn .3s ease}
+.app-page.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+/* 底部毛玻璃导航 */
+.app-tabbar{
+  position:fixed;bottom:0;left:0;right:0;z-index:300;
+  background:rgba(255,255,255,.85);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  border-top:1px solid rgba(0,0,0,.06);
+  display:flex;padding-bottom:env(safe-area-inset-bottom);
+  box-shadow:0 -2px 16px rgba(0,0,0,.06);
+}
+.tabbar-item{flex:1;display:flex;flex-direction:column;align-items:center;padding:8px 0 6px;cursor:pointer;transition:all .2s}
+.tabbar-icon{font-size:22px;margin-bottom:2px;transition:transform .2s}
+.tabbar-label{font-size:10px;color:#999;font-weight:500}
+.tabbar-item.active .tabbar-icon{transform:scale(1.15)}
+.tabbar-item.active .tabbar-label{color:#667eea;font-weight:600}
+/* 首页样式 */
+.home-section{padding:16px}
+.home-card{background:#fff;border-radius:16px;padding:16px;margin-bottom:14px;box-shadow:0 2px 12px rgba(0,0,0,.06)}
+.home-card-title{font-size:15px;font-weight:700;color:#333;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center}
+.home-card-title .more{font-size:12px;color:#999;font-weight:400;cursor:pointer}
+.latest-draw{display:flex;align-items:center;gap:12px}
+.latest-draw .draw-info{flex:1}
+.latest-draw .draw-name{font-size:14px;font-weight:600;color:#333}
+.latest-draw .draw-issue{font-size:11px;color:#999;margin-top:2px}
+.latest-draw .draw-nums{display:flex;gap:4px;flex-wrap:wrap}
+.quick-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.quick-item{display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;padding:10px 4px;border-radius:12px;transition:background .2s}
+.quick-item:active{background:#f5f5f5}
+.quick-icon{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px}
+.quick-label{font-size:11px;color:#666;font-weight:500}
+.vip-banner{
+  background:linear-gradient(135deg,#f6d365 0%,#fda085 100%);
+  border-radius:16px;padding:16px;color:#fff;display:flex;justify-content:space-between;align-items:center;
+  box-shadow:0 4px 16px rgba(253,160,133,.3);cursor:pointer;margin-bottom:14px;
+}
+.vip-banner .vip-text{flex:1}
+.vip-banner .vip-title{font-size:15px;font-weight:700;margin-bottom:4px}
+.vip-banner .vip-desc{font-size:11px;opacity:.9}
+.vip-banner .vip-arrow{font-size:20px;margin-left:10px}
+/* 我的页面样式 */
+.mine-header{
+  background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);
+  padding:30px 20px 40px;color:#fff;text-align:center;
+}
+.mine-avatar{width:64px;height:64px;border-radius:50%;background:rgba(255,255,255,.2);display:inline-flex;align-items:center;justify-content:center;font-size:32px;margin-bottom:10px}
+.mine-name{font-size:18px;font-weight:700}
+.mine-device{font-size:11px;opacity:.7;margin-top:4px}
+.mine-vip-status{display:inline-block;margin-top:10px;padding:4px 14px;border-radius:12px;font-size:11px;font-weight:600}
+.mine-vip-status.active{background:rgba(46,204,113,.3);color:#fff}
+.mine-vip-status.inactive{background:rgba(255,255,255,.2);color:#fff}
+.mine-menu{margin:-20px 16px 16px;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.06)}
+.mine-menu-item{display:flex;align-items:center;padding:14px 16px;border-bottom:1px solid #f5f5f5;cursor:pointer;transition:background .2s}
+.mine-menu-item:last-child{border-bottom:none}
+.mine-menu-item:active{background:#f9f9f9}
+.mine-menu-icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;margin-right:12px}
+.mine-menu-text{flex:1;font-size:14px;color:#333;font-weight:500}
+.mine-menu-arrow{color:#ccc;font-size:14px}
+.mine-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:#f0f0f0;margin:0 16px 16px;border-radius:16px;overflow:hidden}
+.mine-stat{background:#fff;padding:16px 8px;text-align:center}
+.mine-stat-num{font-size:20px;font-weight:700;color:#667eea}
+.mine-stat-label{font-size:11px;color:#999;margin-top:4px}
 </style>
 </head>
 <body>
@@ -313,32 +385,81 @@ body{padding-bottom:80px}
     </div>
   </div>
 </div>
-<div class="header">
-  <h1>🎰 锦鲤选号（综合版）</h1>
-  <p>福利彩票 + 体育彩票 · 复式胆拖 · 走势图 · 数据自动更新</p>
+<!-- APP顶部渐变栏 -->
+<div class="app-header">
+  <div class="app-title" id="appTitle">🎰 锦鲤选号</div>
+  <div class="vip-badge" onclick="showVipModal()">👑 会员</div>
 </div>
 
-<div class="main-tabs">
-  <div class="main-tab active" onclick="switchMain('fc',this)">🎁 福利彩票</div>
-  <div class="main-tab" onclick="switchMain('tc',this)">🏆 体育彩票</div>
-  <div class="vip-badge" onclick="showVipModal()" style="position:absolute;right:10px;top:50%;transform:translateY(-50%)">👑 开通会员</div>
+<!-- APP内容区 -->
+<div class="app-content">
+  <!-- ===== 首页 ===== -->
+  <div class="app-page active" id="page-home">
+    <div id="homeContent"></div>
+  </div>
+  <!-- ===== 选号页 ===== -->
+  <div class="app-page" id="page-picker">
+    <div class="main-tabs">
+      <div class="main-tab active" onclick="switchMain('fc',this)">🎁 福利彩票</div>
+      <div class="main-tab" onclick="switchMain('tc',this)">🏆 体育彩票</div>
+    </div>
+    <div class="sub-tabs" id="fc-tabs">
+      <div class="sub-tab active" onclick="switchGame('ssq',this)">双色球</div>
+      <div class="sub-tab" onclick="switchGame('3d',this)">福彩3D</div>
+      <div class="sub-tab" onclick="switchGame('kl8',this)">快乐8</div>
+    </div>
+    <div class="sub-tabs" id="tc-tabs" style="display:none">
+      <div class="sub-tab active" onclick="switchGame('dlt',this)">大乐透</div>
+      <div class="sub-tab" onclick="switchGame('p3',this)">排列3</div>
+      <div class="sub-tab" onclick="switchGame('p5',this)">排列5</div>
+      <div class="sub-tab" onclick="switchGame('qxc',this)">7星彩</div>
+    </div>
+    <div id="pickerContainer"></div>
+  </div>
+  <!-- ===== 分析页 ===== -->
+  <div class="app-page" id="page-analysis">
+    <div class="main-tabs">
+      <div class="main-tab active" onclick="switchMain('fc',this)">🎁 福利彩票</div>
+      <div class="main-tab" onclick="switchMain('tc',this)">🏆 体育彩票</div>
+    </div>
+    <div class="sub-tabs" id="fc-tabs2">
+      <div class="sub-tab active" onclick="switchGame('ssq',this)">双色球</div>
+      <div class="sub-tab" onclick="switchGame('3d',this)">福彩3D</div>
+      <div class="sub-tab" onclick="switchGame('kl8',this)">快乐8</div>
+    </div>
+    <div class="sub-tabs" id="tc-tabs2" style="display:none">
+      <div class="sub-tab active" onclick="switchGame('dlt',this)">大乐透</div>
+      <div class="sub-tab" onclick="switchGame('p3',this)">排列3</div>
+      <div class="sub-tab" onclick="switchGame('p5',this)">排列5</div>
+      <div class="sub-tab" onclick="switchGame('qxc',this)">7星彩</div>
+    </div>
+    <div id="analysisContainer"></div>
+  </div>
+  <!-- ===== 我的页面 ===== -->
+  <div class="app-page" id="page-mine">
+    <div id="mineContent"></div>
+  </div>
 </div>
 
-<!-- 福利彩票子tab -->
-<div class="sub-tabs" id="fc-tabs">
-  <div class="sub-tab active" onclick="switchGame('ssq',this)">双色球</div>
-  <div class="sub-tab" onclick="switchGame('3d',this)">福彩3D</div>
-  <div class="sub-tab" onclick="switchGame('kl8',this)">快乐8</div>
+<!-- 底部毛玻璃导航栏 -->
+<div class="app-tabbar">
+  <div class="tabbar-item active" data-page="home" onclick="switchPage('home',this)">
+    <div class="tabbar-icon">🏠</div>
+    <div class="tabbar-label">首页</div>
+  </div>
+  <div class="tabbar-item" data-page="picker" onclick="switchPage('picker',this)">
+    <div class="tabbar-icon">🎯</div>
+    <div class="tabbar-label">选号</div>
+  </div>
+  <div class="tabbar-item" data-page="analysis" onclick="switchPage('analysis',this)">
+    <div class="tabbar-icon">📊</div>
+    <div class="tabbar-label">分析</div>
+  </div>
+  <div class="tabbar-item" data-page="mine" onclick="switchPage('mine',this)">
+    <div class="tabbar-icon">👤</div>
+    <div class="tabbar-label">我的</div>
+  </div>
 </div>
-<!-- 体育彩票子tab -->
-<div class="sub-tabs" id="tc-tabs" style="display:none">
-  <div class="sub-tab active" onclick="switchGame('dlt',this)">大乐透</div>
-  <div class="sub-tab" onclick="switchGame('p3',this)">排列3</div>
-  <div class="sub-tab" onclick="switchGame('p5',this)">排列5</div>
-  <div class="sub-tab" onclick="switchGame('qxc',this)">7星彩</div>
-</div>
-
-<div class="container" id="gameContainer"></div>
 
 <div class="footer">
   <div style="color:#c0392b;font-size:11px;line-height:1.6;text-align:center;padding:4px 10px">
@@ -370,20 +491,26 @@ Object.keys(GAMES).forEach(k=>{gameState[k]={data:[],loaded:false,tickets:[],ran
 // ===== 主分类切换 =====
 function switchMain(cat,el){
   currentMain=cat;
+  // 同步两个页面的main-tab
   document.querySelectorAll('.main-tab').forEach(t=>t.classList.remove('active'));
-  el.classList.add('active');
-  document.getElementById('fc-tabs').style.display=cat==='fc'?'flex':'none';
-  document.getElementById('tc-tabs').style.display=cat==='tc'?'flex':'none';
+  document.querySelectorAll(`.main-tab[onclick*="'${cat}'"]`).forEach(t=>t.classList.add('active'));
+  // 同步两个页面的sub-tabs显示
+  ['fc-tabs','fc-tabs2'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display=cat==='fc'?'flex':'none';});
+  ['tc-tabs','tc-tabs2'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display=cat==='tc'?'flex':'none';});
   const firstGame=Object.keys(GAMES).find(k=>GAMES[k].cat===cat);
-  document.querySelectorAll(`#${cat}-tabs .sub-tab`).forEach((t,i)=>{t.classList.toggle('active',i===0)});
-  switchGame(firstGame, document.querySelector(`#${cat}-tabs .sub-tab`));
+  // 同步两个页面的sub-tab active状态
+  document.querySelectorAll(`#fc-tabs .sub-tab, #fc-tabs2 .sub-tab, #tc-tabs .sub-tab, #tc-tabs2 .sub-tab`).forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll(`#fc-tabs .sub-tab, #fc-tabs2 .sub-tab`).forEach((t,i)=>{if(i===0&&cat==='fc')t.classList.add('active');});
+  document.querySelectorAll(`#tc-tabs .sub-tab, #tc-tabs2 .sub-tab`).forEach((t,i)=>{if(i===0&&cat==='tc')t.classList.add('active');});
+  switchGame(firstGame, null);
 }
 
 // ===== 玩法切换 =====
 function switchGame(key,el){
   currentGame=key;
+  // 同步两个页面的sub-tab active状态
   document.querySelectorAll('.sub-tab').forEach(t=>t.classList.remove('active'));
-  if(el)el.classList.add('active');
+  document.querySelectorAll(`.sub-tab[onclick*="'${key}'"]`).forEach(t=>t.classList.add('active'));
   renderGame();
   if(!gameState[key].loaded)loadGameData(key);
 }
@@ -418,29 +545,28 @@ async function loadGameData(key){
 // ===== 渲染游戏主界面 =====
 function renderGame(){
   const key=currentGame, g=GAMES[key], st=gameState[key];
-  const container=document.getElementById('gameContainer');
-  if(!st.loaded){container.innerHTML=`<div class="card"><div class="loading">正在加载${g.name}数据...</div></div>`;return;}
-  let html='';
-  // 历史开奖
-  html+=renderHistory(key).replace('<div class="card">','<div class="card" id="sec-history">');
-  // 频次冷热
-  html+=renderFreq(key).replace('<div class="card">','<div class="card" id="sec-freq">');
-  // 专家分析（会员功能）
-  html+=lockVipSection(renderExpert(key).replace('<div class="card">','<div class="card" id="sec-expert">'),'专家分析');
-  // 遗漏值分析
-  if(g.type==='lotto')html+=renderMissing(key).replace('<div class="card">','<div class="card" id="sec-missing">');
-  // 杀号推荐
-  if(g.type==='lotto')html+=renderKillNum(key).replace('<div class="card">','<div class="card" id="sec-kill">');
-  // 深度分析（会员功能）
-  if(g.type==='lotto')html+=lockVipSection(renderDeepAnalysis(key).replace('<div class="card">','<div class="card" id="sec-deep">'),'深度分析');
-  // 走势图
-  html+=renderTrendSection(key).replace('<div class="card trend-section">','<div class="card trend-section" id="sec-trend">');
-  // 选号中心
-  html+=renderPicker(key).replace('<div class="card">','<div class="card" id="sec-picker">');
-  // 我的选号
-  html+=renderTickets(key).replace('<div class="card">','<div class="card" id="sec-tickets">');
-  container.innerHTML=html;
-  // 初始化
+  const pickerC=document.getElementById('pickerContainer');
+  const analysisC=document.getElementById('analysisContainer');
+  if(!st.loaded){
+    const loading=`<div class="card"><div class="loading">正在加载${g.name}数据...</div></div>`;
+    pickerC.innerHTML=loading;analysisC.innerHTML=loading;return;
+  }
+  // ===== 分析页内容 =====
+  let aHtml='';
+  aHtml+=renderHistory(key).replace('<div class="card">','<div class="card" id="sec-history">');
+  aHtml+=renderFreq(key).replace('<div class="card">','<div class="card" id="sec-freq">');
+  aHtml+=lockVipSection(renderExpert(key).replace('<div class="card">','<div class="card" id="sec-expert">'),'专家分析');
+  if(g.type==='lotto')aHtml+=renderMissing(key).replace('<div class="card">','<div class="card" id="sec-missing">');
+  if(g.type==='lotto')aHtml+=renderKillNum(key).replace('<div class="card">','<div class="card" id="sec-kill">');
+  if(g.type==='lotto')aHtml+=lockVipSection(renderDeepAnalysis(key).replace('<div class="card">','<div class="card" id="sec-deep">'),'深度分析');
+  aHtml+=renderTrendSection(key).replace('<div class="card trend-section">','<div class="card trend-section" id="sec-trend">');
+  analysisC.innerHTML=aHtml;
+  // ===== 选号页内容 =====
+  let pHtml='';
+  pHtml+=renderPicker(key).replace('<div class="card">','<div class="card" id="sec-picker">');
+  pHtml+=renderTickets(key).replace('<div class="card">','<div class="card" id="sec-tickets">');
+  pickerC.innerHTML=pHtml;
+  // 初始化选号
   if(g.type==='digit')initDigitPicker(key);
   else initLottoPicker(key);
 }
@@ -2597,14 +2723,136 @@ function showAdminPanel(){
   if(cat==='tc'){
     currentMain='tc';
     document.querySelectorAll('.main-tab').forEach((t,i)=>t.classList.toggle('active',i===1));
-    document.getElementById('fc-tabs').style.display='none';
-    document.getElementById('tc-tabs').style.display='flex';
+    ['fc-tabs','fc-tabs2'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='none';});
+    ['tc-tabs','tc-tabs2'].forEach(id=>{const el=document.getElementById(id);if(el)el.style.display='flex';});
     currentGame='dlt';
-    document.querySelectorAll('#tc-tabs .sub-tab').forEach((t,i)=>t.classList.toggle('active',i===0));
+    document.querySelectorAll('#tc-tabs .sub-tab, #tc-tabs2 .sub-tab').forEach((t,i)=>t.classList.toggle('active',i===0));
   }
   loadGameData(currentGame);
   renderGame();
+  renderHome();
 })();
+// ===== APP页面切换 =====
+function switchPage(page,el){
+  document.querySelectorAll('.app-page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-'+page).classList.add('active');
+  document.querySelectorAll('.tabbar-item').forEach(t=>t.classList.remove('active'));
+  if(el)el.classList.add('active');
+  const titles={home:'🎰 锦鲤选号',picker:'🎯 选号中心',analysis:'📊 数据分析',mine:'👤 我的'};
+  document.getElementById('appTitle').textContent=titles[page]||'🎰 锦鲤选号';
+  if(page==='home')renderHome();
+  if(page==='mine')renderMine();
+  window.scrollTo(0,0);
+}
+// ===== 首页渲染 =====
+function renderHome(){
+  const c=document.getElementById('homeContent');
+  let html='<div class="home-section">';
+  // 会员横幅
+  if(!isVip()){
+    html+=`<div class="vip-banner" onclick="showVipModal()">
+      <div class="vip-text">
+        <div class="vip-title">👑 开通会员 解锁全部高级功能</div>
+        <div class="vip-desc">专家分析 · 深度分析 · 条件缩水 · 智能推荐</div>
+      </div>
+      <div class="vip-arrow">›</div>
+    </div>`;
+  }
+  // 最新开奖
+  html+=`<div class="home-card">
+    <div class="home-card-title">📋 最新开奖 <span class="more" onclick="switchPage('analysis',document.querySelector('[data-page=analysis]'))">更多 ›</span></div>`;
+  ['ssq','dlt'].forEach(key=>{
+    const g=GAMES[key], st=gameState[key];
+    if(st.loaded&&st.data.length>0){
+      const d=st.data[0];
+      const redNums=d.red.map(n=>`<span class="ball ${g.redClass}" style="width:24px;height:24px;line-height:24px;font-size:11px">${pad(n)}</span>`).join('');
+      const blueNums=g.blueMax>0?d.blue.map(n=>`<span class="ball ${g.blueClass}" style="width:24px;height:24px;line-height:24px;font-size:11px">${pad(n)}</span>`).join(''):'';
+      html+=`<div class="latest-draw" style="padding:10px 0;border-bottom:1px solid #f5f5f5;cursor:pointer" onclick="switchGame('${key}',null);switchPage('analysis',document.querySelector('[data-page=analysis]'))">
+        <div class="draw-info">
+          <div class="draw-name">${g.name}</div>
+          <div class="draw-issue">第${d.issue}期 · ${d.date||''}</div>
+        </div>
+        <div class="draw-nums">${redNums}${blueNums}</div>
+      </div>`;
+    }
+  });
+  html+='</div>';
+  // 快捷入口
+  html+=`<div class="home-card">
+    <div class="home-card-title">⚡ 快捷功能</div>
+    <div class="quick-grid">
+      <div class="quick-item" onclick="switchPage('picker',document.querySelector('[data-page=picker]'))">
+        <div class="quick-icon" style="background:#e8f5e9">🎯</div>
+        <div class="quick-label">选号</div>
+      </div>
+      <div class="quick-item" onclick="switchPage('analysis',document.querySelector('[data-page=analysis]'))">
+        <div class="quick-icon" style="background:#e3f2fd">📊</div>
+        <div class="quick-label">分析</div>
+      </div>
+      <div class="quick-item" onclick="switchPage('analysis',document.querySelector('[data-page=analysis]'))">
+        <div class="quick-icon" style="background:#fff3e0">📈</div>
+        <div class="quick-label">走势图</div>
+      </div>
+      <div class="quick-item" onclick="showVipModal()">
+        <div class="quick-icon" style="background:#fce4ec">👑</div>
+        <div class="quick-label">会员</div>
+      </div>
+    </div>
+  </div>`;
+  // 今日推荐
+  if(isVip()){
+    html+=`<div class="home-card">
+      <div class="home-card-title">🔮 今日推荐 <span class="more" onclick="switchPage('analysis',document.querySelector('[data-page=analysis]'))">专家分析 ›</span></div>
+      <div style="font-size:13px;color:#666;line-height:1.8">基于最新开奖数据和十一维算法，为您推荐今日高概率号码组合。前往分析页面查看详细推荐。</div>
+    </div>`;
+  }
+  html+='</div>';
+  c.innerHTML=html;
+}
+// ===== 我的页面渲染 =====
+function renderMine(){
+  const c=document.getElementById('mineContent');
+  const totalTickets=Object.values(gameState).reduce((s,st)=>s+(st.tickets?st.tickets.length:0),0);
+  const vip=isVip();
+  let html=`
+  <div class="mine-header">
+    <div class="mine-avatar">🎰</div>
+    <div class="mine-name">锦鲤选号用户</div>
+    <div class="mine-device">设备码：${getDeviceId()}</div>
+    <div class="mine-vip-status ${vip?'active':'inactive'}">${vip?'👑 会员已激活':'未开通会员'}</div>
+  </div>
+  <div class="mine-stats">
+    <div class="mine-stat"><div class="mine-stat-num">${totalTickets}</div><div class="mine-stat-label">我的选号</div></div>
+    <div class="mine-stat"><div class="mine-stat-num">7</div><div class="mine-stat-label">支持玩法</div></div>
+    <div class="mine-stat"><div class="mine-stat-num">${vip?'∞':'6'}</div><div class="mine-stat-label">${vip?'全部功能':'免费功能'}</div></div>
+  </div>
+  <div class="mine-menu">
+    <div class="mine-menu-item" onclick="switchPage('picker',document.querySelector('[data-page=picker]'))">
+      <div class="mine-menu-icon" style="background:#e8f5e9">🎯</div>
+      <div class="mine-menu-text">我的选号</div>
+      <div class="mine-menu-arrow">›</div>
+    </div>
+    <div class="mine-menu-item" onclick="showVipModal()">
+      <div class="mine-menu-icon" style="background:#fff3e0">👑</div>
+      <div class="mine-menu-text">会员中心 ${vip?'(已激活)':'(去开通)'}</div>
+      <div class="mine-menu-arrow">›</div>
+    </div>
+    <div class="mine-menu-item" onclick="showAdminPanel()">
+      <div class="mine-menu-icon" style="background:#e3f2fd">⚙️</div>
+      <div class="mine-menu-text">管理员入口</div>
+      <div class="mine-menu-arrow">›</div>
+    </div>
+    <div class="mine-menu-item" onclick="genDesktopLink()">
+      <div class="mine-menu-icon" style="background:#f3e5f5">📱</div>
+      <div class="mine-menu-text">添加到桌面</div>
+      <div class="mine-menu-arrow">›</div>
+    </div>
+  </div>
+  <div style="text-align:center;padding:20px;color:#bbb;font-size:11px">
+    锦鲤选号 v2.0 · 仅供娱乐参考
+  </div>`;
+  c.innerHTML=html;
+}
 // 浮动导航
 function toggleFab(){document.getElementById('fabMenu').classList.toggle('show');}
 function scrollToSec(id){
