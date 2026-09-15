@@ -355,6 +355,26 @@ body{padding-bottom:80px}
 .mine-stat{background:#fff;padding:16px 8px;text-align:center}
 .mine-stat-num{font-size:20px;font-weight:700;color:#667eea}
 .mine-stat-label{font-size:11px;color:#999;margin-top:4px}
+/* 分析页内部tab */
+.analysis-tabs{display:flex;background:#fff;border-bottom:1px solid #eee;position:sticky;top:0;z-index:50;overflow-x:auto;scrollbar-width:none}
+.analysis-tabs::-webkit-scrollbar{display:none}
+.analysis-tab{flex:1;min-width:60px;padding:12px 8px;text-align:center;font-size:13px;color:#999;cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;white-space:nowrap}
+.analysis-tab.active{color:#667eea;border-bottom-color:#667eea;font-weight:600}
+.analysis-panel{display:none}
+.analysis-panel.active{display:block;animation:fadeIn .3s ease}
+/* 视觉动画 */
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
+@keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+.ball{transition:transform .15s ease,box-shadow .15s ease}
+.ball:active{transform:scale(0.9)}
+.ball.selected-red,.ball.selected-blue{animation:pulse .3s ease}
+.vip-banner{background:linear-gradient(135deg,#667eea,#764ba2);position:relative;overflow:hidden}
+.vip-banner::after{content:'';position:absolute;top:0;left:0;right:0;bottom:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.2),transparent);background-size:200% 100%;animation:shimmer 3s infinite}
+.quick-item{transition:transform .2s ease}
+.quick-item:active{transform:scale(0.95)}
+.mine-menu-item{transition:background .2s ease}
+.mine-menu-item:active{background:#f5f5f5}
 </style>
 </head>
 <body>
@@ -553,15 +573,36 @@ function renderGame(){
     const loading=`<div class="card"><div class="loading">正在加载${g.name}数据...</div></div>`;
     pickerC.innerHTML=loading;analysisC.innerHTML=loading;return;
   }
-  // ===== 分析页内容 =====
-  let aHtml='';
+  // ===== 分析页内容（内部tab切换）=====
+  let aHtml='<div class="analysis-tabs">';
+  const tabs=[['history','📋 开奖'],['freq','🌡️ 冷热'],['expert','🔮 专家'],['missing','📊 遗漏'],['deep','🧠 深度'],['trend','📈 走势']];
+  tabs.forEach((t,i)=>{aHtml+=`<div class="analysis-tab ${i===0?'active':''}" onclick="switchAnalysisTab('${t[0]}',this)">${t[1]}</div>`;});
+  aHtml+='</div>';
+  // 开奖面板
+  aHtml+=`<div class="analysis-panel active" id="panel-history">`;
   aHtml+=renderHistory(key).replace('<div class="card">','<div class="card" id="sec-history">');
+  aHtml+='</div>';
+  // 冷热面板
+  aHtml+=`<div class="analysis-panel" id="panel-freq">`;
   aHtml+=renderFreq(key).replace('<div class="card">','<div class="card" id="sec-freq">');
+  aHtml+='</div>';
+  // 专家面板
+  aHtml+=`<div class="analysis-panel" id="panel-expert">`;
   aHtml+=lockVipSection(renderExpert(key).replace('<div class="card">','<div class="card" id="sec-expert">'),'专家分析');
+  aHtml+='</div>';
+  // 遗漏面板（遗漏+杀号）
+  aHtml+=`<div class="analysis-panel" id="panel-missing">`;
   if(g.type==='lotto')aHtml+=renderMissing(key).replace('<div class="card">','<div class="card" id="sec-missing">');
   if(g.type==='lotto')aHtml+=renderKillNum(key).replace('<div class="card">','<div class="card" id="sec-kill">');
+  aHtml+='</div>';
+  // 深度面板
+  aHtml+=`<div class="analysis-panel" id="panel-deep">`;
   if(g.type==='lotto')aHtml+=lockVipSection(renderDeepAnalysis(key).replace('<div class="card">','<div class="card" id="sec-deep">'),'深度分析');
+  aHtml+='</div>';
+  // 走势面板
+  aHtml+=`<div class="analysis-panel" id="panel-trend">`;
   aHtml+=renderTrendSection(key).replace('<div class="card trend-section">','<div class="card trend-section" id="sec-trend">');
+  aHtml+='</div>';
   analysisC.innerHTML=aHtml;
   // ===== 选号页内容 =====
   let pHtml='';
@@ -1523,8 +1564,13 @@ function renderDeepAnalysis(key){
 // ===== 走势图 =====
 function renderTrendSection(key){
   const g=GAMES[key], st=gameState[key];
+  if(!st.trendCount)st.trendCount=30;
   const compareLabel = (key==='qxc'||key==='kl8')?'':`<label class="compare-toggle"><input type="checkbox" id="compareToggle_${key}" onchange="toggleCompare('${key}')"> 去年同期对比</label>`;
   let html=`<div class="card trend-section"><div class="trend-title">📈 走势图 <span style="font-size:11px;color:#999;font-weight:normal">（手机可横屏）</span>${compareLabel}</div>`;
+  // 期数选择
+  html+=`<div style="display:flex;gap:8px;padding:8px 16px;border-bottom:1px solid #eee">
+    ${[10,20,30].map(n=>`<div class="trend-tab ${st.trendCount===n?'active':''}" style="padding:4px 12px;font-size:12px;border-radius:12px;background:${st.trendCount===n?'#667eea':'#f0f0f0'};color:${st.trendCount===n?'#fff':'#666'};cursor:pointer" onclick="setTrendCount('${key}',${n},this)">${n}期</div>`).join('')}
+  </div>`;
   if(g.type==='lotto'){
     html+=`<div class="trend-wrap" id="trendWrap"></div>`;
   }else{
@@ -1533,6 +1579,12 @@ function renderTrendSection(key){
   html+=`</div>`;
   setTimeout(()=>{renderTrend(key);},50);
   return html;
+}
+function setTrendCount(key,count,el){
+  gameState[key].trendCount=count;
+  document.querySelectorAll('#analysisContainer .trend-tab').forEach(t=>{t.style.background='#f0f0f0';t.style.color='#666';});
+  el.style.background='#667eea';el.style.color='#fff';
+  renderTrend(key);
 }
 function setTrendArea(key,area,el){gameState[key].trendArea=area;document.querySelectorAll(`#analysisContainer .trend-tab`).forEach(t=>t.classList.remove('active'));el.classList.add('active');renderTrend(key);}
 function setTrendPos(key,pos,el){gameState[key].trendPos=pos;document.querySelectorAll(`#analysisContainer .trend-tab`).forEach(t=>t.classList.remove('active'));el.classList.add('active');renderTrend(key);}
@@ -1561,7 +1613,7 @@ function renderTrend(key){
   const g=GAMES[key], st=gameState[key];
   const wrap=document.getElementById('trendWrap');
   if(!wrap)return;
-  const data=st.data.slice(0,30).reverse();
+  const data=st.data.slice(0,st.trendCount||30).reverse();
   const showCompare=localStorage.getItem('compare_'+key)==='1';
   let myRows=[];
   try{myRows=JSON.parse(localStorage.getItem('myRows_'+key)||'[]');}catch(e){}
@@ -2070,9 +2122,30 @@ function delNote(key,btn){
 }
 
 // ===== 选号中心 =====
+function quickRandom(key){
+  const g=GAMES[key], st=gameState[key];
+  if(g.type!=='lotto'){alert('数字型玩法请在选号区手动随机');return;}
+  for(let i=0;i<5;i++){
+    const rp=[];for(let n=1;n<=g.redMax;n++)rp.push(n);
+    for(let j=rp.length-1;j>0;j--){const k=Math.floor(Math.random()*(j+1));[rp[j],rp[k]]=[rp[k],rp[j]];}
+    const red=rp.slice(0,g.redPick).sort((a,b)=>a-b);
+    let blue=[];
+    if(g.blueMax>0){const bp=[];for(let n=1;n<=g.blueMax;n++)bp.push(n);for(let j=bp.length-1;j>0;j--){const k=Math.floor(Math.random()*(j+1));[bp[j],bp[k]]=[bp[k],bp[j]];}blue=bp.slice(0,g.bluePick).sort((a,b)=>a-b);}
+    const sum=red.reduce((a,b)=>a+b,0);
+    const odd=red.filter(n=>n%2===1).length;
+    st.tickets.push({red,blue,desc:`【随机${i+1}】和值${sum}，奇偶比${odd}:${red.length-odd}`,type:'随机'});
+  }
+  addStat('genCount');
+  renderGame();
+  alert('✅ 已随机生成 5 组号码，添加到我的选号');
+}
 function renderPicker(key){
   const g=GAMES[key], st=gameState[key];
   let html=`<div class="card"><div class="card-title"><span>选号中心</span></div>`;
+  // 一键随机按钮
+  html+=`<div style="padding:12px 16px;background:linear-gradient(135deg,#f0f4ff,#e8eeff);border-bottom:1px solid #eee">
+    <button class="btn btn-primary" style="width:100%;padding:12px;font-size:15px;font-weight:600;background:linear-gradient(135deg,#667eea,#764ba2)" onclick="quickRandom('${key}')">🎲 一键随机生成 5 组</button>
+  </div>`;
   if(g.type==='lotto'){
     // 玩法模式tab
     const modes=[['single','单式']];
@@ -2621,7 +2694,7 @@ function delTicket(key,i){gameState[key].tickets.splice(i,1);renderGame();}
 // ===== 我的选号 =====
 function renderTickets(key){
   const g=GAMES[key], st=gameState[key];
-  let html=`<div class="card"><div class="card-title"><span>我的选号（<span id="ticketCount">${st.tickets.length}</span>组）</span></div><div class="ticket-list">`;
+  let html=`<div class="card"><div class="card-title"><span>我的选号（<span id="ticketCount">${st.tickets.length}</span>组）</span>${st.tickets.length>0?`<span style="font-size:12px;color:#667eea;cursor:pointer;font-weight:normal" onclick="generateShareImage('${key}')">📷 分享图</span>`:''}</div><div class="ticket-list">`;
   if(!st.tickets.length){html+='<div class="empty-tip">暂无选号，手动选号或一键随机生成</div>';}
   else{
     st.tickets.forEach((t,i)=>{
@@ -2634,11 +2707,65 @@ function renderTickets(key){
       }else{
         nums=t.digits.map((n,idx)=>`<span class="ball ${idx===t.digits.length-1&&g.maxes[idx]>=14?'ball-special':'ball-digit'}">${n}</span>`).join('');
       }
-      html+=`<div class="ticket-item"><div class="ticket-index">${i+1}</div><div class="ticket-body"><div class="ticket-nums">${typeTag}${nums}</div><div class="ticket-desc">${t.desc}</div></div><button class="ticket-del" onclick="delTicket('${key}',${i})">×</button></div>`;
+      const favBtn=g.type==='lotto'?`<span style="cursor:pointer;font-size:16px;margin-right:4px" onclick="toggleFav([${t.red.join(',')}],[${(t.blue||[]).join(',')}],'${g.name}')">⭐</span>`:'';
+      html+=`<div class="ticket-item"><div class="ticket-index">${i+1}</div><div class="ticket-body"><div class="ticket-nums">${typeTag}${nums}</div><div class="ticket-desc">${t.desc}</div></div>${favBtn}<button class="ticket-del" onclick="delTicket('${key}',${i})">×</button></div>`;
     });
   }
   html+='</div></div>';
   return html;
+}
+// 生成分享图
+function generateShareImage(key){
+  const g=GAMES[key], st=gameState[key];
+  if(!st.tickets.length){alert('暂无选号可分享');return;}
+  const canvas=document.createElement('canvas');
+  const W=750,H=400+st.tickets.length*60;
+  canvas.width=W;canvas.height=H;
+  const ctx=canvas.getContext('2d');
+  // 背景渐变
+  const grad=ctx.createLinearGradient(0,0,W,H);
+  grad.addColorStop(0,'#667eea');grad.addColorStop(1,'#764ba2');
+  ctx.fillStyle=grad;ctx.fillRect(0,0,W,H);
+  // 标题
+  ctx.fillStyle='#fff';ctx.font='bold 36px sans-serif';ctx.textAlign='center';
+  ctx.fillText('🎰 '+g.name+' 选号推荐',W/2,70);
+  ctx.font='20px sans-serif';ctx.fillStyle='rgba(255,255,255,0.8)';
+  ctx.fillText(new Date().toLocaleDateString()+' 生成',W/2,105);
+  // 每组号码
+  st.tickets.forEach((t,i)=>{
+    const y=150+i*60;
+    ctx.fillStyle='rgba(255,255,255,0.15)';
+    ctx.beginPath();ctx.roundRect(40,y-25,W-80,50,12);ctx.fill();
+    ctx.fillStyle='#fff';ctx.font='bold 18px sans-serif';ctx.textAlign='left';
+    ctx.fillText('第'+(i+1)+'组',60,y+5);
+    let x=140;
+    if(g.type==='lotto'){
+      t.red.forEach(n=>{
+        ctx.fillStyle='#e74c3c';ctx.beginPath();ctx.arc(x+15,y,15,0,Math.PI*2);ctx.fill();
+        ctx.fillStyle='#fff';ctx.font='bold 14px sans-serif';ctx.textAlign='center';ctx.fillText(pad(n),x+15,y+5);
+        x+=38;
+      });
+      x+=10;
+      (t.blue||[]).forEach(n=>{
+        ctx.fillStyle='#3498db';ctx.beginPath();ctx.arc(x+15,y,15,0,Math.PI*2);ctx.fill();
+        ctx.fillStyle='#fff';ctx.font='bold 14px sans-serif';ctx.textAlign='center';ctx.fillText(pad(n),x+15,y+5);
+        x+=38;
+      });
+    }
+  });
+  // 底部
+  ctx.fillStyle='rgba(255,255,255,0.6)';ctx.font='16px sans-serif';ctx.textAlign='center';
+  ctx.fillText('锦鲤选号 · 仅供娱乐参考 · 理性购彩',W/2,H-30);
+  // 显示图片
+  const img=canvas.toDataURL('image/png');
+  const modal=document.createElement('div');
+  modal.style.cssText='position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.8);z-index:9999;display:flex;align-items:center;justify-content:center;flex-direction:column';
+  modal.innerHTML=`<img src="${img}" style="max-width:90%;max-height:70%;border-radius:12px;margin-bottom:20px">
+    <div style="display:flex;gap:16px">
+      <a href="${img}" download="锦鲤选号_${g.name}.png" style="background:#667eea;color:#fff;padding:12px 32px;border-radius:24px;text-decoration:none;font-size:16px">💾 保存图片</a>
+      <button onclick="this.closest('div').parentElement.remove()" style="background:#fff;color:#333;padding:12px 32px;border-radius:24px;border:none;font-size:16px;cursor:pointer">关闭</button>
+    </div>`;
+  document.body.appendChild(modal);
 }
 
 // ===== 设备授权 =====
@@ -2744,6 +2871,15 @@ function switchPage(page,el){
   document.getElementById('appTitle').textContent=titles[page]||'🎰 锦鲤选号';
   if(page==='home')renderHome();
   if(page==='mine')renderMine();
+  if(page==='analysis')addStat('viewCount');
+  window.scrollTo(0,0);
+}
+// ===== 分析页内部tab切换 =====
+function switchAnalysisTab(tab,el){
+  document.querySelectorAll('.analysis-tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  document.querySelectorAll('.analysis-panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('panel-'+tab).classList.add('active');
   window.scrollTo(0,0);
 }
 // ===== 首页渲染 =====
@@ -2760,22 +2896,64 @@ function renderHome(){
       <div class="vip-arrow">›</div>
     </div>`;
   }
-  // 最新开奖
+  // 今日开奖提醒
+  const today=new Date().getDay();
+  const todayGames=[];
+  if([2,4,0].includes(today))todayGames.push({name:'双色球',time:'21:15'});
+  if([1,3,6].includes(today))todayGames.push({name:'大乐透',time:'20:30'});
+  todayGames.push({name:'福彩3D',time:'21:15'},{name:'排列3/5',time:'20:30'});
+  html+=`<div class="home-card">
+    <div class="home-card-title">📅 今日开奖</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      ${todayGames.map(g=>`<div style="flex:1;min-width:80px;background:#f8f9fa;border-radius:10px;padding:10px 8px;text-align:center">
+        <div style="font-size:13px;font-weight:600;color:#333">${g.name}</div>
+        <div style="font-size:11px;color:#999;margin-top:2px">${g.time}</div>
+      </div>`).join('')}
+    </div>
+  </div>`;
+  // 快速随机选号
+  const quickKey=currentGame;
+  const qg=GAMES[quickKey];
+  let quickRed=[],quickBlue=[];
+  if(qg.type==='lotto'){
+    const pool=[];for(let i=1;i<=qg.redMax;i++)pool.push(i);
+    for(let i=pool.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[pool[i],pool[j]]=[pool[j],pool[i]];}
+    quickRed=pool.slice(0,qg.redPick).sort((a,b)=>a-b);
+    if(qg.blueMax>0){const bp=[];for(let i=1;i<=qg.blueMax;i++)bp.push(i);for(let i=bp.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[bp[i],bp[j]]=[bp[j],bp[i]];}quickBlue=bp.slice(0,qg.bluePick).sort((a,b)=>a-b);}
+  }
+  const quickRedHtml=quickRed.map(n=>`<span class="ball ${qg.redClass}" style="width:28px;height:28px;line-height:28px;font-size:13px">${pad(n)}</span>`).join('');
+  const quickBlueHtml=quickBlue.map(n=>`<span class="ball ${qg.blueClass}" style="width:28px;height:28px;line-height:28px;font-size:13px">${pad(n)}</span>`).join('');
+  html+=`<div class="home-card">
+    <div class="home-card-title">🎲 快速随机 <span style="font-size:11px;color:#999;font-weight:normal">${qg.name}</span></div>
+    <div style="text-align:center;padding:16px 0">
+      <div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-bottom:12px">${quickRedHtml}${quickBlueHtml}</div>
+      <div style="display:flex;gap:10px;justify-content:center">
+        <button class="btn btn-secondary" style="padding:8px 20px;font-size:13px" onclick="renderHome()">🔄 换一组</button>
+        <button class="btn btn-primary" style="padding:8px 20px;font-size:13px" onclick="switchPage('picker',document.querySelector('[data-page=picker]'))">去选号 ›</button>
+      </div>
+    </div>
+  </div>`;
+  // 最新开奖（更多玩法）
   html+=`<div class="home-card">
     <div class="home-card-title">📋 最新开奖 <span class="more" onclick="switchPage('analysis',document.querySelector('[data-page=analysis]'))">更多 ›</span></div>`;
-  ['ssq','dlt'].forEach(key=>{
+  ['ssq','dlt','3d','p3'].forEach(key=>{
     const g=GAMES[key], st=gameState[key];
     if(st.loaded&&st.data.length>0){
       const d=st.data[0];
-      const redNums=d.red.map(n=>`<span class="ball ${g.redClass}" style="width:24px;height:24px;line-height:24px;font-size:11px">${pad(n)}</span>`).join('');
-      const blueNums=g.blueMax>0?d.blue.map(n=>`<span class="ball ${g.blueClass}" style="width:24px;height:24px;line-height:24px;font-size:11px">${pad(n)}</span>`).join(''):'';
-      html+=`<div class="latest-draw" style="padding:10px 0;border-bottom:1px solid #f5f5f5;cursor:pointer" onclick="switchGame('${key}',null);switchPage('analysis',document.querySelector('[data-page=analysis]'))">
-        <div class="draw-info">
-          <div class="draw-name">${g.name}</div>
-          <div class="draw-issue">第${d.issue}期 · ${d.date||''}</div>
-        </div>
-        <div class="draw-nums">${redNums}${blueNums}</div>
-      </div>`;
+      if(g.type==='lotto'){
+        const redNums=d.red.map(n=>`<span class="ball ${g.redClass}" style="width:22px;height:22px;line-height:22px;font-size:10px">${pad(n)}</span>`).join('');
+        const blueNums=g.blueMax>0?d.blue.map(n=>`<span class="ball ${g.blueClass}" style="width:22px;height:22px;line-height:22px;font-size:10px">${pad(n)}</span>`).join(''):'';
+        html+=`<div class="latest-draw" style="padding:10px 0;border-bottom:1px solid #f5f5f5;cursor:pointer" onclick="switchGame('${key}',null);switchPage('analysis',document.querySelector('[data-page=analysis]'))">
+          <div class="draw-info"><div class="draw-name">${g.name}</div><div class="draw-issue">第${d.issue}期</div></div>
+          <div class="draw-nums">${redNums}${blueNums}</div>
+        </div>`;
+      }else{
+        const digitStr=(d.digits||[]).map(n=>`<span class="ball ball-red" style="width:22px;height:22px;line-height:22px;font-size:10px">${n}</span>`).join('');
+        html+=`<div class="latest-draw" style="padding:10px 0;border-bottom:1px solid #f5f5f5;cursor:pointer" onclick="switchGame('${key}',null);switchPage('analysis',document.querySelector('[data-page=analysis]'))">
+          <div class="draw-info"><div class="draw-name">${g.name}</div><div class="draw-issue">第${d.issue}期</div></div>
+          <div class="draw-nums">${digitStr}</div>
+        </div>`;
+      }
     }
   });
   html+='</div>';
@@ -2784,30 +2962,19 @@ function renderHome(){
     <div class="home-card-title">⚡ 快捷功能</div>
     <div class="quick-grid">
       <div class="quick-item" onclick="switchPage('picker',document.querySelector('[data-page=picker]'))">
-        <div class="quick-icon" style="background:#e8f5e9">🎯</div>
-        <div class="quick-label">选号</div>
+        <div class="quick-icon" style="background:#e8f5e9">🎯</div><div class="quick-label">选号</div>
       </div>
       <div class="quick-item" onclick="switchPage('analysis',document.querySelector('[data-page=analysis]'))">
-        <div class="quick-icon" style="background:#e3f2fd">📊</div>
-        <div class="quick-label">分析</div>
+        <div class="quick-icon" style="background:#e3f2fd">📊</div><div class="quick-label">分析</div>
       </div>
-      <div class="quick-item" onclick="switchPage('analysis',document.querySelector('[data-page=analysis]'))">
-        <div class="quick-icon" style="background:#fff3e0">📈</div>
-        <div class="quick-label">走势图</div>
+      <div class="quick-item" onclick="switchPage('analysis',document.querySelector('[data-page=analysis]'));setTimeout(()=>{document.getElementById('sec-trend')?.scrollIntoView({behavior:'smooth'})},150)">
+        <div class="quick-icon" style="background:#fff3e0">📈</div><div class="quick-label">走势图</div>
       </div>
       <div class="quick-item" onclick="showVipModal()">
-        <div class="quick-icon" style="background:#fce4ec">👑</div>
-        <div class="quick-label">会员</div>
+        <div class="quick-icon" style="background:#fce4ec">👑</div><div class="quick-label">会员</div>
       </div>
     </div>
   </div>`;
-  // 今日推荐
-  if(isVip()){
-    html+=`<div class="home-card">
-      <div class="home-card-title">🔮 今日推荐 <span class="more" onclick="switchPage('analysis',document.querySelector('[data-page=analysis]'))">专家分析 ›</span></div>
-      <div style="font-size:13px;color:#666;line-height:1.8">基于最新开奖数据和十一维算法，为您推荐今日高概率号码组合。前往分析页面查看详细推荐。</div>
-    </div>`;
-  }
   html+='</div>';
   c.innerHTML=html;
 }
@@ -2816,6 +2983,12 @@ function renderMine(){
   const c=document.getElementById('mineContent');
   const totalTickets=Object.values(gameState).reduce((s,st)=>s+(st.tickets?st.tickets.length:0),0);
   const vip=isVip();
+  // 使用统计
+  const stats=JSON.parse(localStorage.getItem('lottery_stats')||'{}');
+  const genCount=stats.genCount||0;
+  const viewCount=stats.viewCount||0;
+  // 收藏的号码
+  const favs=JSON.parse(localStorage.getItem('lottery_favs')||'[]');
   let html=`
   <div class="mine-header">
     <div class="mine-avatar">🎰</div>
@@ -2825,8 +2998,8 @@ function renderMine(){
   </div>
   <div class="mine-stats">
     <div class="mine-stat"><div class="mine-stat-num">${totalTickets}</div><div class="mine-stat-label">我的选号</div></div>
-    <div class="mine-stat"><div class="mine-stat-num">7</div><div class="mine-stat-label">支持玩法</div></div>
-    <div class="mine-stat"><div class="mine-stat-num">${vip?'∞':'6'}</div><div class="mine-stat-label">${vip?'全部功能':'免费功能'}</div></div>
+    <div class="mine-stat"><div class="mine-stat-num">${favs.length}</div><div class="mine-stat-label">收藏号码</div></div>
+    <div class="mine-stat"><div class="mine-stat-num">${genCount}</div><div class="mine-stat-label">生成次数</div></div>
   </div>
   <div class="mine-menu">
     <div class="mine-menu-item" onclick="switchPage('picker',document.querySelector('[data-page=picker]'))">
@@ -2849,11 +3022,47 @@ function renderMine(){
       <div class="mine-menu-text">添加到桌面</div>
       <div class="mine-menu-arrow">›</div>
     </div>
-  </div>
-  <div style="text-align:center;padding:20px;color:#bbb;font-size:11px">
+  </div>`;
+  // 收藏的号码
+  if(favs.length>0){
+    html+=`<div class="home-card" style="margin:0 16px 16px">
+      <div class="home-card-title">⭐ 我的收藏</div>`;
+    favs.forEach((f,i)=>{
+      const redHtml=f.red.map(n=>`<span class="ball ball-red" style="width:22px;height:22px;line-height:22px;font-size:10px">${pad(n)}</span>`).join('');
+      const blueHtml=(f.blue||[]).map(n=>`<span class="ball ball-blue" style="width:22px;height:22px;line-height:22px;font-size:10px">${pad(n)}</span>`).join('');
+      html+=`<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #f5f5f5">
+        <div style="flex:1">${redHtml}${blueHtml}</div>
+        <span style="font-size:11px;color:#999">${f.game||''}</span>
+        <span style="cursor:pointer;color:#e74c3c;font-size:14px" onclick="removeFav(${i})">✕</span>
+      </div>`;
+    });
+    html+='</div>';
+  }
+  html+=`<div style="text-align:center;padding:20px;color:#bbb;font-size:11px">
     锦鲤选号 v2.0 · 仅供娱乐参考
   </div>`;
   c.innerHTML=html;
+}
+// 使用统计记录
+function addStat(key){
+  const stats=JSON.parse(localStorage.getItem('lottery_stats')||'{}');
+  stats[key]=(stats[key]||0)+1;
+  localStorage.setItem('lottery_stats',JSON.stringify(stats));
+}
+// 收藏功能
+function toggleFav(red,blue,game){
+  const favs=JSON.parse(localStorage.getItem('lottery_favs')||'[]');
+  const exists=favs.findIndex(f=>JSON.stringify(f.red)===JSON.stringify(red)&&JSON.stringify(f.blue||[])===JSON.stringify(blue||[]));
+  if(exists>=0){favs.splice(exists,1);alert('已取消收藏');}
+  else{favs.push({red,blue,game,time:new Date().toLocaleDateString()});alert('⭐ 已收藏');}
+  localStorage.setItem('lottery_favs',JSON.stringify(favs));
+  renderGame();renderMine();
+}
+function removeFav(i){
+  const favs=JSON.parse(localStorage.getItem('lottery_favs')||'[]');
+  favs.splice(i,1);
+  localStorage.setItem('lottery_favs',JSON.stringify(favs));
+  renderMine();
 }
 // 浮动导航
 function toggleFab(){document.getElementById('fabMenu').classList.toggle('show');}
@@ -2870,6 +3079,40 @@ function scrollToSec(id){
 }
 document.addEventListener('click',function(e){
   if(!e.target.closest('.fab-nav'))document.getElementById('fabMenu').classList.remove('show');
+});
+// 下拉刷新
+let pullStartY=0,pullDist=0,pulling=false;
+const pullTip=document.createElement('div');
+pullTip.id='pullTip';
+pullTip.style.cssText='position:fixed;top:0;left:0;right:0;text-align:center;padding:12px;color:#667eea;font-size:13px;z-index:100;transform:translateY(-100%);transition:transform .2s ease';
+document.body.appendChild(pullTip);
+document.addEventListener('touchstart',function(e){
+  if(window.scrollY<=0){pullStartY=e.touches[0].clientY;pulling=true;}
+},{passive:true});
+document.addEventListener('touchmove',function(e){
+  if(!pulling)return;
+  pullDist=e.touches[0].clientY-pullStartY;
+  if(pullDist>0&&pullDist<150){
+    pullTip.style.transform='translateY('+(pullDist-50)+'px)';
+    pullTip.textContent=pullDist>80?'松开刷新':'下拉刷新';
+  }
+},{passive:true});
+document.addEventListener('touchend',function(){
+  if(!pulling)return;
+  pulling=false;
+  if(pullDist>80){
+    pullTip.textContent='刷新中...';
+    pullTip.style.transform='translateY(0)';
+    // 重新加载当前玩法数据
+    const key=currentGame;
+    gameState[key].loaded=false;
+    loadGameData(key);
+    setTimeout(()=>{pullTip.style.transform='translateY(-100%)';pullTip.textContent='刷新成功';},1000);
+    setTimeout(()=>{pullTip.textContent='下拉刷新';},1500);
+  }else{
+    pullTip.style.transform='translateY(-100%)';
+  }
+  pullDist=0;
 });
 // ===== 会员系统 =====
 function isVip(){return localStorage.getItem('lottery_activated')==='1';}
