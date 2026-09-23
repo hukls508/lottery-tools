@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>幸运摇奖机 - 锦鲤选号</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon.png">
+<meta name="theme-color" content="#6a11cb">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="幸运摇奖机">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;background:linear-gradient(135deg,#6a11cb 0%,#2575fc 100%);min-height:100vh;overflow-x:hidden}
+.header{background:rgba(0,0,0,.2);padding:16px 20px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:100;backdrop-filter:blur(10px)}
+.back-btn{color:#fff;font-size:14px;cursor:pointer;text-decoration:none;display:flex;align-items:center;gap:4px}
+.header-title{color:#fff;font-size:18px;font-weight:bold}
+.container{max-width:500px;margin:0 auto;padding:20px}
+
+/* 玩法选择 */
+.game-selector{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:24px}
+.game-btn{background:rgba(255,255,255,.15);border:2px solid transparent;border-radius:12px;padding:12px 8px;color:#fff;text-align:center;cursor:pointer;transition:all .3s;font-size:13px}
+.game-btn.active{background:#fff;color:#6a11cb;border-color:#fff;box-shadow:0 4px 15px rgba(0,0,0,.2)}
+.game-btn .g-icon{font-size:20px;margin-bottom:4px}
+
+/* 摇奖机主体 */
+.machine-container{background:rgba(255,255,255,.1);border-radius:24px;padding:30px 20px;text-align:center;margin-bottom:24px;backdrop-filter:blur(10px)}
+.machine-title{color:#fff;font-size:16px;margin-bottom:20px;opacity:.9}
+
+/* 透明球 */
+.machine-ball{width:200px;height:200px;border-radius:50%;background:radial-gradient(circle at 30% 30%,rgba(255,255,255,.3),rgba(255,255,255,.05));border:3px solid rgba(255,255,255,.3);margin:0 auto 24px;position:relative;overflow:hidden;box-shadow:inset 0 0 40px rgba(0,0,0,.2),0 10px 30px rgba(0,0,0,.2)}
+.machine-ball.shaking{animation:shake .5s ease-in-out infinite}
+@keyframes shake{
+0%,100%{transform:translateX(0) rotate(0deg)}
+25%{transform:translateX(-5px) rotate(-2deg)}
+75%{transform:translateX(5px) rotate(2deg)}
+}
+
+/* 球里的滚动小球 */
+.rolling-ball{position:absolute;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:bold;color:#fff;box-shadow:0 2px 6px rgba(0,0,0,.3)}
+.rolling-ball.red{background:linear-gradient(135deg,#ff6b6b,#e74c3c)}
+.rolling-ball.blue{background:linear-gradient(135deg,#74b9ff,#3498db)}
+.rolling-ball.gold{background:linear-gradient(135deg,#ffeaa7,#e67e22)}
+
+/* 掉出来的球 */
+.result-area{min-height:80px;display:flex;flex-wrap:wrap;gap:8px;justify-content:center;align-items:center;margin-bottom:20px;padding:16px;background:rgba(0,0,0,.15);border-radius:16px}
+.result-ball{width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:bold;color:#fff;box-shadow:0 4px 12px rgba(0,0,0,.3);animation:dropIn .5s ease-out}
+.result-ball.red{background:linear-gradient(135deg,#ff6b6b,#e74c3c)}
+.result-ball.blue{background:linear-gradient(135deg,#74b9ff,#3498db)}
+.result-ball.gold{background:linear-gradient(135deg,#ffeaa7,#e67e22)}
+.result-ball.digit{background:linear-gradient(135deg,#ff6b6b,#e74c3c)}
+@keyframes dropIn{
+0%{transform:translateY(-100px) scale(0)}
+60%{transform:translateY(10px) scale(1.1)}
+100%{transform:translateY(0) scale(1)}
+}
+
+/* 按钮 */
+.shake-btn{background:linear-gradient(135deg,#f093fb,#f5576c);color:#fff;border:none;border-radius:50px;padding:16px 48px;font-size:18px;font-weight:bold;cursor:pointer;box-shadow:0 8px 25px rgba(245,87,108,.4);transition:all .3s}
+.shake-btn:hover{transform:translateY(-2px);box-shadow:0 12px 35px rgba(245,87,108,.5)}
+.shake-btn:disabled{opacity:.6;cursor:not-allowed;transform:none}
+
+/* 提示 */
+.tip{color:rgba(255,255,255,.7);font-size:12px;margin-top:16px;line-height:1.6}
+
+/* 玩法配置 */
+.game-config{background:rgba(255,255,255,.1);border-radius:16px;padding:16px;margin-bottom:20px;color:#fff;font-size:13px;line-height:1.8}
+</style>
+</head>
+<body>
+<div class="header">
+  <a href="index.html" class="back-btn">← 返回</a>
+  <div class="header-title">🎰 幸运摇奖机</div>
+</div>
+
+<div class="container">
+  <!-- 玩法选择 -->
+  <div class="game-selector" id="gameSelector">
+    <div class="game-btn active" data-game="ssq" onclick="selectGame('ssq',this)">
+      <div class="g-icon">🔴</div>双色球
+    </div>
+    <div class="game-btn" data-game="dlt" onclick="selectGame('dlt',this)">
+      <div class="g-icon">🔵</div>大乐透
+    </div>
+    <div class="game-btn" data-game="3d" onclick="selectGame('3d',this)">
+      <div class="g-icon">🎲</div>福彩3D
+    </div>
+    <div class="game-btn" data-game="p3" onclick="selectGame('p3',this)">
+      <div class="g-icon">🎲</div>排列3
+    </div>
+    <div class="game-btn" data-game="p5" onclick="selectGame('p5',this)">
+      <div class="g-icon">🎲</div>排列5
+    </div>
+    <div class="game-btn" data-game="qxc" onclick="selectGame('qxc',this)">
+      <div class="g-icon">🎲</div>七星彩
+    </div>
+  </div>
+
+  <!-- 玩法说明 -->
+  <div class="game-config" id="gameConfig">
+    当前玩法：双色球<br>
+    红球：6个（1-33）+ 蓝球：1个（1-16）
+  </div>
+
+  <!-- 摇奖机 -->
+  <div class="machine-container">
+    <div class="machine-title">🎱 点击按钮开始摇奖</div>
+    <div class="machine-ball" id="machineBall"></div>
+    <div class="result-area" id="resultArea">
+      <div style="color:rgba(255,255,255,.5);font-size:13px">等待摇奖...</div>
+    </div>
+    <button class="shake-btn" id="shakeBtn" onclick="startShaking()">🎰 开始摇奖</button>
+  </div>
+
+  <div class="tip">
+    ✨ 摇奖机随机生成号码，仅供娱乐参考<br>
+    彩票开奖为独立随机事件，不构成投注建议
+  </div>
+</div>
+
+<script>
+// 玩法配置
+const GAMES = {
+  ssq: {
+    name: '双色球',
+    redCount: 6, redMin: 1, redMax: 33,
+    blueCount: 1, blueMin: 1, blueMax: 16,
+    type: 'lotto'
+  },
+  dlt: {
+    name: '大乐透',
+    redCount: 5, redMin: 1, redMax: 35,
+    blueCount: 2, blueMin: 1, blueMax: 12,
+    type: 'lotto'
+  },
+  '3d': {
+    name: '福彩3D',
+    digits: 3, max: 9,
+    type: 'digit'
+  },
+  p3: {
+    name: '排列3',
+    digits: 3, max: 9,
+    type: 'digit'
+  },
+  p5: {
+    name: '排列5',
+    digits: 5, max: 9,
+    type: 'digit'
+  },
+  qxc: {
+    name: '七星彩',
+    digits: 6, max: 9,
+    specialLast: true,
+    type: 'digit'
+  }
+};
+
+let currentGame = 'ssq';
+let isShaking = false;
+
+function pad(n) { return String(n).padStart(2, '0'); }
+
+function selectGame(game, el) {
+  if (isShaking) return;
+  currentGame = game;
+  document.querySelectorAll('.game-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  updateConfig();
+  clearResult();
+}
+
+function updateConfig() {
+  const g = GAMES[currentGame];
+  let text = `当前玩法：${g.name}<br>`;
+  if (g.type === 'lotto') {
+    text += `红球：${g.redCount}个（${g.redMin}-${g.redMax}）+ 蓝球：${g.blueCount}个（${g.blueMin}-${g.blueMax}）`;
+  } else {
+    text += `${g.digits}位数字（每位0-${g.max}）`;
+  }
+  document.getElementById('gameConfig').innerHTML = text;
+}
+
+function clearResult() {
+  document.getElementById('resultArea').innerHTML = '<div style="color:rgba(255,255,255,.5);font-size:13px">等待摇奖...</div>';
+  document.getElementById('machineBall').innerHTML = '';
+}
+
+function generateNumbers() {
+  const g = GAMES[currentGame];
+  if (g.type === 'lotto') {
+    // 生成红球
+    const reds = [];
+    while (reds.length < g.redCount) {
+      const n = Math.floor(Math.random() * g.redMax) + g.redMin;
+      if (!reds.includes(n)) reds.push(n);
+    }
+    reds.sort((a, b) => a - b);
+    // 生成蓝球
+    const blues = [];
+    while (blues.length < g.blueCount) {
+      const n = Math.floor(Math.random() * g.blueMax) + g.blueMin;
+      if (!blues.includes(n)) blues.push(n);
+    }
+    blues.sort((a, b) => a - b);
+    return { reds, blues };
+  } else {
+    // 数字型
+    const digits = [];
+    for (let i = 0; i < g.digits; i++) {
+      digits.push(Math.floor(Math.random() * (g.max + 1)));
+    }
+    return { digits };
+  }
+}
+
+function startShaking() {
+  if (isShaking) return;
+  isShaking = true;
+  const btn = document.getElementById('shakeBtn');
+  btn.disabled = true;
+  btn.textContent = '🎰 摇奖中...';
+  
+  clearResult();
+  const ball = document.getElementById('machineBall');
+  ball.classList.add('shaking');
+  
+  // 生成滚动的小球动画
+  const g = GAMES[currentGame];
+  const totalBalls = g.type === 'lotto' ? g.redCount + g.blueCount : g.digits;
+  
+  // 随机滚动的球
+  const rollingBalls = [];
+  for (let i = 0; i < 10; i++) {
+    const rb = document.createElement('div');
+    rb.className = 'rolling-ball ' + (Math.random() > 0.5 ? 'red' : 'blue');
+    rb.textContent = Math.floor(Math.random() * 33) + 1;
+    rb.style.left = Math.random() * 160 + 'px';
+    rb.style.top = Math.random() * 160 + 'px';
+    ball.appendChild(rb);
+    rollingBalls.push(rb);
+  }
+  
+  // 让球滚动
+  const rollInterval = setInterval(() => {
+    rollingBalls.forEach(rb => {
+      rb.style.left = Math.random() * 160 + 'px';
+      rb.style.top = Math.random() * 160 + 'px';
+      rb.textContent = Math.floor(Math.random() * 33) + 1;
+    });
+  }, 100);
+  
+  // 3秒后出结果
+  setTimeout(() => {
+    clearInterval(rollInterval);
+    ball.classList.remove('shaking');
+    ball.innerHTML = '';
+    
+    const result = generateNumbers();
+    const resultArea = document.getElementById('resultArea');
+    resultArea.innerHTML = '';
+    
+    let delay = 0;
+    if (g.type === 'lotto') {
+      // 红球逐个出来
+      result.reds.forEach((n, i) => {
+        setTimeout(() => {
+          const rb = document.createElement('div');
+          rb.className = 'result-ball red';
+          rb.textContent = pad(n);
+          resultArea.appendChild(rb);
+        }, delay);
+        delay += 400;
+      });
+      // 蓝球
+      setTimeout(() => {
+        const plus = document.createElement('div');
+        plus.style.color = '#fff';
+        plus.style.fontSize = '24px';
+        plus.style.margin = '0 8px';
+        plus.textContent = '+';
+        resultArea.appendChild(plus);
+      }, delay);
+      delay += 200;
+      result.blues.forEach((n, i) => {
+        setTimeout(() => {
+          const rb = document.createElement('div');
+          rb.className = 'result-ball blue';
+          rb.textContent = pad(n);
+          resultArea.appendChild(rb);
+        }, delay);
+        delay += 400;
+      });
+    } else {
+      // 数字型逐个出来
+      result.digits.forEach((n, i) => {
+        setTimeout(() => {
+          const rb = document.createElement('div');
+          const isSpecial = g.specialLast && i === result.digits.length - 1;
+          rb.className = 'result-ball ' + (isSpecial ? 'gold' : 'digit');
+          rb.textContent = n;
+          resultArea.appendChild(rb);
+        }, delay);
+        delay += 400;
+      });
+    }
+    
+    // 全部出完后启用按钮
+    setTimeout(() => {
+      isShaking = false;
+      btn.disabled = false;
+      btn.textContent = '🎰 再摇一次';
+    }, delay + 500);
+    
+  }, 3000);
+}
+
+// 初始化
+updateConfig();
+</script>
+</body>
+</html>
