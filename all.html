@@ -1098,6 +1098,7 @@ function renderExpertLotto(key,g,data){
   html+=lockVipSection(chiHtml,'卡方检验');
 
   // 4. AI神经网络预测（模拟）
+  const maxScore=Math.max(...frontRanked.map(x=>x[1]));
   const aiScores=frontRanked.map(x=>{
     const base=x[1]/maxScore*70;
     const missBonus=(frontMiss[x[0]]||0)/frontMax*20;
