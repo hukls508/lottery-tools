@@ -1156,6 +1156,8 @@ function renderExpertLotto(key,g,data){
   html+=`</div>`;
   return html;
 }
+
+function renderExpertDigit(key,g,data){
   const positions=g.digits;
   const maxes=g.maxes||Array(positions).fill(9);
   // 每位统计
