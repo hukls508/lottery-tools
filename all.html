@@ -463,11 +463,7 @@ body{padding-bottom:80px}
 
 <!-- 底部毛玻璃导航栏 -->
 <div class="app-tabbar">
-  <div class="tabbar-item active" data-page="home" onclick="switchPage('home',this)">
-    <div class="tabbar-icon">🏠</div>
-    <div class="tabbar-label">首页</div>
-  </div>
-  <div class="tabbar-item" data-page="picker" onclick="switchPage('picker',this)">
+  <div class="tabbar-item active" data-page="picker" onclick="switchPage('picker',this)">
     <div class="tabbar-icon">🎯</div>
     <div class="tabbar-label">选号</div>
   </div>
@@ -3167,7 +3163,12 @@ function showAdminPanel(){
   }
   loadGameData(currentGame);
   renderGame();
-  renderHome();
+  // 默认显示分析页
+  document.getElementById('page-home').classList.remove('active');
+  document.getElementById('page-picker').classList.remove('active');
+  document.getElementById('page-analysis').classList.add('active');
+  document.querySelector('.tabbar-item[data-page="analysis"]').classList.add('active');
+  document.getElementById('appTitle').textContent='📊 数据分析';
 })();
 // ===== APP页面切换 =====
 function switchPage(page,el){
