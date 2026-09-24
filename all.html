@@ -3088,14 +3088,14 @@ function getDeviceId(){
   // 注意：用hash而不是query，因为浏览器"添加到主屏幕"会去掉query参数
   const hash=location.hash.substring(1);
   const hashParams=new URLSearchParams(hash);
-  const hashDeviceId=hashParams.get('deviceId');
+  const hashDeviceId=(hashParams.get('deviceId')||'').toUpperCase();
   if(hashDeviceId){
     localStorage.setItem('lottery_device_id',hashDeviceId);
     return hashDeviceId;
   }
   // 再从query读取（兼容旧链接）
   const params=new URLSearchParams(location.search);
-  const urlDeviceId=params.get('deviceId');
+  const urlDeviceId=(params.get('deviceId')||'').toUpperCase();
   if(urlDeviceId){
     localStorage.setItem('lottery_device_id',urlDeviceId);
     return urlDeviceId;
