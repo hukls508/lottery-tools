@@ -1960,12 +1960,13 @@ function renderTrend(key){
   let myRows=[];
   try{myRows=JSON.parse(localStorage.getItem('myRows_'+key)||'[]');}catch(e){}
   // 计算统计数据
-  function calcStats(getNums,max){
+  function calcStats(getNums,max,startFrom){
+    startFrom=startFrom||1;
     const counts={},missSum={},maxMiss={},curMiss={},maxConsec={},curConsec={};
-    for(let i=1;i<=max;i++){counts[i]=0;missSum[i]=0;maxMiss[i]=0;curMiss[i]=0;maxConsec[i]=0;curConsec[i]=0;}
+    for(let i=startFrom;i<=max;i++){counts[i]=0;missSum[i]=0;maxMiss[i]=0;curMiss[i]=0;maxConsec[i]=0;curConsec[i]=0;}
     st.data.forEach(d=>{
       const nums=new Set(getNums(d));
-      for(let i=1;i<=max;i++){
+      for(let i=startFrom;i<=max;i++){
         if(nums.has(i)){
           counts[i]++;
           missSum[i]+=curMiss[i];
@@ -2212,7 +2213,7 @@ function renderTrend(key){
     html+=`<tr><td colspan="${totalCols}" style="padding:6px"><button class="add-myrow-btn" onclick="addDigitRow('${key}')">+ 添加一组我的选号</button></td></tr>`;
     // 统计行
     g.maxes.forEach((max,pi)=>{
-      const stats=calcStats(d=>[d.digits[pi]],max);
+      const stats=calcStats(d=>[d.digits[pi]],max,0);
       // 出现次数从0开始
       if(pi===0){
         html+=`<tr class="stats-row"><td colspan="2" class="stats-label">出现次数</td>`;
@@ -2222,7 +2223,7 @@ function renderTrend(key){
       g.maxes.forEach((m,pi2)=>{
         if(pi2>0)html+=`<td class="td-divider"></td>`;
         if(pi2===pi){
-          for(let n=0;n<=m;n++)html+=`<td class="stats-cell">${stats.counts[n+1]||0}</td>`;
+          for(let n=0;n<=m;n++)html+=`<td class="stats-cell">${stats.counts[n]||0}</td>`;
         }else{
           for(let n=0;n<=m;n++)html+=`<td class="stats-cell" style="opacity:.3"></td>`;
         }
