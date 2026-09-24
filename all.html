@@ -2124,47 +2124,46 @@ function renderTrend(key){
     }
     html+='</tr>';
   }else{
-    // 数字型
-    const posColors=['hit-orange','hit-green','hit-blue','hit-purple','hit-pink','hit-teal','hit-red'];
-    const thColors=['th-orange','th-green','th-blue','th-purple','th-pink','th-teal','th-red'];
+    // 数字型走势图
+    const posColors=['#ff6b6b','#27ae60','#3498db','#9b59b6','#e91e63','#009688','#e74c3c'];
+    const thColors=['#ff6b6b','#27ae60','#3498db','#9b59b6','#e91e63','#009688','#e74c3c'];
     const posNames=g.labels||['个位','十位','百位','千位','万位','十万位','百万位'];
-    // 第一行表头：位置
-    html+='<tr><th rowspan="2" class="issue-col">期号</th><th rowspan="2" class="week-col">星<br>期</th>';
+    // 表头
+    html+='<tr><th rowspan="2" class="issue-col">期号</th><th rowspan="2" class="week-col">星期</th>';
     g.maxes.forEach((max,pi)=>{
       if(pi>0)html+=`<th class="th-divider"></th>`;
-      html+=`<th colspan="${max+1}" class="zone-header">${posNames[pi]||('第'+(pi+1)+'位')}</th>`;
+      html+=`<th colspan="${max+1}" class="zone-header" style="background:${thColors[pi%thColors.length]}20;color:${thColors[pi%thColors.length]}">${posNames[pi]||('第'+(pi+1)+'位')}</th>`;
     });
     html+='</tr>';
-    // 第二行表头：号码
     html+='<tr>';
     g.maxes.forEach((max,pi)=>{
       if(pi>0)html+=`<th class="th-divider"></th>`;
-      for(let n=0;n<=max;n++)html+=`<th class="${thColors[pi%thColors.length]}">${n}</th>`;
+      for(let n=0;n<=max;n++)html+=`<th style="background:${thColors[pi%thColors.length]}10;color:${thColors[pi%thColors.length]};font-size:11px">${n}</th>`;
     });
     html+='</tr></thead><tbody>';
+    
     // 当前遗漏行
     html+=`<tr class="miss-row"><td colspan="2" class="miss-label">当前遗漏</td>`;
-    g.maxes.forEach((max,pi)=>{
-      if(pi>0)html+=`<td class="td-divider"></td>`;
-      for(let n=0;n<=max;n++){
-        let miss=st.data.length;
-        for(let i=0;i<st.data.length;i++){
-          if(st.data[i].digits[pi]===n){miss=i;break;}
-        }
-        const color=miss>=15?'#e74c3c':miss>=8?'#f39c12':'#27ae60';
-        html+=`<td class="miss-cell" style="color:${color};font-weight:600">${miss}</td>`;
-      }
-    });
-    html+='</tr>';
-    // 计算每位当前遗漏
     const digitCurMiss=[];
     g.maxes.forEach((max,pi)=>{
       const miss={};
-      for(let n=0;n<=max;n++)miss[n]=st.data.length;
-      st.data.forEach((d,idx)=>{if(d.digits[pi]===n&&miss[n]===st.data.length)miss[n]=idx;});
+      for(let n=0;n<=max;n++){
+        miss[n]=st.data.length;
+        for(let i=0;i<st.data.length;i++){
+          if(st.data[i].digits[pi]===n){miss[n]=i;break;}
+        }
+      }
       digitCurMiss.push(miss);
+      if(pi>0)html+=`<td class="td-divider"></td>`;
+      for(let n=0;n<=max;n++){
+        const m=miss[n];
+        const color=m>=15?'#e74c3c':m>=8?'#f39c12':'#27ae60';
+        html+=`<td class="miss-cell" style="color:${color};font-weight:600;font-size:11px">${m}</td>`;
+      }
     });
-    // 开奖数据
+    html+='</tr>';
+    
+    // 开奖数据行
     data.forEach(d=>{
       html+=`<tr><td class="issue-col">${d.issue}</td><td class="week-col">${getWeek(d.date)}</td>`;
       g.maxes.forEach((max,pi)=>{
@@ -2173,63 +2172,29 @@ function renderTrend(key){
         for(let n=0;n<=max;n++){
           const isHit=n===num;
           const miss=digitCurMiss[pi][n];
-          const heatBg=!isHit?`background:rgba(231,76,60,${Math.min(miss/30,0.15)})`:'';
-          const title=`第${pi+1}位 ${n}\n当前遗漏:${miss}`;
-          html+=isHit?`<td class="${posColors[pi%posColors.length]} circle trend-num" data-num="${n}" data-pos="${pi}" title="${title}" onclick="highlightTrendDigit('${key}',${pi},${n})">${n}</td>`:`<td class="miss-num trend-num" data-num="${n}" data-pos="${pi}" title="${title}" style="${heatBg}" onclick="highlightTrendDigit('${key}',${pi},${n})">${n}</td>`;
+          const heatBg=!isHit?`background:rgba(231,76,60,${Math.min(miss/30,0.12)})`:'';
+          if(isHit){
+            html+=`<td class="circle trend-num" style="background:${posColors[pi%posColors.length]};color:#fff;font-weight:bold;text-align:center">${n}</td>`;
+          }else{
+            html+=`<td class="miss-num trend-num" style="${heatBg};text-align:center;color:#999">${n}</td>`;
+          }
         }
       });
       html+='</tr>';
-      // 去年同期对比
-      if(showCompare){
-        const ly=findLastYearIssue(key,d.issue);
-        if(ly){
-          html+=`<tr class="last-year-row"><td class="issue-col">↳${ly.issue}</td><td class="week-col">去</td>`;
-          g.maxes.forEach((max,pi)=>{
-            if(pi>0)html+=`<td class="td-divider"></td>`;
-            const num=ly.digits[pi];
-            for(let n=0;n<=max;n++)html+=n===num?`<td class="${posColors[pi%posColors.length]} circle" style="opacity:.5">${n}</td>`:`<td class="miss-num" style="opacity:.4">${n}</td>`;
-          });
-          html+='</tr>';
-        }
-      }
     });
-    // 我的选号行
-    const digitKey='myRows_digit_'+key;
-    let digitRows=[];
-    try{digitRows=JSON.parse(localStorage.getItem(digitKey)||'[]');}catch(e){}
-    const totalCols=g.maxes.reduce((a,b)=>a+b+1,0)+2;
-    if(digitRows.length>0){
-      html+=`<tr><td colspan="${totalCols}" style="background:#fff3cd;padding:4px;font-size:11px;color:#856404;font-weight:600">👇 我的选号（点击号码标记）</td></tr>`;
-      digitRows.forEach((row,ri)=>{
-        html+=`<tr class="my-row"><td class="issue-col" style="background:#fff3cd">第${ri+1}组</td><td class="week-col" style="background:#fff3cd"><span class="del-myrow" onclick="delDigitRow('${key}',${ri})">✕</span></td>`;
-        g.maxes.forEach((max,pi)=>{
-          if(pi>0)html+=`<td class="td-divider"></td>`;
-          const nums=new Set((row['pos'+pi])||[]);
-          for(let n=0;n<=max;n++)html+=`<td class="${nums.has(n)?posColors[pi%posColors.length]+' circle':'miss'} my-cell" onclick="toggleDigitNum('${key}',${ri},${pi},${n})">${n}</td>`;
-        });
-        html+='</tr>';
-      });
-    }
-    html+=`<tr><td colspan="${totalCols}" style="padding:6px"><button class="add-myrow-btn" onclick="addDigitRow('${key}')">+ 添加一组我的选号</button></td></tr>`;
-    // 统计行
+    
+    // 统计行：出现次数
+    html+=`<tr class="stats-row"><td colspan="2" class="stats-label">出现次数</td>`;
     g.maxes.forEach((max,pi)=>{
-      const stats=calcStats(d=>[d.digits[pi]],max,0);
-      // 出现次数从0开始
-      if(pi===0){
-        html+=`<tr class="stats-row"><td colspan="2" class="stats-label">出现次数</td>`;
-      }else{
-        html+=`<tr class="stats-row"><td colspan="2" class="stats-label" style="opacity:.3"></td>`;
+      if(pi>0)html+=`<td class="td-divider"></td>`;
+      const counts={};
+      for(let n=0;n<=max;n++)counts[n]=0;
+      st.data.forEach(d=>counts[d.digits[pi]]++);
+      for(let n=0;n<=max;n++){
+        html+=`<td class="stats-cell" style="text-align:center;font-size:11px">${counts[n]}</td>`;
       }
-      g.maxes.forEach((m,pi2)=>{
-        if(pi2>0)html+=`<td class="td-divider"></td>`;
-        if(pi2===pi){
-          for(let n=0;n<=m;n++)html+=`<td class="stats-cell">${stats.counts[n]||0}</td>`;
-        }else{
-          for(let n=0;n<=m;n++)html+=`<td class="stats-cell" style="opacity:.3"></td>`;
-        }
-      });
-      html+='</tr>';
     });
+    html+='</tr>';
   }
   html+='</tbody></table>';
   wrap.innerHTML=`<div class="trend-container" style="position:relative;overflow-x:auto">${html}<svg class="trend-lines" style="position:absolute;top:0;left:0;pointer-events:none;z-index:1"></svg></div>`;
