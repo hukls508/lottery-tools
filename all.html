@@ -3084,7 +3084,16 @@ function generateShareImage(key){
 // ===== 设备授权 =====
 const ADMIN_PASSWORD="1995327";
 function getDeviceId(){
-  // 先从URL读取deviceId（用于桌面快捷方式，删除重加不丢失）
+  // 先从URL hash读取deviceId（用于桌面快捷方式，删除重加不丢失）
+  // 注意：用hash而不是query，因为浏览器"添加到主屏幕"会去掉query参数
+  const hash=location.hash.substring(1);
+  const hashParams=new URLSearchParams(hash);
+  const hashDeviceId=hashParams.get('deviceId');
+  if(hashDeviceId){
+    localStorage.setItem('lottery_device_id',hashDeviceId);
+    return hashDeviceId;
+  }
+  // 再从query读取（兼容旧链接）
   const params=new URLSearchParams(location.search);
   const urlDeviceId=params.get('deviceId');
   if(urlDeviceId){
@@ -3134,12 +3143,15 @@ function adminLogin(){
 function genForDevice(){
   const id=document.getElementById('customDeviceId').value.trim().toUpperCase();
   if(!id){document.getElementById('genResult').textContent='请输入设备ID';return;}
-  document.getElementById('genResult').textContent='激活码：'+generateCode(id);
+  const code=generateCode(id);
+  const url=location.origin+'/lottery-tools/#deviceId='+id+'&code='+code;
+  document.getElementById('genResult').innerHTML=`激活码：<b style="font-size:16px">${code}</b><br><br>专属链接：<br><span style="font-size:10px;word-break:break-all">${url}</span>`;
 }
 function genDesktopLink(){
   const deviceId=getDeviceId();
   const code=generateCode(deviceId);
-  const url=location.origin+'/lottery-tools/?deviceId='+deviceId+'&code='+code;
+  // 用hash而不是query，因为浏览器"添加到主屏幕"会去掉query参数
+  const url=location.origin+'/lottery-tools/#deviceId='+deviceId+'&code='+code;
   alert(`📱 添加到手机桌面教程
 
 🍎 苹果手机（iPhone）：
@@ -3215,8 +3227,11 @@ function showAdminPanel(){
 (function(){
   document.getElementById('authDeviceId').textContent=getDeviceId();
   // URL参数自动激活（用于添加到桌面）
+  // 优先从hash读取（浏览器添加到主屏幕不会去掉hash），兼容旧的query参数
+  const hash=location.hash.substring(1);
+  const hashParams=new URLSearchParams(hash);
   const params=new URLSearchParams(location.search);
-  const urlCode=params.get('code');
+  const urlCode=hashParams.get('code')||params.get('code');
   if(urlCode && (urlCode===generateCode(getDeviceId())||urlCode===ADMIN_PASSWORD)){
     localStorage.setItem('lottery_activated','1');
   }
