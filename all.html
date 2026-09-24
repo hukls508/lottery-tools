@@ -589,12 +589,16 @@ function renderGame(){
   aHtml+='</div>';
   // 遗漏面板（遗漏+杀号）
   aHtml+=`<div class="analysis-panel" id="panel-missing">`;
-  if(g.type==='lotto')aHtml+=renderMissing(key).replace('<div class="card">','<div class="card" id="sec-missing">');
-  if(g.type==='lotto')aHtml+=renderKillNum(key).replace('<div class="card">','<div class="card" id="sec-kill">');
+  if(g.type==='lotto'){
+    aHtml+=renderMissing(key).replace('<div class="card">','<div class="card" id="sec-missing">');
+    aHtml+=renderKillNum(key).replace('<div class="card">','<div class="card" id="sec-kill">');
+  }
+  if(g.type==='digit')aHtml+=renderMissingDigit(key).replace('<div class="card">','<div class="card" id="sec-missing">');
   aHtml+='</div>';
   // 深度面板
   aHtml+=`<div class="analysis-panel" id="panel-deep">`;
   if(g.type==='lotto')aHtml+=lockVipSection(renderDeepAnalysis(key).replace('<div class="card">','<div class="card" id="sec-deep">'),'深度分析');
+  if(g.type==='digit')aHtml+=lockVipSection(renderDeepDigit(key).replace('<div class="card">','<div class="card" id="sec-deep">'),'深度分析');
   aHtml+='</div>';
   // 走势面板
   aHtml+=`<div class="analysis-panel" id="panel-trend">`;
@@ -1230,6 +1234,221 @@ function renderExpertDigit(key,g,data){
     html+=`<div style="font-size:12px;color:#666">${r.reason}</div>`;
     html+=`</div>`;
   });
+  html+=`</div>`;
+  return html;
+}
+
+// ===== 数字型遗漏分析 =====
+function renderMissingDigit(key){
+  const g=GAMES[key], st=gameState[key];
+  const data=st.data;
+  const positions=g.digits;
+  const maxes=g.maxes||Array(positions).fill(9);
+  const posNames=['个位','十位','百位','千位','万位','十万位','百万位'];
+  let html=`<div class="card"><div class="card-title"><span>📊 遗漏值分析</span><span style="font-size:11px;color:#999">共${data.length}期数据</span></div>`;
+  
+  for(let p=0;p<positions;p++){
+    const numRange=maxes[p];
+    // 计算每位的遗漏
+    const curMiss={},maxMiss={},avgMiss={};
+    for(let i=0;i<=numRange;i++){curMiss[i]=0;maxMiss[i]=0;avgMiss[i]=[];}
+    let lastSeen={};for(let i=0;i<=numRange;i++)lastSeen[i]=-1;
+    
+    data.forEach((d,idx)=>{
+      const num=d.digits[p];
+      for(let i=0;i<=numRange;i++){
+        if(num===i){
+          if(lastSeen[i]>=0){const miss=idx-lastSeen[i]-1;avgMiss[i].push(miss);if(miss>maxMiss[i])maxMiss[i]=miss;}
+          lastSeen[i]=idx;curMiss[i]=0;
+        }else{
+          curMiss[i]++;
+        }
+      }
+    });
+    
+    const list=Object.entries(curMiss).map(([n,m])=>({
+      num:+n,cur:m,max:maxMiss[n],
+      avg:avgMiss[n].length?Math.round(avgMiss[n].reduce((a,b)=>a+b,0)/avgMiss[n].length):0
+    }));
+    list.sort((a,b)=>b.cur-a.cur);
+    
+    html+=`<div style="margin-bottom:16px"><div style="font-weight:600;margin-bottom:8px;color:#333">${posNames[p]||('第'+(p+1)+'位')}遗漏TOP5</div><div class="freq-grid" style="grid-template-columns:repeat(${numRange+1},1fr)">`;
+    list.slice(0,5).forEach(item=>{
+      const level=item.cur>=item.avg*2?'freq-hot':item.cur>=item.avg?'freq-warm':'freq-cold';
+      html+=`<div class="freq-cell ${level}"><div class="num">${item.num}</div><div class="cnt">${item.cur}期</div></div>`;
+    });
+    html+=`</div>`;
+    
+    // 遗漏详情表
+    html+=`<div style="font-size:12px;color:#666;margin-bottom:6px">遗漏详情（按当前遗漏排序）</div><div class="table-wrap"><table class="history-table"><thead><tr><th>号码</th><th>当前遗漏</th><th>最大遗漏</th><th>平均遗漏</th><th>状态</th></tr></thead><tbody>`;
+    list.forEach(item=>{
+      let status='正常',color='#666';
+      if(item.cur>=item.max*0.8){status='该出了';color='#e74c3c';}
+      else if(item.cur>=item.avg*1.5){status='偏冷';color='#f39c12';}
+      else if(item.cur<=1){status='热出';color='#27ae60';}
+      html+=`<tr><td><span style="display:inline-block;width:24px;height:24px;line-height:24px;text-align:center;border-radius:4px;background:linear-gradient(135deg,#ff6b6b,#e74c3c);color:#fff;font-size:12px;font-weight:bold">${item.num}</span></td><td><strong>${item.cur}</strong></td><td>${item.max}</td><td>${item.avg}</td><td style="color:${color}">${status}</td></tr>`;
+    });
+    html+=`</tbody></table></div></div>`;
+  }
+  
+  // 会员功能：六维评分
+  let sixDimHtml=`<div class="freq-label" style="margin-top:12px">🎯 各位热号六维评分 👑</div>`;
+  for(let p=0;p<Math.min(positions,3);p++){
+    const numRange=maxes[p];
+    const curMiss={};
+    for(let i=0;i<=numRange;i++)curMiss[i]=0;
+    let lastSeen={};for(let i=0;i<=numRange;i++)lastSeen[i]=-1;
+    data.forEach((d,idx)=>{
+      const num=d.digits[p];
+      for(let i=0;i<=numRange;i++){
+        if(num===i){lastSeen[i]=idx;curMiss[i]=0;}
+        else{curMiss[i]++;}
+      }
+    });
+    const freq={};for(let i=0;i<=numRange;i++)freq[i]=0;
+    data.forEach(d=>freq[d.digits[p]]++);
+    const recent5={};for(let i=0;i<=numRange;i++)recent5[i]=0;
+    data.slice(0,5).forEach(d=>recent5[d.digits[p]]++);
+    
+    const ranked=Object.entries(curMiss).sort((a,b)=>b[1]-a[1]).slice(0,3);
+    sixDimHtml+=`<div style="font-size:13px;font-weight:600;margin:8px 0 4px;color:#333">${posNames[p]||('第'+(p+1)+'位')}冷号评分</div>`;
+    ranked.forEach(([n,m])=>{
+      n=+n;
+      const s1=Math.min(100,m/5*50);
+      const s2=Math.min(100,Math.abs(freq[n]-data.length/10)/(data.length/10)*100);
+      const s3=recent5[n]>0?50:100;
+      const s4=Math.min(100,m/20*100);
+      const s5=Math.min(100,m/(data.length/10)*100);
+      const s6=Math.round((s1+s2+s3+s4+s5)/5);
+      sixDimHtml+=`<div style="background:#f8f9fa;border-radius:8px;padding:8px 10px;margin-bottom:6px">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span style="font-weight:600;color:#333">号码 ${n}</span>
+          <span style="font-size:14px;font-weight:700;color:${s6>=70?'#e74c3c':s6>=50?'#f39c12':'#3498db'}">${s6}分</span>
+        </div>
+        <div style="font-size:11px;color:#999;margin-top:4px">当前遗漏 ${m} 期 ｜ 回补指数 ${s6>=70?'高':s6>=50?'中':'低'}</div>
+      </div>`;
+    });
+  }
+  html+=lockVipSection(sixDimHtml,'六维评分');
+  
+  html+=`</div>`;
+  return html;
+}
+
+// ===== 数字型深度分析（会员级）=====
+function renderDeepDigit(key){
+  const g=GAMES[key], st=gameState[key];
+  const data=st.data;
+  const positions=g.digits;
+  const maxes=g.maxes||Array(positions).fill(9);
+  const posNames=['个位','十位','百位','千位','万位','十万位','百万位'];
+  let html=`<div class="card"><div class="card-title"><span>🧠 深度分析</span><span style="font-size:11px;color:#9c27b0">会员级</span></div>`;
+  
+  // === 1. 和值走势曲线 ===
+  html+=`<div style="margin-bottom:18px"><div style="font-weight:600;margin-bottom:8px;font-size:14px">📈 和值走势（近30期）</div>`;
+  const sums=data.slice(0,30).map(d=>d.digits.reduce((a,b)=>a+b,0));
+  const avgSum=sums.reduce((a,b)=>a+b,0)/sums.length;
+  const maxSum=Math.max(...sums), minSum=Math.min(...sums);
+  const chartH=80, chartW=100;
+  const points=sums.map((s,i)=>{
+    const x=(i/(sums.length-1))*chartW;
+    const y=chartH-((s-minSum)/(maxSum-minSum||1))*chartH;
+    return `${x.toFixed(1)},${y.toFixed(1)}`;
+  }).join(' ');
+  html+=`<div style="position:relative;background:#f8f9fa;border-radius:8px;padding:8px">
+    <svg viewBox="0 0 ${chartW} ${chartH}" style="width:100%;height:100px;display:block">
+      <line x1="0" y1="${(chartH-((avgSum-minSum)/(maxSum-minSum||1))*chartH).toFixed(1)}" x2="${chartW}" y2="${(chartH-((avgSum-minSum)/(maxSum-minSum||1))*chartH).toFixed(1)}" stroke="#ffc107" stroke-width="0.5" stroke-dasharray="2,2"/>
+      <polyline points="${points}" fill="none" stroke="#667eea" stroke-width="1.2" stroke-linejoin="round"/>
+      ${sums.map((s,i)=>{const x=(i/(sums.length-1))*chartW;const y=chartH-((s-minSum)/(maxSum-minSum||1))*chartH;return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="1" fill="#667eea"/>`}).join('')}
+    </svg>
+    <div style="display:flex;justify-content:space-between;font-size:10px;color:#999;margin-top:4px">
+      <span>最低 ${minSum}</span><span style="color:#f39c12">均值 ${avgSum.toFixed(0)}</span><span>最高 ${maxSum}</span>
+    </div>
+  </div></div>`;
+  
+  // === 2. 跨度分析 ===
+  html+=`<div style="margin-bottom:18px"><div style="font-weight:600;margin-bottom:8px;font-size:14px">↔️ 跨度分布（近30期）</div>`;
+  const spans=data.slice(0,30).map(d=>Math.max(...d.digits)-Math.min(...d.digits));
+  const spanFreq={};
+  spans.forEach(s=>spanFreq[s]=(spanFreq[s]||0)+1);
+  const maxSpan=Math.max(...Object.values(spanFreq));
+  html+=`<div style="display:flex;gap:4px;align-items:flex-end;height:60px;margin-bottom:8px">`;
+  for(let s=0;s<=9;s++){
+    const h=((spanFreq[s]||0)/maxSpan)*50+8;
+    const color=spanFreq[s]>=maxSpan*0.7?'#e74c3c':spanFreq[s]===0?'#ccc':'#667eea';
+    html+=`<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px">
+      <div style="width:100%;height:${h}px;background:${color};border-radius:3px 3px 0 0"></div>
+      <span style="font-size:10px;color:#666">${s}</span>
+    </div>`;
+  }
+  html+=`</div><div style="font-size:12px;color:#666">最热跨度：<span style="color:#e74c3c;font-weight:600">${Object.entries(spanFreq).sort((a,b)=>b[1]-a[1]).slice(0,3).map(x=>x[0]).join(' ')}</span></div></div>`;
+  
+  // === 3. 012路分析 ===
+  html+=`<div style="margin-bottom:18px"><div style="font-weight:600;margin-bottom:8px;font-size:14px">🔄 012路分布（近30期）</div>`;
+  const roadFreq={0:0,1:0,2:0};
+  data.slice(0,30).forEach(d=>d.digits.forEach(n=>roadFreq[n%3]++));
+  const totalRoad=roadFreq[0]+roadFreq[1]+roadFreq[2];
+  html+=`<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+    <div style="background:#fff3e0;padding:10px;border-radius:8px;text-align:center"><div style="font-size:12px;color:#999">0路（0369）</div><div style="font-size:18px;font-weight:700;color:#f39c12">${(roadFreq[0]/totalRoad*100).toFixed(0)}%</div></div>
+    <div style="background:#e8f5e9;padding:10px;border-radius:8px;text-align:center"><div style="font-size:12px;color:#999">1路（147）</div><div style="font-size:18px;font-weight:700;color:#27ae60">${(roadFreq[1]/totalRoad*100).toFixed(0)}%</div></div>
+    <div style="background:#e3f2fd;padding:10px;border-radius:8px;text-align:center"><div style="font-size:12px;color:#999">2路（258）</div><div style="font-size:18px;font-weight:700;color:#3498db">${(roadFreq[2]/totalRoad*100).toFixed(0)}%</div></div>
+  </div></div>`;
+  
+  // === 4. 大小比/奇偶比 ===
+  html+=`<div style="margin-bottom:18px"><div style="font-weight:600;margin-bottom:8px;font-size:14px">⚖️ 大小比与奇偶比（近30期）</div>`;
+  let bigCount=0,oddCount=0,total=0;
+  data.slice(0,30).forEach(d=>d.digits.forEach(n=>{total++;if(n>=5)bigCount++;if(n%2===1)oddCount++;}));
+  html+=`<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+    <div style="background:#f8f9fa;padding:10px;border-radius:8px"><div style="font-size:12px;color:#999;margin-bottom:4px">大小比</div><div style="font-size:18px;font-weight:700;color:#333">大:小 = ${bigCount}:${total-bigCount}</div><div style="font-size:11px;color:#666">${(bigCount/total*100).toFixed(0)}% : ${((total-bigCount)/total*100).toFixed(0)}%</div></div>
+    <div style="background:#f8f9fa;padding:10px;border-radius:8px"><div style="font-size:12px;color:#999;margin-bottom:4px">奇偶比</div><div style="font-size:18px;font-weight:700;color:#333">奇:偶 = ${oddCount}:${total-oddCount}</div><div style="font-size:11px;color:#666">${(oddCount/total*100).toFixed(0)}% : ${((total-oddCount)/total*100).toFixed(0)}%</div></div>
+  </div></div>`;
+  
+  // === 5. 各位冷热号统计 ===
+  html+=`<div style="margin-bottom:18px"><div style="font-weight:600;margin-bottom:8px;font-size:14px">🌡️ 各位冷热号统计（近30期）</div>`;
+  for(let p=0;p<Math.min(positions,3);p++){
+    const numRange=maxes[p];
+    const freq={};for(let i=0;i<=numRange;i++)freq[i]=0;
+    data.slice(0,30).forEach(d=>freq[d.digits[p]]++);
+    const ranked=Object.entries(freq).sort((a,b)=>b[1]-a[1]);
+    const hot=ranked.slice(0,3).map(x=>x[0]);
+    const cold=ranked.slice(-3).map(x=>x[0]);
+    html+=`<div style="margin-bottom:10px">
+      <div style="font-size:13px;font-weight:600;color:#333;margin-bottom:4px">${posNames[p]||('第'+(p+1)+'位')}</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;font-size:12px">
+        <span style="color:#e74c3c">热号：${hot.join(' ')}</span>
+        <span style="color:#3498db;margin-left:12px">冷号：${cold.join(' ')}</span>
+      </div>
+    </div>`;
+  }
+  html+=`</div>`;
+  
+  // === 6. 相似期号检索 ===
+  html+=`<div style="margin-bottom:18px"><div style="font-weight:600;margin-bottom:8px;font-size:14px">🔍 相似期号检索</div>`;
+  const recent5=data.slice(0,5);
+  const recentSums=recent5.map(d=>d.digits.reduce((a,b)=>a+b,0));
+  const avgRecentSum=recentSums.reduce((a,b)=>a+b,0)/recentSums.length;
+  const similar=[];
+  for(let i=5;i<data.length-5;i++){
+    const s=data.slice(i,i+5).map(d=>d.digits.reduce((a,b)=>a+b,0));
+    const avgS=s.reduce((a,b)=>a+b,0)/s.length;
+    if(Math.abs(avgS-avgRecentSum)<5){
+      similar.push({idx:i,sum:avgS,next:data[i-1]?data[i-1].digits:null});
+    }
+  }
+  if(similar.length>0){
+    html+=`<div style="font-size:12px;color:#666;margin-bottom:8px">找到 ${similar.length} 期和值相近的历史数据：</div>`;
+    similar.slice(0,5).forEach(s=>{
+      if(s.next){
+        html+=`<div style="background:#f8f9fa;border-radius:8px;padding:8px 10px;margin-bottom:6px;font-size:12px">
+          下一期号码：${s.next.map(n=>`<span style="display:inline-block;width:22px;height:22px;line-height:22px;text-align:center;border-radius:4px;background:linear-gradient(135deg,#ff6b6b,#e74c3c);color:#fff;font-size:11px;font-weight:bold;margin-right:3px">${n}</span>`).join('')}
+        </div>`;
+      }
+    });
+  }else{
+    html+=`<div style="font-size:12px;color:#999">暂无相似期号数据</div>`;
+  }
+  html+=`</div>`;
+  
   html+=`</div>`;
   return html;
 }
