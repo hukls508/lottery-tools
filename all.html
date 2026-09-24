@@ -3144,14 +3144,15 @@ function genForDevice(){
   const id=document.getElementById('customDeviceId').value.trim().toUpperCase();
   if(!id){document.getElementById('genResult').textContent='请输入设备ID';return;}
   const code=generateCode(id);
-  const url=location.origin+'/lottery-tools/#deviceId='+id+'&code='+code;
+  const url=location.origin+'/lottery-tools/all.html#deviceId='+id+'&code='+code;
   document.getElementById('genResult').innerHTML=`激活码：<b style="font-size:16px">${code}</b><br><br>专属链接：<br><span style="font-size:10px;word-break:break-all">${url}</span>`;
 }
 function genDesktopLink(){
   const deviceId=getDeviceId();
   const code=generateCode(deviceId);
   // 用hash而不是query，因为浏览器"添加到主屏幕"会去掉query参数
-  const url=location.origin+'/lottery-tools/#deviceId='+deviceId+'&code='+code;
+  // 链接指向all.html，激活逻辑都在all.html里
+  const url=location.origin+'/lottery-tools/all.html#deviceId='+deviceId+'&code='+code;
   alert(`📱 添加到手机桌面教程
 
 🍎 苹果手机（iPhone）：
