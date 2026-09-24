@@ -3259,12 +3259,13 @@ function showAdminPanel(){
   }
   loadGameData(currentGame);
   renderGame();
-  // 默认显示分析页
-  document.getElementById('page-home').classList.remove('active');
+  // 默认显示主页（选号入口）
+  document.getElementById('page-home').classList.add('active');
   document.getElementById('page-picker').classList.remove('active');
-  document.getElementById('page-analysis').classList.add('active');
-  document.querySelector('.tabbar-item[data-page="analysis"]').classList.add('active');
-  document.getElementById('appTitle').textContent='📊 数据分析';
+  document.getElementById('page-analysis').classList.remove('active');
+  document.querySelector('.tabbar-item[data-page="home"]').classList.add('active');
+  document.getElementById('appTitle').textContent='🎰 锦鲤选号';
+  renderHome();
 })();
 // ===== APP页面切换 =====
 function switchPage(page,el){
