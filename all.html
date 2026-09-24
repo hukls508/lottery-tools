@@ -3132,41 +3132,24 @@ function genForDevice(){
 function genDesktopLink(){
   const code=generateCode(getDeviceId());
   const url=location.origin+'/lottery-tools/?code='+code;
-  const div=document.getElementById('desktopLink');
-  div.style.display='block';
-  div.innerHTML=`
-  <div style="background:#f8f9fa;border-radius:12px;padding:16px;margin-top:12px">
-    <div style="font-weight:bold;margin-bottom:12px;font-size:14px;color:#333">📱 添加到手机桌面</div>
-    
-    <div style="margin-bottom:16px">
-      <div style="font-weight:600;color:#e74c3c;margin-bottom:8px">🍎 苹果手机（iPhone）：</div>
-      <div style="font-size:12px;color:#666;line-height:1.8">
-        1. 复制下方链接，用 <b>Safari浏览器</b> 打开<br>
-        2. 点击底部中间的 <b>分享图标</b>（方框带向上箭头）<br>
-        3. 往下滑，找到 <b>"添加到主屏幕"</b><br>
-        4. 点击右上角 <b>"添加"</b>，桌面就有图标了
-      </div>
-    </div>
-    
-    <div style="margin-bottom:16px">
-      <div style="font-weight:600;color:#3498db;margin-bottom:8px">🤖 安卓手机：</div>
-      <div style="font-size:12px;color:#666;line-height:1.8">
-        1. 复制下方链接，用 <b>Chrome浏览器</b> 打开<br>
-        2. 点击右上角 <b>三个点</b> 菜单<br>
-        3. 选择 <b>"添加到主屏幕"</b> 或 <b>"添加到桌面"</b><br>
-        4. 点击 <b>"添加"</b>，桌面就有图标了
-      </div>
-    </div>
-    
-    <div style="background:#fff;border:1px dashed #ddd;border-radius:8px;padding:10px;margin-top:12px">
-      <div style="font-size:11px;color:#999;margin-bottom:4px">🔗 您的专属链接：</div>
-      <div style="font-size:11px;color:#333;word-break:break-all;line-height:1.5">${url}</div>
-    </div>
-    
-    <div style="font-size:10px;color:#999;margin-top:12px;line-height:1.6">
-      ⚠️ 提示：第一次添加到桌面打开可能需要再输一次激活码，之后就不用了
-    </div>
-  </div>`;
+  alert(`📱 添加到手机桌面教程
+
+🍎 苹果手机（iPhone）：
+1. 复制下方链接，用 Safari浏览器 打开
+2. 点击底部中间的 分享图标（方框带向上箭头）
+3. 往下滑，找到 "添加到主屏幕"
+4. 点击右上角 "添加"，桌面就有图标了
+
+🤖 安卓手机：
+1. 复制下方链接，用 Chrome浏览器 打开
+2. 点击右上角 三个点 菜单
+3. 选择 "添加到主屏幕" 或 "添加到桌面"
+4. 点击 "添加"，桌面就有图标了
+
+🔗 您的专属链接：
+${url}
+
+⚠️ 提示：第一次添加到桌面打开可能需要再输一次激活码，之后就不用了`);
 }
 // ===== 分享给朋友 =====
 function shareApp(){
@@ -3203,8 +3186,16 @@ function showHelp(){
 }
 // ===== 清除缓存 =====
 function clearCache(){
-  if(confirm('确定要清除所有本地数据吗？包括选号记录、收藏号码、会员状态等。')){
-    localStorage.clear();
+  if(confirm('确定要清除缓存吗？\n\n将清除：选号记录、收藏号码、使用统计\n保留：会员状态、设备码、激活状态')){
+    // 保留的key
+    const keepKeys=['lottery_activated','lottery_device_id','lottery_admin'];
+    // 清除其他所有数据
+    Object.keys(localStorage).forEach(key=>{
+      if(!keepKeys.includes(key)){
+        localStorage.removeItem(key);
+      }
+    });
+    alert('缓存已清除！');
     location.reload();
   }
 }
