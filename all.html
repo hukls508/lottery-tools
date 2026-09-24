@@ -3084,6 +3084,13 @@ function generateShareImage(key){
 // ===== 设备授权 =====
 const ADMIN_PASSWORD="1995327";
 function getDeviceId(){
+  // 先从URL读取deviceId（用于桌面快捷方式，删除重加不丢失）
+  const params=new URLSearchParams(location.search);
+  const urlDeviceId=params.get('deviceId');
+  if(urlDeviceId){
+    localStorage.setItem('lottery_device_id',urlDeviceId);
+    return urlDeviceId;
+  }
   let id=localStorage.getItem('lottery_device_id');
   if(!id){
     id=Math.random().toString(36).substring(2,8).toUpperCase()+Math.floor(Math.random()*90+10);
@@ -3130,8 +3137,9 @@ function genForDevice(){
   document.getElementById('genResult').textContent='激活码：'+generateCode(id);
 }
 function genDesktopLink(){
-  const code=generateCode(getDeviceId());
-  const url=location.origin+'/lottery-tools/?code='+code;
+  const deviceId=getDeviceId();
+  const code=generateCode(deviceId);
+  const url=location.origin+'/lottery-tools/?deviceId='+deviceId+'&code='+code;
   alert(`📱 添加到手机桌面教程
 
 🍎 苹果手机（iPhone）：
@@ -3149,7 +3157,7 @@ function genDesktopLink(){
 🔗 您的专属链接：
 ${url}
 
-⚠️ 提示：第一次添加到桌面打开可能需要再输一次激活码，之后就不用了`);
+✅ 提示：用这个链接添加到桌面，删除后重新添加也不用重新激活会员`);
 }
 // ===== 分享给朋友 =====
 function shareApp(){
